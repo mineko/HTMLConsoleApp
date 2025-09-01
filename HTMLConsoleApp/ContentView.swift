@@ -15,7 +15,25 @@ struct ContentView: View {
     }
 }
 
+// Script message handler to receive messages from JavaScript
+class ConsoleMessageHandler: NSObject, WKScriptMessageHandler {
+    let controller: HTMLConsoleController
+    
+    init(controller: HTMLConsoleController) {
+        self.controller = controller
+    }
+    
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        if message.name == "consoleInput", let input = message.body as? String {
+            let output = controller.processInput(input)
+            controller.addOutput(output)
+        }
+    }
+}
+
 struct WebViewRepresentable: NSViewRepresentable {
+    @StateObject private var consoleController = HTMLConsoleController()
+    
     func makeNSView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
         
@@ -23,7 +41,12 @@ struct WebViewRepresentable: NSViewRepresentable {
         configuration.websiteDataStore = .nonPersistent()
         configuration.preferences.javaScriptCanOpenWindowsAutomatically = false
         
+        // Add script message handler for console input
+        let messageHandler = ConsoleMessageHandler(controller: consoleController)
+        configuration.userContentController.add(messageHandler, name: "consoleInput")
+        
         let webView = WKWebView(frame: .zero, configuration: configuration)
+        consoleController.setWebView(webView)
         
         let htmlString = """
         <!DOCTYPE html>
@@ -57,6 +80,7 @@ struct WebViewRepresentable: NSViewRepresentable {
                     color: #00ff00;
                     margin-right: 5px;
                     flex-shrink: 0;
+                    margin-top: 2px;
                 }
                 
                 #input {
@@ -68,6 +92,11 @@ struct WebViewRepresentable: NSViewRepresentable {
                     font-size: inherit;
                     flex-grow: 1;
                     caret-color: #00ff00;
+                    resize: none;
+                    overflow: hidden;
+                    min-height: 1.4em;
+                    line-height: 1.4;
+                    word-wrap: break-word;
                 }
                 
                 .output-line {
@@ -83,7 +112,7 @@ struct WebViewRepresentable: NSViewRepresentable {
             <div id="output"></div>
             <div id="input-line">
                 <span id="prompt">></span>
-                <input type="text" id="input" autofocus>
+                <textarea id="input" rows="1" autofocus></textarea>
             </div>
             
             <script>
@@ -102,16 +131,27 @@ struct WebViewRepresentable: NSViewRepresentable {
                     window.scrollTo(0, document.body.scrollHeight);
                 }
                 
-                input.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
+                function autoResizeTextarea() {
+                    input.style.height = 'auto';
+                    input.style.height = input.scrollHeight + 'px';
+                    scrollToBottom();
+                }
+                
+                input.addEventListener('input', autoResizeTextarea);
+                
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault(); // Prevent new line
                         const userText = input.value;
                         if (userText.trim()) {
                             // Add user input to output
                             addOutput('> ' + userText, 'user-input');
-                            // Echo the input back
-                            addOutput(userText);
+                            // Send input to Swift controller for processing
+                            window.webkit.messageHandlers.consoleInput.postMessage(userText);
                         }
                         input.value = '';
+                        input.style.height = 'auto';
+                        input.style.height = '1.4em';
                     }
                 });
                 
