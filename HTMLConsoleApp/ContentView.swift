@@ -77,7 +77,7 @@ struct WebViewRepresentable: NSViewRepresentable {
                 }
                 
                 #prompt {
-                    color: #00ff00;
+                    color: #ffffff;
                     margin-right: 5px;
                     flex-shrink: 0;
                     margin-top: 2px;
@@ -87,11 +87,11 @@ struct WebViewRepresentable: NSViewRepresentable {
                     background: transparent;
                     border: none;
                     outline: none;
-                    color: #00ff00;
+                    color: #ffffff;
                     font-family: inherit;
                     font-size: inherit;
                     flex-grow: 1;
-                    caret-color: #00ff00;
+                    caret-color: #ffffff;
                     resize: none;
                     overflow: hidden;
                     min-height: 1.4em;
@@ -103,8 +103,12 @@ struct WebViewRepresentable: NSViewRepresentable {
                     margin-bottom: 2px;
                 }
                 
-                .user-input {
+                .new-output {
                     color: #ffffff;
+                }
+                
+                .old-output {
+                    color: #00ff00;
                 }
             </style>
         </head>
@@ -121,10 +125,19 @@ struct WebViewRepresentable: NSViewRepresentable {
                 
                 function addOutput(text, className = '') {
                     const line = document.createElement('div');
-                    line.className = 'output-line ' + className;
+                    line.className = 'output-line new-output ' + className;
                     line.textContent = text;
                     output.appendChild(line);
                     scrollToBottom();
+                }
+                
+                function markAllOutputAsOld() {
+                    // Change all existing output from new-output to old-output
+                    const allOutputLines = output.querySelectorAll('.output-line');
+                    allOutputLines.forEach(line => {
+                        line.classList.remove('new-output');
+                        line.classList.add('old-output');
+                    });
                 }
                 
                 function scrollToBottom() {
@@ -144,8 +157,8 @@ struct WebViewRepresentable: NSViewRepresentable {
                         e.preventDefault(); // Prevent new line
                         const userText = input.value;
                         if (userText.trim()) {
-                            // Add user input to output
-                            //addOutput('> ' + userText, 'user-input');
+                            // Mark all existing output as old (green) before processing new input
+                            markAllOutputAsOld();
                             // Send input to Swift controller for processing
                             window.webkit.messageHandlers.consoleInput.postMessage(userText);
                         }
