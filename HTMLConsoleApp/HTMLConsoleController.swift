@@ -11,13 +11,26 @@ import WebKit
 // Console controller to handle input/output logic
 class HTMLConsoleController: NSObject, ObservableObject {
     private weak var webView: WKWebView?
+    private let availableThemes = ["default", "retro", "dark", "light"]
+    private var currentTheme: String
+    
+    override init() {
+        // Pick a random theme at initialization
+        self.currentTheme = availableThemes.randomElement() ?? "retro"
+        super.init()
+    }
     
     func getHTMLFileURL() -> URL? {
         return Bundle.main.url(forResource: "console", withExtension: "html")
     }
     
+    func getCurrentTheme() -> String {
+        return currentTheme
+    }
+    
     func switchTheme(to themeName: String) {
         guard let webView = webView else { return }
+        currentTheme = themeName
         let script = "document.querySelector('link[rel=\"stylesheet\"]').href = '\(themeName).css';"
         webView.evaluateJavaScript(script, completionHandler: nil)
     }
@@ -28,6 +41,8 @@ class HTMLConsoleController: NSObject, ObservableObject {
     
     func start() {
         print("start")
+        // Apply the randomly selected theme after webview loads
+        switchTheme(to: currentTheme)
         showWelcomeMessage()
     }
     
