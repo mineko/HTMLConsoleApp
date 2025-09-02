@@ -92,10 +92,11 @@ class HTMLConsoleController: NSObject, ObservableObject {
         webView.evaluateJavaScript(script, completionHandler: nil)
     }
     
-    func processInput(_ input: String) -> String {
+    func processInput(_ input: String) {
         // For now, just echo the input back
         // This is where you can add more sophisticated command processing later
-        return input
+        addOutput("\n" + input)
+        showPrompt()
     }
     
     func addOutput(_ text: String) {
