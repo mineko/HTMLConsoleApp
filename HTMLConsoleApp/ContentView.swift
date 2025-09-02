@@ -25,8 +25,10 @@ class ConsoleMessageHandler: NSObject, WKScriptMessageHandler {
     
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         if message.name == "consoleInput", let input = message.body as? String {
+            controller.hidePrompt()
             let output = controller.processInput(input)
             controller.addOutput(output)
+            controller.showPrompt()
         }
     }
 }
