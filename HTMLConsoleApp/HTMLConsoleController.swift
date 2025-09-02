@@ -11,13 +11,38 @@ import WebKit
 // Console controller to handle input/output logic
 class HTMLConsoleController: NSObject, ObservableObject {
     private weak var webView: WKWebView?
-    private let availableThemes = ["Default", "Retro", "Dark", "Light"]
+    private var availableThemes: [String] = []
     private var currentTheme: String
     
     override init() {
-        // Pick a random theme at initialization
-        self.currentTheme = availableThemes.randomElement() ?? "retro"
+        // Initialize with placeholder values
+        self.availableThemes = []
+        self.currentTheme = "default"
         super.init()
+        
+        // Dynamically discover CSS files in the bundle after super.init()
+        self.availableThemes = self.discoverAvailableThemes()
+        // Pick a random theme at initialization
+        self.currentTheme = availableThemes.randomElement() ?? "default"
+    }
+    
+    private func discoverAvailableThemes() -> [String] {
+        guard let bundlePath = Bundle.main.resourcePath else { 
+            return ["default"] 
+        }
+        
+        do {
+            let contents = try FileManager.default.contentsOfDirectory(atPath: bundlePath)
+            let cssFiles = contents
+                .filter { $0.hasSuffix(".css") }
+                .map { String($0.dropLast(4)) } // Remove .css extension
+                .sorted()
+            
+            return cssFiles.isEmpty ? ["default"] : cssFiles
+        } catch {
+            print("Error discovering themes: \(error)")
+            return ["default"]
+        }
     }
     
     func getHTMLFileURL() -> URL? {
