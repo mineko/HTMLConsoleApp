@@ -145,7 +145,7 @@ struct WebViewRepresentable: NSViewRepresentable {
                         const userText = input.value;
                         if (userText.trim()) {
                             // Add user input to output
-                            addOutput('> ' + userText, 'user-input');
+                            //addOutput('> ' + userText, 'user-input');
                             // Send input to Swift controller for processing
                             window.webkit.messageHandlers.consoleInput.postMessage(userText);
                         }
