@@ -11,7 +11,7 @@ import WebKit
 // Console controller to handle input/output logic
 class HTMLConsoleController: NSObject, ObservableObject {
     private weak var webView: WKWebView?
-    private let availableThemes = ["default", "retro", "dark", "light"]
+    private let availableThemes = ["Default", "Retro", "Dark", "Light"]
     private var currentTheme: String
     
     override init() {
