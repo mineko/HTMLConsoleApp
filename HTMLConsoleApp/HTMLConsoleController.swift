@@ -24,6 +24,19 @@ class HTMLConsoleController: NSObject, ObservableObject {
     private func showWelcomeMessage() {
         addOutput("Welcome to HTMLConsole")
         addOutput("Type something and press Enter...")
+        showPrompt()
+    }
+    
+    func showPrompt() {
+        guard let webView = webView else { return }
+        let script = "showPrompt();"
+        webView.evaluateJavaScript(script, completionHandler: nil)
+    }
+    
+    func hidePrompt() {
+        guard let webView = webView else { return }
+        let script = "hidePrompt();"
+        webView.evaluateJavaScript(script, completionHandler: nil)
     }
     
     func processInput(_ input: String) -> String {

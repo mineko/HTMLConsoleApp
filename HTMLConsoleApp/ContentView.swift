@@ -135,9 +135,9 @@ struct WebViewRepresentable: NSViewRepresentable {
         </head>
         <body>
             <div id="output"></div>
-            <div id="input-line">
+            <div id="input-line" style="display: none;">
                 <span id="prompt">></span>
-                <textarea id="input" rows="1" autofocus></textarea>
+                <textarea id="input" rows="1"></textarea>
             </div>
             
             <script>
@@ -169,6 +169,18 @@ struct WebViewRepresentable: NSViewRepresentable {
                     input.style.height = 'auto';
                     input.style.height = input.scrollHeight + 'px';
                     scrollToBottom();
+                }
+                
+                function showPrompt() {
+                    const inputLine = document.getElementById('input-line');
+                    inputLine.style.display = 'flex';
+                    input.focus();
+                    scrollToBottom();
+                }
+                
+                function hidePrompt() {
+                    const inputLine = document.getElementById('input-line');
+                    inputLine.style.display = 'none';
                 }
                 
                 input.addEventListener('input', autoResizeTextarea);
