@@ -16,6 +16,16 @@ class HTMLConsoleController: NSObject, ObservableObject {
         self.webView = webView
     }
     
+    func start() {
+        print("start")
+        showWelcomeMessage()
+    }
+    
+    private func showWelcomeMessage() {
+        addOutput("Welcome to HTMLConsole")
+        addOutput("Type something and press Enter...")
+    }
+    
     func processInput(_ input: String) -> String {
         // For now, just echo the input back
         // This is where you can add more sophisticated command processing later

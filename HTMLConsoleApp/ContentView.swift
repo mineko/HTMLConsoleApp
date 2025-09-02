@@ -31,8 +31,26 @@ class ConsoleMessageHandler: NSObject, WKScriptMessageHandler {
     }
 }
 
+
 struct WebViewRepresentable: NSViewRepresentable {
     @StateObject private var consoleController = HTMLConsoleController()
+    
+    class Coordinator: NSObject, WKNavigationDelegate {
+        let consoleController: HTMLConsoleController
+        
+        init(consoleController: HTMLConsoleController) {
+            self.consoleController = consoleController
+        }
+        
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            print("Navigation finished - calling start()")
+            consoleController.start()
+        }
+    }
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(consoleController: consoleController)
+    }
     
     func makeNSView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
@@ -47,6 +65,9 @@ struct WebViewRepresentable: NSViewRepresentable {
         
         let webView = WKWebView(frame: .zero, configuration: configuration)
         consoleController.setWebView(webView)
+        
+        // Set navigation delegate using coordinator
+        webView.navigationDelegate = context.coordinator
         
         let htmlString = """
         <!DOCTYPE html>
@@ -167,10 +188,6 @@ struct WebViewRepresentable: NSViewRepresentable {
                         input.style.height = '1.4em';
                     }
                 });
-                
-                // Initial welcome message
-                addOutput('Welcome to HTMLConsole');
-                addOutput('Type something and press Enter...');
                 
                 // Focus input when page loads
                 window.addEventListener('load', function() {
