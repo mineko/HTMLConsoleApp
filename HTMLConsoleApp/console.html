@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="console.css">
+</head>
+<body>
+    <div id="output"></div>
+    <div id="input-line" style="display: none;">
+        <span id="prompt">></span>
+        <textarea id="input" rows="1"></textarea>
+    </div>
+    
+    <script>
+        const output = document.getElementById('output');
+        const input = document.getElementById('input');
+        
+        function addOutput(text, className = '') {
+            const line = document.createElement('div');
+            line.className = 'output-line new-output ' + className;
+            line.textContent = text;
+            output.appendChild(line);
+            scrollToBottom();
+        }
+        
+        function markAllOutputAsOld() {
+            // Change all existing output from new-output to old-output
+            const allOutputLines = output.querySelectorAll('.output-line');
+            allOutputLines.forEach(line => {
+                line.classList.remove('new-output');
+                line.classList.add('old-output');
+            });
+        }
+        
+        function scrollToBottom() {
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+        
+        function autoResizeTextarea() {
+            input.style.height = 'auto';
+            input.style.height = input.scrollHeight + 'px';
+            scrollToBottom();
+        }
+        
+        function showPrompt() {
+            const inputLine = document.getElementById('input-line');
+            inputLine.style.display = 'flex';
+            input.focus();
+            scrollToBottom();
+        }
+        
+        function hidePrompt() {
+            const inputLine = document.getElementById('input-line');
+            inputLine.style.display = 'none';
+        }
+        
+        input.addEventListener('input', autoResizeTextarea);
+        
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault(); // Prevent new line
+                const userText = input.value;
+                if (userText.trim()) {
+                    // Mark all existing output as old (green) before processing new input
+                    markAllOutputAsOld();
+                    // Send input to Swift controller for processing
+                    window.webkit.messageHandlers.consoleInput.postMessage(userText);
+                }
+                input.value = '';
+                input.style.height = 'auto';
+                input.style.height = '1.4em';
+            }
+        });
+        
+        // Focus input when page loads
+        window.addEventListener('load', function() {
+            input.focus();
+        });
+        
+        // Maintain focus on input
+        document.addEventListener('click', function() {
+            input.focus();
+        });
+    </script>
+</body>
+</html>

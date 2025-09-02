@@ -12,6 +12,16 @@ import WebKit
 class HTMLConsoleController: NSObject, ObservableObject {
     private weak var webView: WKWebView?
     
+    func getHTMLFileURL() -> URL? {
+        return Bundle.main.url(forResource: "console", withExtension: "html")
+    }
+    
+    func switchTheme(to themeName: String) {
+        guard let webView = webView else { return }
+        let script = "document.querySelector('link[rel=\"stylesheet\"]').href = '\(themeName).css';"
+        webView.evaluateJavaScript(script, completionHandler: nil)
+    }
+    
     func setWebView(_ webView: WKWebView) {
         self.webView = webView
     }
