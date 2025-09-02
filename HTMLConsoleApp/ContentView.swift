@@ -45,7 +45,6 @@ struct WebViewRepresentable: NSViewRepresentable {
         }
         
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            print("Navigation finished - calling start()")
             consoleController.start()
         }
     }

@@ -31,6 +31,7 @@ class HTMLConsoleController: NSObject, ObservableObject {
             return ["default"] 
         }
         
+        // Since Xcode flattens the directory structure, look for CSS files in the root
         do {
             let contents = try FileManager.default.contentsOfDirectory(atPath: bundlePath)
             let cssFiles = contents
@@ -40,13 +41,16 @@ class HTMLConsoleController: NSObject, ObservableObject {
             
             return cssFiles.isEmpty ? ["default"] : cssFiles
         } catch {
-            print("Error discovering themes: \(error)")
             return ["default"]
         }
     }
     
     func getHTMLFileURL() -> URL? {
         return Bundle.main.url(forResource: "console", withExtension: "html")
+    }
+    
+    func getSelectedTheme() -> String {
+        return currentTheme
     }
     
     func getCurrentTheme() -> String {
@@ -65,10 +69,9 @@ class HTMLConsoleController: NSObject, ObservableObject {
     }
     
     func start() {
-        print("start")
-        // Apply the randomly selected theme after webview loads
-        switchTheme(to: currentTheme)
         showWelcomeMessage()
+        // Switch to the selected theme immediately after WebView loads
+        switchTheme(to: currentTheme)
     }
     
     private func showWelcomeMessage() {
