@@ -1,13 +1,13 @@
 body {
     font-family: Times, "Times New Roman", serif;
     font-size: 16px;
-    background-color: #ffffff;
+    background-color: #c0c0c0;
     color: #000000;
     margin: 0;
     padding: 20px;
     overflow-wrap: break-word;
     line-height: 1.2;
-    background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23f0f0f0' fill-opacity='0.3'%3E%3Cpath d='M40 40H20v20h20V40zM0 20h20V0H0v20z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg width='2' height='2' viewBox='0 0 2 2' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23b8b8b8' fill-opacity='0.4'%3E%3Cpath d='M1 0h1v1H1zM0 1h1v1H0z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
 
 #output {
