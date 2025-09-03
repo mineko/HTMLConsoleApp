@@ -25,8 +25,15 @@
         let menuMode = false;
         let currentMenuData = null;
         let selectedIndex = 0;
+        let shouldMarkOldOnNextOutput = false;
         
         function addOutput(text, className = '') {
+            // Mark existing output as old only on the first new output after user interaction
+            if (shouldMarkOldOnNextOutput) {
+                markAllOutputAsOld();
+                shouldMarkOldOnNextOutput = false;
+            }
+            
             const line = document.createElement('div');
             line.className = 'output-line new-output ' + className;
             line.textContent = text;
@@ -54,6 +61,8 @@
         }
         
         function showPrompt() {
+            // Set flag to mark old output when first new output is added
+            shouldMarkOldOnNextOutput = true;
             const inputLine = document.getElementById('input-line');
             inputLine.style.display = 'flex';
             input.focus();
@@ -77,9 +86,8 @@
                 e.preventDefault(); // Prevent new line
                 const userText = input.value;
                 if (userText.trim()) {
-                    // Mark all existing output as old (green) before processing new input
-                    markAllOutputAsOld();
                     // Send input to Swift controller for processing
+                    // Note: markAllOutputAsOld() will be called in addOutput() when actual output is added
                     window.webkit.messageHandlers.consoleInput.postMessage(userText);
                 }
                 input.value = '';
@@ -111,6 +119,9 @@
         }
         
         function showMenu(data) {
+            // Set flag to mark old output when first new output is added
+            shouldMarkOldOnNextOutput = true;
+            
             menuMode = true;
             currentMenuData = data;
             selectedIndex = 0;
