@@ -19,6 +19,7 @@ enum MenuAction {
     case submenu([MenuItem])
     case switchTheme(String)
     case cancel
+    case back
 }
 
 enum MenuMode {
@@ -32,6 +33,7 @@ class HTMLConsoleController: NSObject, ObservableObject {
     private var availableThemes: [String] = []
     private var currentTheme: String
     private var menuMode: MenuMode = .normal
+    private var menuStack: [(items: [MenuItem], title: String)] = []
     
     override init() {
         // Initialize with placeholder values
@@ -121,15 +123,14 @@ class HTMLConsoleController: NSObject, ObservableObject {
                 addOutput("\n" + input)
                 showPrompt()
             }
-        case .menu(let items, let selectedIndex, let title):
-            // Menu navigation will be handled by JavaScript and sent as special commands
-            if input == "MENU_SELECT:current" {
-                selectMenuItem(items: items, index: selectedIndex)
+        case .menu(let items, _, _):
+            if input.hasPrefix("MENU_SELECT:") {
+                let parts = input.split(separator: ":", maxSplits: 2)
+                if parts.count >= 2, let index = Int(parts[1]) {
+                    selectMenuItem(items: items, index: index)
+                }
             } else if input == "MENU_CANCEL" {
                 exitMenu()
-            } else if input.hasPrefix("MENU_NAVIGATE:") {
-                let direction = String(input.dropFirst(14))
-                navigateMenu(items: items, direction: direction, currentTitle: title)
             }
         }
     }
@@ -141,11 +142,25 @@ class HTMLConsoleController: NSObject, ObservableObject {
         
         let adminItems = [
             MenuItem(id: "theme_menu", title: "Theme", action: .submenu(themeItems)),
+            MenuItem(id: "separator", title: "", action: .cancel), // Empty item for spacing
             MenuItem(id: "cancel", title: "Cancel", action: .cancel)
         ]
         
         menuMode = .menu(items: adminItems, selectedIndex: 0, title: "Admin Menu")
-        renderMenu(items: adminItems, selectedIndex: 0, title: "Admin Menu")
+        menuStack = [] // Clear menu stack for root menu
+        sendMenuToJS(items: adminItems, title: "Admin Menu")
+    }
+    
+    private func sendMenuToJS(items: [MenuItem], title: String) {
+        guard let webView = webView else { return }
+        
+        let itemTitles = items.map { $0.title }
+        let itemsJSON = try! JSONSerialization.data(withJSONObject: itemTitles, options: [])
+        let itemsString = String(data: itemsJSON, encoding: .utf8)!
+        
+        let escapedTitle = title.replacingOccurrences(of: "'", with: "\\'")
+        let script = "showMenu({title: '\(escapedTitle)', items: \(itemsString)});"
+        webView.evaluateJavaScript(script, completionHandler: nil)
     }
     
     private func selectMenuItem(items: [MenuItem], index: Int) {
@@ -155,76 +170,61 @@ class HTMLConsoleController: NSObject, ObservableObject {
         
         switch selectedItem.action {
         case .submenu(let subItems):
-            menuMode = .menu(items: subItems, selectedIndex: 0, title: selectedItem.title)
-            renderMenu(items: subItems, selectedIndex: 0, title: selectedItem.title)
+            // Push current menu to stack before entering submenu
+            menuStack.append((items: items, title: getCurrentMenuTitle()))
+            
+            // Create submenu with Back option
+            let submenuItems = createSubmenuWithBack(subItems)
+            menuMode = .menu(items: submenuItems, selectedIndex: 0, title: selectedItem.title)
+            sendMenuToJS(items: submenuItems, title: selectedItem.title)
         case .switchTheme(let theme):
             switchTheme(to: theme)
             exitMenu()
         case .cancel:
             exitMenu()
+        case .back:
+            goBackInMenu()
         }
     }
     
-    private func navigateMenu(items: [MenuItem], direction: String, currentTitle: String) {
-        guard case .menu(_, let currentIndex, _) = menuMode else { return }
-        
-        var newIndex = currentIndex
-        if direction == "up" {
-            newIndex = max(0, currentIndex - 1)
-        } else if direction == "down" {
-            newIndex = min(items.count - 1, currentIndex + 1)
+    private func createSubmenuWithBack(_ items: [MenuItem]) -> [MenuItem] {
+        var submenuItems = items
+        submenuItems.append(MenuItem(id: "separator", title: "", action: .back)) // Empty item for spacing
+        submenuItems.append(MenuItem(id: "back", title: "Back", action: .back))
+        return submenuItems
+    }
+    
+    private func goBackInMenu() {
+        guard !menuStack.isEmpty else {
+            exitMenu()
+            return
         }
         
-        if newIndex != currentIndex {
-            menuMode = .menu(items: items, selectedIndex: newIndex, title: currentTitle)
-            redrawMenu(items: items, selectedIndex: newIndex, title: currentTitle)
+        let previousMenu = menuStack.removeLast()
+        menuMode = .menu(items: previousMenu.items, selectedIndex: 0, title: previousMenu.title)
+        sendMenuToJS(items: previousMenu.items, title: previousMenu.title)
+    }
+    
+    private func getCurrentMenuTitle() -> String {
+        switch menuMode {
+        case .menu(_, _, let title):
+            return title
+        case .normal:
+            return ""
         }
     }
     
-    private func redrawMenu(items: [MenuItem], selectedIndex: Int, title: String) {
-        // Clear the last rendered menu and redraw
-        guard let webView = webView else { return }
-        let clearScript = "clearLastMenu(\(items.count + 1));" // +1 for the title line
-        webView.evaluateJavaScript(clearScript) { [weak self] _, _ in
-            self?.renderMenu(items: items, selectedIndex: selectedIndex, title: title)
-        }
-    }
-    
-    private func renderMenu(items: [MenuItem], selectedIndex: Int, title: String) {
-        hidePrompt()
-        addOutput("\n=== \(title) ===\n")
-        
-        for (index, item) in items.enumerated() {
-            addMenuLine(item.title, isSelected: index == selectedIndex)
-        }
-        
-        // Enable menu navigation mode in JavaScript
-        guard let webView = webView else { return }
-        let script = "enableMenuMode();"
-        webView.evaluateJavaScript(script, completionHandler: nil)
-    }
-    
-    private func addMenuLine(_ text: String, isSelected: Bool) {
-        guard let webView = webView else { return }
-        
-        let escapedText = text.replacingOccurrences(of: "\\", with: "\\\\")
-                             .replacingOccurrences(of: "'", with: "\\'")
-                             .replacingOccurrences(of: "\n", with: "\\n")
-        
-        let className = isSelected ? "menu-selected" : ""
-        let script = "addOutput('  \(escapedText)', '\(className)');"
-        webView.evaluateJavaScript(script, completionHandler: nil)
-    }
     
     private func exitMenu() {
         menuMode = .normal
-        addOutput("\n")
-        showPrompt()
+        menuStack = [] // Clear menu stack when exiting
         
-        // Disable menu navigation mode in JavaScript
+        // Hide menu and restore normal input
         guard let webView = webView else { return }
-        let script = "disableMenuMode();"
+        let script = "hideMenu();"
         webView.evaluateJavaScript(script, completionHandler: nil)
+        
+        showPrompt()
     }
     
     func addOutput(_ text: String) {

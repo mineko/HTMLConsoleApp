@@ -6,6 +6,10 @@
 </head>
 <body>
     <div id="output"></div>
+    <div id="menu-container" style="display: none;">
+        <div id="menu-title"></div>
+        <div id="menu-items"></div>
+    </div>
     <div id="input-line" style="display: none;">
         <span id="prompt">></span>
         <textarea id="input" rows="1"></textarea>
@@ -14,7 +18,13 @@
     <script>
         const output = document.getElementById('output');
         const input = document.getElementById('input');
+        const menuContainer = document.getElementById('menu-container');
+        const menuTitle = document.getElementById('menu-title');
+        const menuItems = document.getElementById('menu-items');
+        
         let menuMode = false;
+        let currentMenuData = null;
+        let selectedIndex = 0;
         
         function addOutput(text, className = '') {
             const line = document.createElement('div');
@@ -90,41 +100,87 @@
             e.stopPropagation();
             
             if (e.key === 'ArrowUp') {
-                window.webkit.messageHandlers.consoleInput.postMessage('MENU_NAVIGATE:up');
+                navigateMenu('up');
             } else if (e.key === 'ArrowDown') {
-                window.webkit.messageHandlers.consoleInput.postMessage('MENU_NAVIGATE:down');
+                navigateMenu('down');
             } else if (e.key === 'Enter') {
-                window.webkit.messageHandlers.consoleInput.postMessage('MENU_SELECT:current');
+                selectMenuItem();
             } else if (e.key === 'Escape') {
                 window.webkit.messageHandlers.consoleInput.postMessage('MENU_CANCEL');
             }
         }
         
-        function enableMenuMode() {
+        function showMenu(data) {
             menuMode = true;
-            // Hide input line completely during menu navigation
-            const inputLine = document.getElementById('input-line');
-            inputLine.style.display = 'none';
+            currentMenuData = data;
+            selectedIndex = 0;
+            
+            // Hide input line and show menu
+            document.getElementById('input-line').style.display = 'none';
+            menuContainer.style.display = 'block';
+            
+            // Set title and render items
+            menuTitle.textContent = `=== ${data.title} ===`;
+            renderMenuItems();
         }
         
-        function disableMenuMode() {
+        function hideMenu() {
             menuMode = false;
-            // Show input line and restore focus
-            const inputLine = document.getElementById('input-line');
-            inputLine.style.display = 'flex';
+            currentMenuData = null;
+            selectedIndex = 0;
+            
+            // Hide menu and show input line
+            menuContainer.style.display = 'none';
+            document.getElementById('input-line').style.display = 'flex';
             input.focus();
         }
         
-        function clearLastMenu(lineCount) {
-            // Remove the last 'lineCount' lines from the output
-            const outputLines = output.querySelectorAll('.output-line');
-            const startIndex = Math.max(0, outputLines.length - lineCount);
+        function renderMenuItems() {
+            if (!currentMenuData) return;
             
-            for (let i = startIndex; i < outputLines.length; i++) {
-                if (outputLines[i]) {
-                    outputLines[i].remove();
+            menuItems.innerHTML = '';
+            currentMenuData.items.forEach((item, index) => {
+                const itemDiv = document.createElement('div');
+                
+                if (item === '') {
+                    // Empty item for spacing
+                    itemDiv.className = 'menu-spacer';
+                    itemDiv.innerHTML = '&nbsp;'; // Non-breaking space
+                } else {
+                    itemDiv.className = 'menu-item';
+                    if (index === selectedIndex) {
+                        itemDiv.classList.add('menu-selected');
+                    }
+                    itemDiv.textContent = `  ${item}`;
                 }
+                menuItems.appendChild(itemDiv);
+            });
+        }
+        
+        function navigateMenu(direction) {
+            if (!currentMenuData) return;
+            
+            let newIndex = selectedIndex;
+            
+            if (direction === 'up') {
+                do {
+                    newIndex = Math.max(0, newIndex - 1);
+                } while (newIndex > 0 && currentMenuData.items[newIndex] === '');
+            } else if (direction === 'down') {
+                do {
+                    newIndex = Math.min(currentMenuData.items.length - 1, newIndex + 1);
+                } while (newIndex < currentMenuData.items.length - 1 && currentMenuData.items[newIndex] === '');
             }
+            
+            selectedIndex = newIndex;
+            renderMenuItems();
+        }
+        
+        function selectMenuItem() {
+            if (!currentMenuData) return;
+            
+            const selectedItem = currentMenuData.items[selectedIndex];
+            window.webkit.messageHandlers.consoleInput.postMessage(`MENU_SELECT:${selectedIndex}:${selectedItem}`);
         }
         
         // Focus input when page loads
