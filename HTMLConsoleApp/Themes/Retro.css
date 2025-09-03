@@ -74,20 +74,28 @@ body {
 #menu-container {
     margin: 20px 0;
     border: 2px inset #c0c0c0;
-    padding: 10px;
+    padding: 0;
     background-color: #fafafa;
     box-shadow: 2px 2px 4px rgba(0,0,0,0.1);
 }
 
 #menu-title {
     font-weight: bold;
-    margin-bottom: 10px;
+    padding: 12px 16px;
+    margin: 0;
+    background-color: #e0e0e0;
+    border-bottom: 2px inset #c0c0c0;
     color: #000080;
     text-shadow: 1px 1px 0px rgba(255,255,255,0.8);
+    text-align: center;
+}
+
+#menu-items {
+    padding: 10px;
 }
 
 .menu-item {
-    padding: 2px 0;
+    padding: 2px 4px;
     margin: 1px 0;
     text-shadow: 1px 1px 0px rgba(255,255,255,0.8);
 }
