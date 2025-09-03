@@ -14,6 +14,7 @@
     <script>
         const output = document.getElementById('output');
         const input = document.getElementById('input');
+        let menuMode = false;
         
         function addOutput(text, className = '') {
             const line = document.createElement('div');
@@ -57,6 +58,11 @@
         input.addEventListener('input', autoResizeTextarea);
         
         input.addEventListener('keydown', function(e) {
+            if (menuMode) {
+                handleMenuKeydown(e);
+                return;
+            }
+            
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault(); // Prevent new line
                 const userText = input.value;
@@ -71,6 +77,55 @@
                 input.style.height = '1.4em';
             }
         });
+        
+        // Add document-level keyboard handling for menu mode
+        document.addEventListener('keydown', function(e) {
+            if (menuMode) {
+                handleMenuKeydown(e);
+            }
+        });
+        
+        function handleMenuKeydown(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (e.key === 'ArrowUp') {
+                window.webkit.messageHandlers.consoleInput.postMessage('MENU_NAVIGATE:up');
+            } else if (e.key === 'ArrowDown') {
+                window.webkit.messageHandlers.consoleInput.postMessage('MENU_NAVIGATE:down');
+            } else if (e.key === 'Enter') {
+                window.webkit.messageHandlers.consoleInput.postMessage('MENU_SELECT:current');
+            } else if (e.key === 'Escape') {
+                window.webkit.messageHandlers.consoleInput.postMessage('MENU_CANCEL');
+            }
+        }
+        
+        function enableMenuMode() {
+            menuMode = true;
+            // Hide input line completely during menu navigation
+            const inputLine = document.getElementById('input-line');
+            inputLine.style.display = 'none';
+        }
+        
+        function disableMenuMode() {
+            menuMode = false;
+            // Show input line and restore focus
+            const inputLine = document.getElementById('input-line');
+            inputLine.style.display = 'flex';
+            input.focus();
+        }
+        
+        function clearLastMenu(lineCount) {
+            // Remove the last 'lineCount' lines from the output
+            const outputLines = output.querySelectorAll('.output-line');
+            const startIndex = Math.max(0, outputLines.length - lineCount);
+            
+            for (let i = startIndex; i < outputLines.length; i++) {
+                if (outputLines[i]) {
+                    outputLines[i].remove();
+                }
+            }
+        }
         
         // Focus input when page loads
         window.addEventListener('load', function() {

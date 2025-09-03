@@ -54,3 +54,9 @@ body {
 .old-output {
     color: #b0b0b0;
 }
+
+.menu-selected {
+    background-color: #ffffff;
+    color: #000000;
+    padding: 0 4px;
+}
