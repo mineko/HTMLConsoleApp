@@ -146,9 +146,9 @@ class HTMLConsoleController: NSObject, ObservableObject {
             MenuItem(id: "cancel", title: "Cancel", action: .cancel)
         ]
         
-        menuMode = .menu(items: adminItems, selectedIndex: 0, title: "Admin Menu")
+        menuMode = .menu(items: adminItems, selectedIndex: 0, title: "Admin")
         menuStack = [] // Clear menu stack for root menu
-        sendMenuToJS(items: adminItems, title: "Admin Menu")
+        sendMenuToJS(items: adminItems, title: "Admin")
     }
     
     private func sendMenuToJS(items: [MenuItem], title: String) {

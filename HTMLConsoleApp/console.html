@@ -122,6 +122,9 @@
             // Set title and render items
             menuTitle.textContent = `=== ${data.title} ===`;
             renderMenuItems();
+            
+            // Scroll menu into view after rendering
+            setTimeout(() => scrollMenuIntoView(), 10);
         }
         
         function hideMenu() {
@@ -174,6 +177,9 @@
             
             selectedIndex = newIndex;
             renderMenuItems();
+            
+            // Scroll selected item into view
+            scrollSelectedItemIntoView();
         }
         
         function selectMenuItem() {
@@ -181,6 +187,54 @@
             
             const selectedItem = currentMenuData.items[selectedIndex];
             window.webkit.messageHandlers.consoleInput.postMessage(`MENU_SELECT:${selectedIndex}:${selectedItem}`);
+        }
+        
+        function scrollMenuIntoView() {
+            if (!menuContainer || menuContainer.style.display === 'none') return;
+            
+            const menuRect = menuContainer.getBoundingClientRect();
+            const windowHeight = window.innerHeight;
+            
+            // Check if menu is clipped at bottom
+            if (menuRect.bottom > windowHeight) {
+                const scrollAmount = menuRect.bottom - windowHeight + 20; // 20px buffer
+                
+                // Check if scrolling would clip the top
+                if (menuRect.top - scrollAmount < 20) { // 20px buffer from top
+                    // Only scroll enough to keep top visible
+                    const maxScroll = menuRect.top - 20;
+                    window.scrollBy(0, Math.min(scrollAmount, maxScroll));
+                } else {
+                    window.scrollBy(0, scrollAmount);
+                }
+            }
+            
+            // Check if menu is clipped at top
+            if (menuRect.top < 20) {
+                window.scrollBy(0, 20 - menuRect.top);
+            }
+        }
+        
+        function scrollSelectedItemIntoView() {
+            if (!menuContainer || menuContainer.style.display === 'none') return;
+            
+            const selectedItem = menuItems.querySelector('.menu-selected');
+            if (!selectedItem) return;
+            
+            const itemRect = selectedItem.getBoundingClientRect();
+            const windowHeight = window.innerHeight;
+            
+            // Check if selected item is below the visible area
+            if (itemRect.bottom > windowHeight - 20) {
+                const scrollAmount = itemRect.bottom - windowHeight + 40; // Extra buffer
+                window.scrollBy(0, scrollAmount);
+            }
+            
+            // Check if selected item is above the visible area
+            if (itemRect.top < 20) {
+                const scrollAmount = 20 - itemRect.top;
+                window.scrollBy(0, -scrollAmount);
+            }
         }
         
         // Focus input when page loads
