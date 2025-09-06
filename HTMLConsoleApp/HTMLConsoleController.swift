@@ -32,6 +32,7 @@ class HTMLConsoleController: NSObject, ObservableObject {
     private var currentTheme: String
     private var currentMenu: Menu? = nil
     private var menuStack: [Menu] = []
+    private var rootMenu: Menu!
     private var adminMenu: Menu!
     private var themeMenu: Menu!
     
@@ -118,8 +119,8 @@ class HTMLConsoleController: NSObject, ObservableObject {
     
     func processInput(_ input: String) {
         // Only handle normal user input - menu actions are handled separately
-        if input == "/admin" {
-            showAdminMenu()
+        if input == "/" {
+            showRootMenu()
         } else {
             // Normal echo functionality
             addOutput("\n" + input)
@@ -165,12 +166,24 @@ class HTMLConsoleController: NSObject, ObservableObject {
             })
         ]
         adminMenu = Menu(items: adminItems, title: "Admin")
+        
+        // Create root menu
+        let rootItems = [
+            MenuItem(id: "admin_menu", title: "Admin", action: { [weak self] in
+                self?.showSubmenu(self?.adminMenu)
+            }),
+            MenuItem(id: "separator", title: "", action: {}), // Empty item for spacing
+            MenuItem(id: "cancel", title: "Cancel", action: { [weak self] in
+                self?.exitMenu()
+            })
+        ]
+        rootMenu = Menu(items: rootItems, title: "Menu")
     }
     
-    private func showAdminMenu() {
-        currentMenu = adminMenu
+    private func showRootMenu() {
+        currentMenu = rootMenu
         menuStack = [] // Clear menu stack for root menu
-        sendMenuToJS(items: adminMenu.items, title: adminMenu.title)
+        sendMenuToJS(items: rootMenu.items, title: rootMenu.title)
     }
     
     private func showSubmenu(_ submenu: Menu?) {
