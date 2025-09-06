@@ -15,8 +15,8 @@ struct ContentView: View {
     }
 }
 
-// Script message handler to receive messages from JavaScript
-class ConsoleMessageHandler: NSObject, WKScriptMessageHandler {
+// Script message handler for user console input
+class ConsoleInputHandler: NSObject, WKScriptMessageHandler {
     let controller: HTMLConsoleController
     
     init(controller: HTMLConsoleController) {
@@ -24,12 +24,27 @@ class ConsoleMessageHandler: NSObject, WKScriptMessageHandler {
     }
     
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        if message.name == "consoleInput", let input = message.body as? String {
-            controller.hidePrompt()
-            controller.processInput(input)
-        } else if message.name == "menuAction", let action = message.body as? String {
-            controller.handleMenuAction(action)
+        guard message.name == "consoleInput", let input = message.body as? String else {
+            return
         }
+        controller.hidePrompt()
+        controller.processInput(input)
+    }
+}
+
+// Script message handler for menu actions
+class MenuActionHandler: NSObject, WKScriptMessageHandler {
+    let controller: HTMLConsoleController
+    
+    init(controller: HTMLConsoleController) {
+        self.controller = controller
+    }
+    
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        guard message.name == "menuAction", let action = message.body as? String else {
+            return
+        }
+        controller.handleMenuAction(action)
     }
 }
 
@@ -60,10 +75,11 @@ struct WebViewRepresentable: NSViewRepresentable {
         configuration.websiteDataStore = .nonPersistent()
         configuration.preferences.javaScriptCanOpenWindowsAutomatically = false
         
-        // Add script message handlers for console input and menu actions
-        let messageHandler = ConsoleMessageHandler(controller: consoleController)
-        configuration.userContentController.add(messageHandler, name: "consoleInput")
-        configuration.userContentController.add(messageHandler, name: "menuAction")
+        // Add separate script message handlers for console input and menu actions
+        let inputHandler = ConsoleInputHandler(controller: consoleController)
+        let menuHandler = MenuActionHandler(controller: consoleController)
+        configuration.userContentController.add(inputHandler, name: "consoleInput")
+        configuration.userContentController.add(menuHandler, name: "menuAction")
         
         let webView = WKWebView(frame: .zero, configuration: configuration)
         consoleController.setWebView(webView)
