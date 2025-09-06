@@ -24,7 +24,6 @@ struct Menu {
     }
 }
 
-
 // Console controller to handle input/output logic
 class HTMLConsoleController: NSObject, ObservableObject {
     private weak var webView: WKWebView?
@@ -33,8 +32,6 @@ class HTMLConsoleController: NSObject, ObservableObject {
     private var currentMenu: Menu? = nil
     private var menuStack: [Menu] = []
     private var rootMenu: Menu!
-    private var adminMenu: Menu!
-    private var themeMenu: Menu!
     
     override init() {
         // Initialize with placeholder values
@@ -152,32 +149,29 @@ class HTMLConsoleController: NSObject, ObservableObject {
         }
         
         // Create theme submenu with Back option
-        let submenuItems = createSubmenuWithBack(themeItems)
-        themeMenu = Menu(items: submenuItems, title: "Theme")
+        let themeMenu = Menu(items: createSubmenuWithBack(themeItems), title: "Theme")
         
         // Create admin menu
-        let adminItems = [
+        let adminMenu = Menu(items: [
             MenuItem(id: "theme_menu", title: "Theme", action: { [weak self] in
-                self?.showSubmenu(self?.themeMenu)
+                self?.showSubmenu(themeMenu)
             }),
             MenuItem(id: "separator", title: "", action: {}), // Empty item for spacing
             MenuItem(id: "cancel", title: "Cancel", action: { [weak self] in
                 self?.exitMenu()
             })
-        ]
-        adminMenu = Menu(items: adminItems, title: "Admin")
+        ], title: "Admin")
         
         // Create root menu
-        let rootItems = [
+        rootMenu = Menu(items: [
             MenuItem(id: "admin_menu", title: "Admin", action: { [weak self] in
-                self?.showSubmenu(self?.adminMenu)
+                self?.showSubmenu(adminMenu)
             }),
             MenuItem(id: "separator", title: "", action: {}), // Empty item for spacing
             MenuItem(id: "cancel", title: "Cancel", action: { [weak self] in
                 self?.exitMenu()
             })
-        ]
-        rootMenu = Menu(items: rootItems, title: "Menu")
+        ], title: "Menu")
     }
     
     private func showRootMenu() {
