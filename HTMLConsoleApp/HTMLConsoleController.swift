@@ -157,8 +157,8 @@ class HTMLConsoleController: NSObject, ObservableObject {
                 self?.showSubmenu(themeMenu)
             }),
             MenuItem(id: "separator", title: "", action: {}), // Empty item for spacing
-            MenuItem(id: "cancel", title: "Cancel", action: { [weak self] in
-                self?.exitMenu()
+            MenuItem(id: "back", title: "Back", action: { [weak self] in
+                self?.goBackInMenu()
             })
         ], title: "Admin")
         
