@@ -27,6 +27,8 @@ class ConsoleMessageHandler: NSObject, WKScriptMessageHandler {
         if message.name == "consoleInput", let input = message.body as? String {
             controller.hidePrompt()
             controller.processInput(input)
+        } else if message.name == "menuAction", let action = message.body as? String {
+            controller.handleMenuAction(action)
         }
     }
 }
@@ -58,9 +60,10 @@ struct WebViewRepresentable: NSViewRepresentable {
         configuration.websiteDataStore = .nonPersistent()
         configuration.preferences.javaScriptCanOpenWindowsAutomatically = false
         
-        // Add script message handler for console input
+        // Add script message handlers for console input and menu actions
         let messageHandler = ConsoleMessageHandler(controller: consoleController)
         configuration.userContentController.add(messageHandler, name: "consoleInput")
+        configuration.userContentController.add(messageHandler, name: "menuAction")
         
         let webView = WKWebView(frame: .zero, configuration: configuration)
         consoleController.setWebView(webView)

@@ -114,22 +114,28 @@ class HTMLConsoleController: NSObject, ObservableObject {
     }
     
     func processInput(_ input: String) {
+        // Only handle normal user input - menu actions are handled separately
+        if input == "/admin" {
+            showAdminMenu()
+        } else {
+            // Normal echo functionality
+            addOutput("\n" + input)
+            showPrompt()
+        }
+    }
+    
+    func handleMenuAction(_ action: String) {
         switch menuMode {
         case .normal:
-            if input == "/admin" {
-                showAdminMenu()
-            } else {
-                // Normal echo functionality
-                addOutput("\n" + input)
-                showPrompt()
-            }
+            // Ignore menu actions when not in menu mode
+            return
         case .menu(let items, _, _):
-            if input.hasPrefix("MENU_SELECT:") {
-                let parts = input.split(separator: ":", maxSplits: 2)
-                if parts.count >= 2, let index = Int(parts[1]) {
+            if action.hasPrefix("SELECT:") {
+                let indexString = String(action.dropFirst(7)) // Remove "SELECT:" prefix
+                if let index = Int(indexString) {
                     selectMenuItem(items: items, index: index)
                 }
-            } else if input == "MENU_CANCEL" {
+            } else if action == "CANCEL" {
                 exitMenu()
             }
         }

@@ -54,7 +54,7 @@
             window.scrollTo(0, document.body.scrollHeight);
         }
         
-        function autoResizeTextarea() {
+        function autoResizeTextArea() {
             input.style.height = 'auto';
             input.style.height = input.scrollHeight + 'px';
             scrollToBottom();
@@ -74,7 +74,7 @@
             inputLine.style.display = 'none';
         }
         
-        input.addEventListener('input', autoResizeTextarea);
+        input.addEventListener('input', autoResizeTextArea);
         
         input.addEventListener('keydown', function(e) {
             if (menuMode) {
@@ -124,7 +124,7 @@
             } else if (e.key === 'Escape') {
                 e.preventDefault();
                 e.stopPropagation();
-                window.webkit.messageHandlers.consoleInput.postMessage('MENU_CANCEL');
+                window.webkit.messageHandlers.menuAction.postMessage('CANCEL');
             }
         }
         
@@ -206,8 +206,7 @@
         function selectMenuItem() {
             if (!currentMenuData) return;
             
-            const selectedItem = currentMenuData.items[selectedIndex];
-            window.webkit.messageHandlers.consoleInput.postMessage(`MENU_SELECT:${selectedIndex}:${selectedItem}`);
+            window.webkit.messageHandlers.menuAction.postMessage(`SELECT:${selectedIndex}`);
         }
         
         function scrollMenuIntoView() {
