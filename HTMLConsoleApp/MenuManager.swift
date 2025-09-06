@@ -1,5 +1,5 @@
 //
-//  HTMLConsoleController.swift
+//  ConsoleController.swift
 //  HTMLConsoleApp
 //
 //  Created by Collin Pieper on 9/1/25.
@@ -40,7 +40,7 @@ struct MenuItem {
     }
     
     // Execute the menu item's behavior
-    func execute(controller: HTMLConsoleController) {
+    func execute(controller: ConsoleController) {
         switch type {
         case .submenu(let menu):
             controller.showSubmenu(menu)
@@ -154,9 +154,9 @@ class MenuManager {
     private var currentMenu: Menu?
     private var menuStack: [Menu] = []
     private var rootMenu: Menu!
-    private weak var controller: HTMLConsoleController?
+    private weak var controller: ConsoleController?
     
-    init(controller: HTMLConsoleController) {
+    init(controller: ConsoleController) {
         self.controller = controller
         // Now we can safely create the menu hierarchy
         self.rootMenu = MenuManager.createMenuHierarchy(menuManager: self)
@@ -303,181 +303,5 @@ class MenuManager {
     // Send menu data to controller for display
     private func sendMenuToController(menu: Menu) {
         controller?.displayMenu(items: menu.items, title: buildMenuPath())
-    }
-}
-
-// Console controller to handle input/output logic
-class HTMLConsoleController: NSObject, ObservableObject {
-    private weak var webView: WKWebView?
-    private var availableThemes: [String] = []
-    private var currentTheme: String
-    private var menuManager: MenuManager!
-    
-    override init() {
-        // Initialize with placeholder values
-        self.availableThemes = []
-        self.currentTheme = "default"
-        super.init()
-        
-        // Dynamically discover CSS files in the bundle after super.init()
-        self.availableThemes = self.discoverAvailableThemes()
-        // Pick a random theme at initialization
-        self.currentTheme = availableThemes.randomElement() ?? "default"
-        
-        // Create menu manager
-        self.menuManager = MenuManager(controller: self)
-    }
-    
-    private func discoverAvailableThemes() -> [String] {
-        guard let bundlePath = Bundle.main.resourcePath else { 
-            return ["default"] 
-        }
-        
-        // Since Xcode flattens the directory structure, look for CSS files in the root
-        do {
-            let contents = try FileManager.default.contentsOfDirectory(atPath: bundlePath)
-            let cssFiles = contents
-                .filter { $0.hasSuffix(".css") }
-                .map { String($0.dropLast(4)) } // Remove .css extension
-                .sorted()
-            
-            return cssFiles.isEmpty ? ["default"] : cssFiles
-        } catch {
-            return ["default"]
-        }
-    }
-    
-    func getHTMLFileURL() -> URL? {
-        return Bundle.main.url(forResource: "console", withExtension: "html")
-    }
-    
-    func getSelectedTheme() -> String {
-        return currentTheme
-    }
-    
-    func getCurrentTheme() -> String {
-        return currentTheme
-    }
-    
-    func switchTheme(to themeName: String) {
-        guard let webView = webView else { return }
-        currentTheme = themeName
-        let script = "document.querySelector('link[rel=\"stylesheet\"]').href = '\(themeName).css';"
-        webView.evaluateJavaScript(script, completionHandler: nil)
-    }
-    
-    func setWebView(_ webView: WKWebView) {
-        self.webView = webView
-    }
-    
-    func start() {
-        showWelcomeMessage()
-        // Switch to the selected theme immediately after WebView loads
-        switchTheme(to: currentTheme)
-    }
-    
-    private func showWelcomeMessage() {
-        addOutput("Welcome to HTMLConsole")
-        addOutput("Type something and press Enter...")
-        showPrompt()
-    }
-    
-    func showPrompt() {
-        guard let webView = webView else { return }
-        let script = "showPrompt();"
-        webView.evaluateJavaScript(script, completionHandler: nil)
-    }
-    
-    func hidePrompt() {
-        guard let webView = webView else { return }
-        let script = "hidePrompt();"
-        webView.evaluateJavaScript(script, completionHandler: nil)
-    }
-    
-    func processInput(_ input: String) {
-        // Only handle normal user input - menu actions are handled separately
-        if input == "/" {
-            menuManager.showRootMenu()
-        } else if input.hasPrefix("/") {
-            // Try to navigate to a menu path
-            if menuManager.navigateToPath(input) {
-                // Successfully navigated to menu path
-                return
-            } else {
-                // Path not found, show error and continue with normal processing
-                addOutput("Menu path not found: \(input)")
-                showPrompt()
-                return
-            }
-        } else {
-            // Normal echo functionality
-            addOutput("\n" + input)
-            showPrompt()
-        }
-    }
-    
-    func handleMenuAction(_ action: String) {
-        // If not in menu mode, ignore the action
-        guard menuManager.isInMenuMode else { return }
-        
-        if action.hasPrefix("SELECT:") {
-            let indexString = String(action.dropFirst(7)) // Remove "SELECT:" prefix
-            if let index = Int(indexString) {
-                menuManager.selectItem(at: index)
-            }
-        } else if action == "CANCEL" {
-            menuManager.exitMenu()
-        }
-    }
-    
-    // Methods for MenuManager to call
-    internal func getAvailableThemes() -> [String] {
-        return availableThemes
-    }
-    
-    // Interface methods for MenuManager
-    internal func showSubmenu(_ submenu: Menu?) {
-        guard let submenu = submenu else { return }
-        menuManager.showSubmenu(submenu)
-    }
-    
-    internal func goBackInMenu() {
-        menuManager.goBack()
-    }
-    
-    internal func exitMenu() {
-        menuManager.exitMenu()
-    }
-    
-    // Method called by MenuManager to display menu
-    internal func displayMenu(items: [MenuItem], title: String) {
-        guard let webView = webView else { return }
-        
-        let itemTitles = items.map { $0.title }
-        let itemsJSON = try! JSONSerialization.data(withJSONObject: itemTitles, options: [])
-        let itemsString = String(data: itemsJSON, encoding: .utf8)!
-        
-        let escapedTitle = title.replacingOccurrences(of: "'", with: "\\'")
-        let script = "showMenu({title: '\(escapedTitle)', items: \(itemsString)});"
-        webView.evaluateJavaScript(script, completionHandler: nil)
-    }
-    
-    // Method called by MenuManager to hide menu
-    internal func hideMenu() {
-        guard let webView = webView else { return }
-        let script = "hideMenu();"
-        webView.evaluateJavaScript(script, completionHandler: nil)
-        showPrompt()
-    }
-    
-    func addOutput(_ text: String) {
-        guard let webView = webView else { return }
-        
-        let escapedText = text.replacingOccurrences(of: "\\", with: "\\\\")
-                             .replacingOccurrences(of: "'", with: "\\'")
-                             .replacingOccurrences(of: "\n", with: "\\n")
-        
-        let script = "addOutput('\(escapedText)');"
-        webView.evaluateJavaScript(script, completionHandler: nil)
     }
 }

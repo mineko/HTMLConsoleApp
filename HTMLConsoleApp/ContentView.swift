@@ -17,9 +17,9 @@ struct ContentView: View {
 
 // Script message handler for user console input
 class ConsoleInputHandler: NSObject, WKScriptMessageHandler {
-    let controller: HTMLConsoleController
+    let controller: ConsoleController
     
-    init(controller: HTMLConsoleController) {
+    init(controller: ConsoleController) {
         self.controller = controller
     }
     
@@ -34,9 +34,9 @@ class ConsoleInputHandler: NSObject, WKScriptMessageHandler {
 
 // Script message handler for menu actions
 class MenuActionHandler: NSObject, WKScriptMessageHandler {
-    let controller: HTMLConsoleController
+    let controller: ConsoleController
     
-    init(controller: HTMLConsoleController) {
+    init(controller: ConsoleController) {
         self.controller = controller
     }
     
@@ -50,12 +50,12 @@ class MenuActionHandler: NSObject, WKScriptMessageHandler {
 
 
 struct WebViewRepresentable: NSViewRepresentable {
-    @StateObject private var consoleController = HTMLConsoleController()
+    @StateObject private var consoleController = ConsoleController()
     
     class Coordinator: NSObject, WKNavigationDelegate {
-        let consoleController: HTMLConsoleController
+        let consoleController: ConsoleController
         
-        init(consoleController: HTMLConsoleController) {
+        init(consoleController: ConsoleController) {
             self.consoleController = consoleController
         }
         
