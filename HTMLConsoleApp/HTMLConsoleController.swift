@@ -22,18 +22,23 @@ enum MenuAction {
     case back
 }
 
-enum MenuMode {
-    case normal
-    case menu(items: [MenuItem], selectedIndex: Int, title: String)
+struct Menu {
+    let items: [MenuItem]
+    let title: String
+    
+    var isEmpty: Bool {
+        return items.isEmpty
+    }
 }
+
 
 // Console controller to handle input/output logic
 class HTMLConsoleController: NSObject, ObservableObject {
     private weak var webView: WKWebView?
     private var availableThemes: [String] = []
     private var currentTheme: String
-    private var menuMode: MenuMode = .normal
-    private var menuStack: [(items: [MenuItem], title: String)] = []
+    private var currentMenu: Menu? = nil
+    private var menuStack: [Menu] = []
     
     override init() {
         // Initialize with placeholder values
@@ -125,19 +130,16 @@ class HTMLConsoleController: NSObject, ObservableObject {
     }
     
     func handleMenuAction(_ action: String) {
-        switch menuMode {
-        case .normal:
-            // Ignore menu actions when not in menu mode
-            return
-        case .menu(let items, _, _):
-            if action.hasPrefix("SELECT:") {
-                let indexString = String(action.dropFirst(7)) // Remove "SELECT:" prefix
-                if let index = Int(indexString) {
-                    selectMenuItem(items: items, index: index)
-                }
-            } else if action == "CANCEL" {
-                exitMenu()
+        // If no current menu, ignore the action
+        guard let menu = currentMenu else { return }
+        
+        if action.hasPrefix("SELECT:") {
+            let indexString = String(action.dropFirst(7)) // Remove "SELECT:" prefix
+            if let index = Int(indexString) {
+                selectMenuItem(items: menu.items, index: index)
             }
+        } else if action == "CANCEL" {
+            exitMenu()
         }
     }
     
@@ -152,7 +154,7 @@ class HTMLConsoleController: NSObject, ObservableObject {
             MenuItem(id: "cancel", title: "Cancel", action: .cancel)
         ]
         
-        menuMode = .menu(items: adminItems, selectedIndex: 0, title: "Admin")
+        currentMenu = Menu(items: adminItems, title: "Admin")
         menuStack = [] // Clear menu stack for root menu
         sendMenuToJS(items: adminItems, title: "Admin")
     }
@@ -177,11 +179,13 @@ class HTMLConsoleController: NSObject, ObservableObject {
         switch selectedItem.action {
         case .submenu(let subItems):
             // Push current menu to stack before entering submenu
-            menuStack.append((items: items, title: getCurrentMenuTitle()))
+            if let menu = currentMenu {
+                menuStack.append(menu)
+            }
             
             // Create submenu with Back option
             let submenuItems = createSubmenuWithBack(subItems)
-            menuMode = .menu(items: submenuItems, selectedIndex: 0, title: selectedItem.title)
+            currentMenu = Menu(items: submenuItems, title: selectedItem.title)
             sendMenuToJS(items: submenuItems, title: selectedItem.title)
         case .switchTheme(let theme):
             switchTheme(to: theme)
@@ -207,22 +211,17 @@ class HTMLConsoleController: NSObject, ObservableObject {
         }
         
         let previousMenu = menuStack.removeLast()
-        menuMode = .menu(items: previousMenu.items, selectedIndex: 0, title: previousMenu.title)
+        currentMenu = previousMenu
         sendMenuToJS(items: previousMenu.items, title: previousMenu.title)
     }
     
     private func getCurrentMenuTitle() -> String {
-        switch menuMode {
-        case .menu(_, _, let title):
-            return title
-        case .normal:
-            return ""
-        }
+        return currentMenu?.title ?? ""
     }
     
     
     private func exitMenu() {
-        menuMode = .normal
+        currentMenu = nil
         menuStack = [] // Clear menu stack when exiting
         
         // Hide menu and restore normal input
