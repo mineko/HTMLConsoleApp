@@ -9,32 +9,34 @@ import Foundation
 import WebKit
 
 // Menu system data structures
+enum MenuItemType {
+    case submenu(Menu)
+    case action(() -> Void)
+    case separator  // For spacing items with no behavior
+}
+
 struct MenuItem {
     let id: String
     let title: String
-    let submenu: Menu?  // For parent items that lead to submenus
-    let action: (() -> Void)?  // For leaf items that perform actions
+    let type: MenuItemType
     
     // Convenience initializers
     init(id: String, title: String, submenu: Menu) {
         self.id = id
         self.title = title
-        self.submenu = submenu
-        self.action = nil
+        self.type = .submenu(submenu)
     }
     
     init(id: String, title: String, action: @escaping () -> Void) {
         self.id = id
         self.title = title
-        self.submenu = nil
-        self.action = action
+        self.type = .action(action)
     }
     
     init(id: String, title: String) {
         self.id = id
         self.title = title
-        self.submenu = nil
-        self.action = nil
+        self.type = .separator
     }
 }
 
@@ -278,7 +280,7 @@ class HTMLConsoleController: NSObject, ObservableObject {
             }
             
             // Check if this menu item has a submenu
-            guard let nextMenu = menuItem.submenu else {
+            guard case .submenu(let nextMenu) = menuItem.type else {
                 return false // Menu item doesn't lead to a submenu
             }
             
@@ -311,14 +313,15 @@ class HTMLConsoleController: NSObject, ObservableObject {
         
         let selectedItem = items[index]
         
-        if let submenu = selectedItem.submenu {
-            // Navigate to submenu
-            showSubmenu(submenu)
-        } else if let action = selectedItem.action {
-            // Execute action
+        switch selectedItem.type {
+        case .submenu(let menu):
+            showSubmenu(menu)
+        case .action(let action):
             action()
+        case .separator:
+            // Do nothing for separators
+            break
         }
-        // If neither submenu nor action, do nothing (like separator items)
     }
     
     
