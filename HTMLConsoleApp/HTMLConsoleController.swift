@@ -32,6 +32,8 @@ class HTMLConsoleController: NSObject, ObservableObject {
     private var currentTheme: String
     private var currentMenu: Menu? = nil
     private var menuStack: [Menu] = []
+    private var adminMenu: Menu!
+    private var themeMenu: Menu!
     
     override init() {
         // Initialize with placeholder values
@@ -43,6 +45,9 @@ class HTMLConsoleController: NSObject, ObservableObject {
         self.availableThemes = self.discoverAvailableThemes()
         // Pick a random theme at initialization
         self.currentTheme = availableThemes.randomElement() ?? "default"
+        
+        // Create menus once during initialization
+        self.createMenus()
     }
     
     private func discoverAvailableThemes() -> [String] {
@@ -136,7 +141,8 @@ class HTMLConsoleController: NSObject, ObservableObject {
         }
     }
     
-    private func showAdminMenu() {
+    private func createMenus() {
+        // Create theme menu items
         let themeItems = availableThemes.map { theme in
             MenuItem(id: "theme_\(theme)", title: theme, action: { [weak self] in
                 self?.switchTheme(to: theme)
@@ -144,31 +150,39 @@ class HTMLConsoleController: NSObject, ObservableObject {
             })
         }
         
+        // Create theme submenu with Back option
+        let submenuItems = createSubmenuWithBack(themeItems)
+        themeMenu = Menu(items: submenuItems, title: "Theme")
+        
+        // Create admin menu
         let adminItems = [
             MenuItem(id: "theme_menu", title: "Theme", action: { [weak self] in
-                self?.showThemeSubmenu(themeItems)
+                self?.showSubmenu(self?.themeMenu)
             }),
             MenuItem(id: "separator", title: "", action: {}), // Empty item for spacing
             MenuItem(id: "cancel", title: "Cancel", action: { [weak self] in
                 self?.exitMenu()
             })
         ]
-        
-        currentMenu = Menu(items: adminItems, title: "Admin")
-        menuStack = [] // Clear menu stack for root menu
-        sendMenuToJS(items: adminItems, title: "Admin")
+        adminMenu = Menu(items: adminItems, title: "Admin")
     }
     
-    private func showThemeSubmenu(_ themeItems: [MenuItem]) {
+    private func showAdminMenu() {
+        currentMenu = adminMenu
+        menuStack = [] // Clear menu stack for root menu
+        sendMenuToJS(items: adminMenu.items, title: adminMenu.title)
+    }
+    
+    private func showSubmenu(_ submenu: Menu?) {
+        guard let submenu = submenu else { return }
+        
         // Push current menu to stack before entering submenu
         if let menu = currentMenu {
             menuStack.append(menu)
         }
         
-        // Create submenu with Back option
-        let submenuItems = createSubmenuWithBack(themeItems)
-        currentMenu = Menu(items: submenuItems, title: "Theme")
-        sendMenuToJS(items: submenuItems, title: "Theme")
+        currentMenu = submenu
+        sendMenuToJS(items: submenu.items, title: submenu.title)
     }
     
     private func sendMenuToJS(items: [MenuItem], title: String) {
