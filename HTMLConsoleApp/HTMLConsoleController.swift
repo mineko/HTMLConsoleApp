@@ -98,7 +98,7 @@ struct Menu {
         actions: [(title: String, action: () -> Void)] = [],
         includeBack: Bool = false,
         includeCancel: Bool = false,
-        controller: HTMLConsoleController? = nil
+        menuManager: MenuManager? = nil
     ) -> Menu {
         var items: [MenuItem] = []
         
@@ -118,16 +118,16 @@ struct Menu {
         }
         
         // Add back button if requested
-        if includeBack, let controller = controller {
-            items.append(MenuItem(id: "back", title: "Back", action: { [weak controller] in
-                controller?.goBackInMenu()
+        if includeBack, let menuManager = menuManager {
+            items.append(MenuItem(id: "back", title: "Back", action: { [weak menuManager] in
+                menuManager?.goBack()
             }))
         }
         
         // Add cancel button if requested
-        if includeCancel, let controller = controller {
-            items.append(MenuItem(id: "cancel", title: "Cancel", action: { [weak controller] in
-                controller?.exitMenu()
+        if includeCancel, let menuManager = menuManager {
+            items.append(MenuItem(id: "cancel", title: "Cancel", action: { [weak menuManager] in
+                menuManager?.exitMenu()
             }))
         }
         
@@ -138,14 +138,171 @@ struct Menu {
     static func createActionMenu(
         title: String,
         actions: [(title: String, action: () -> Void)],
-        controller: HTMLConsoleController
+        menuManager: MenuManager
     ) -> Menu {
         return createMenu(
             title: title,
             actions: actions,
             includeBack: true,
-            controller: controller
+            menuManager: menuManager
         )
+    }
+}
+
+// Menu management class
+class MenuManager {
+    private var currentMenu: Menu?
+    private var menuStack: [Menu] = []
+    private var rootMenu: Menu!
+    private weak var controller: HTMLConsoleController?
+    
+    init(controller: HTMLConsoleController) {
+        self.controller = controller
+        // Now we can safely create the menu hierarchy
+        self.rootMenu = MenuManager.createMenuHierarchy(menuManager: self)
+    }
+    
+    // Create the complete menu hierarchy
+    private static func createMenuHierarchy(menuManager: MenuManager) -> Menu {
+        // Get themes from controller
+        let themes = menuManager.controller?.getAvailableThemes() ?? []
+        // Create theme actions
+        let themeActions = themes.map { theme in
+            (title: theme, action: { [weak menuManager] in
+                menuManager?.controller?.switchTheme(to: theme)
+                menuManager?.exitMenu()
+            })
+        }
+        
+        // Create theme menu (leaf menu with actions)
+        let themeMenu = Menu.createActionMenu(
+            title: "Theme",
+            actions: themeActions,
+            menuManager: menuManager
+        )
+        
+        // Create admin menu (has submenu)
+        let adminMenu = Menu.createMenu(
+            title: "Admin",
+            submenus: [("Theme", themeMenu)],
+            includeBack: true,
+            menuManager: menuManager
+        )
+        
+        // Create root menu (has submenu and cancel)
+        return Menu.createMenu(
+            title: "/",
+            submenus: [("Admin", adminMenu)],
+            includeCancel: true,
+            menuManager: menuManager
+        )
+    }
+    
+    // Show the root menu
+    func showRootMenu() {
+        currentMenu = rootMenu
+        menuStack = [] // Clear menu stack for root menu
+        sendMenuToController(menu: rootMenu)
+    }
+    
+    // Navigate to a menu path
+    func navigateToPath(_ path: String) -> Bool {
+        // Split the path into components
+        let components = path.split(separator: "/").map(String.init)
+        
+        // Use the menu's navigation method
+        var menuStack: [Menu] = []
+        guard let targetMenu = rootMenu.navigate(to: components, buildingStack: &menuStack) else {
+            return false // Path not found
+        }
+        
+        // Set the current menu and stack
+        self.currentMenu = targetMenu
+        self.menuStack = menuStack
+        sendMenuToController(menu: targetMenu)
+        return true
+    }
+    
+    // Handle menu item selection
+    func selectItem(at index: Int) {
+        guard let menu = currentMenu,
+              index >= 0 && index < menu.items.count else { return }
+        
+        let selectedItem = menu.items[index]
+        selectedItem.execute(controller: controller!)
+    }
+    
+    // Show a submenu
+    func showSubmenu(_ submenu: Menu) {
+        // Push current menu to stack before entering submenu
+        if let menu = currentMenu {
+            menuStack.append(menu)
+        }
+        
+        currentMenu = submenu
+        sendMenuToController(menu: submenu)
+    }
+    
+    // Go back in menu hierarchy
+    func goBack() {
+        guard !menuStack.isEmpty else {
+            exitMenu()
+            return
+        }
+        
+        let previousMenu = menuStack.removeLast()
+        currentMenu = previousMenu
+        sendMenuToController(menu: previousMenu)
+    }
+    
+    // Exit menu system
+    func exitMenu() {
+        currentMenu = nil
+        menuStack = [] // Clear menu stack when exiting
+        controller?.hideMenu()
+    }
+    
+    // Build the current menu path for display
+    func buildMenuPath() -> String {
+        var path = ""
+        
+        // Add all menus from the stack
+        for menu in menuStack {
+            if path.isEmpty {
+                path = menu.title
+            } else {
+                // Only add "/" if the current path doesn't end with "/"
+                if !path.hasSuffix("/") {
+                    path += "/"
+                }
+                path += menu.title
+            }
+        }
+        
+        // Add current menu
+        if let currentMenu = currentMenu {
+            if path.isEmpty {
+                path = currentMenu.title
+            } else {
+                // Only add "/" if the current path doesn't end with "/"
+                if !path.hasSuffix("/") {
+                    path += "/"
+                }
+                path += currentMenu.title
+            }
+        }
+        
+        return path
+    }
+    
+    // Check if currently in menu mode
+    var isInMenuMode: Bool {
+        return currentMenu != nil
+    }
+    
+    // Send menu data to controller for display
+    private func sendMenuToController(menu: Menu) {
+        controller?.displayMenu(items: menu.items, title: buildMenuPath())
     }
 }
 
@@ -154,9 +311,7 @@ class HTMLConsoleController: NSObject, ObservableObject {
     private weak var webView: WKWebView?
     private var availableThemes: [String] = []
     private var currentTheme: String
-    private var currentMenu: Menu? = nil
-    private var menuStack: [Menu] = []
-    private var rootMenu: Menu!
+    private var menuManager: MenuManager!
     
     override init() {
         // Initialize with placeholder values
@@ -169,8 +324,8 @@ class HTMLConsoleController: NSObject, ObservableObject {
         // Pick a random theme at initialization
         self.currentTheme = availableThemes.randomElement() ?? "default"
         
-        // Create menus once during initialization
-        self.createMenus()
+        // Create menu manager
+        self.menuManager = MenuManager(controller: self)
     }
     
     private func discoverAvailableThemes() -> [String] {
@@ -242,10 +397,10 @@ class HTMLConsoleController: NSObject, ObservableObject {
     func processInput(_ input: String) {
         // Only handle normal user input - menu actions are handled separately
         if input == "/" {
-            showRootMenu()
+            menuManager.showRootMenu()
         } else if input.hasPrefix("/") {
             // Try to navigate to a menu path
-            if navigateToMenuPath(input) {
+            if menuManager.navigateToPath(input) {
                 // Successfully navigated to menu path
                 return
             } else {
@@ -262,120 +417,40 @@ class HTMLConsoleController: NSObject, ObservableObject {
     }
     
     func handleMenuAction(_ action: String) {
-        // If no current menu, ignore the action
-        guard let menu = currentMenu else { return }
+        // If not in menu mode, ignore the action
+        guard menuManager.isInMenuMode else { return }
         
         if action.hasPrefix("SELECT:") {
             let indexString = String(action.dropFirst(7)) // Remove "SELECT:" prefix
             if let index = Int(indexString) {
-                selectMenuItem(items: menu.items, index: index)
+                menuManager.selectItem(at: index)
             }
         } else if action == "CANCEL" {
-            exitMenu()
+            menuManager.exitMenu()
         }
     }
     
-    private func createMenus() {
-        // Create theme actions
-        let themeActions = availableThemes.map { theme in
-            (title: theme, action: { [weak self] in
-                self?.switchTheme(to: theme)
-                self?.exitMenu()
-            })
-        }
-        
-        // Create theme menu (leaf menu with actions)
-        let themeMenu = Menu.createActionMenu(
-            title: "Theme",
-            actions: themeActions,
-            controller: self
-        )
-        
-        // Create admin menu (has submenu)
-        let adminMenu = Menu.createMenu(
-            title: "Admin",
-            submenus: [("Theme", themeMenu)],
-            includeBack: true,
-            controller: self
-        )
-        
-        // Create root menu (has submenu and cancel)
-        rootMenu = Menu.createMenu(
-            title: "/",
-            submenus: [("Admin", adminMenu)],
-            includeCancel: true,
-            controller: self
-        )
+    // Methods for MenuManager to call
+    internal func getAvailableThemes() -> [String] {
+        return availableThemes
     }
     
-    private func showRootMenu() {
-        currentMenu = rootMenu
-        menuStack = [] // Clear menu stack for root menu
-        sendMenuToJS(items: rootMenu.items, title: buildMenuPath())
-    }
-    
+    // Interface methods for MenuManager
     internal func showSubmenu(_ submenu: Menu?) {
         guard let submenu = submenu else { return }
-        
-        // Push current menu to stack before entering submenu
-        if let menu = currentMenu {
-            menuStack.append(menu)
-        }
-        
-        currentMenu = submenu
-        sendMenuToJS(items: submenu.items, title: buildMenuPath())
+        menuManager.showSubmenu(submenu)
     }
     
-    private func buildMenuPath() -> String {
-        var path = ""
-        
-        // Add all menus from the stack
-        for menu in menuStack {
-            if path.isEmpty {
-                path = menu.title
-            } else {
-                // Only add "/" if the current path doesn't end with "/"
-                if !path.hasSuffix("/") {
-                    path += "/"
-                }
-                path += menu.title
-            }
-        }
-        
-        // Add current menu
-        if let currentMenu = currentMenu {
-            if path.isEmpty {
-                path = currentMenu.title
-            } else {
-                // Only add "/" if the current path doesn't end with "/"
-                if !path.hasSuffix("/") {
-                    path += "/"
-                }
-                path += currentMenu.title
-            }
-        }
-        
-        return path
+    internal func goBackInMenu() {
+        menuManager.goBack()
     }
     
-    private func navigateToMenuPath(_ path: String) -> Bool {
-        // Split the path into components
-        let components = path.split(separator: "/").map(String.init)
-        
-        // Use the menu's navigation method
-        var menuStack: [Menu] = []
-        guard let targetMenu = rootMenu.navigate(to: components, buildingStack: &menuStack) else {
-            return false // Path not found
-        }
-        
-        // Set the current menu and stack
-        self.currentMenu = targetMenu
-        self.menuStack = menuStack
-        sendMenuToJS(items: targetMenu.items, title: buildMenuPath())
-        return true
+    internal func exitMenu() {
+        menuManager.exitMenu()
     }
     
-    private func sendMenuToJS(items: [MenuItem], title: String) {
+    // Method called by MenuManager to display menu
+    internal func displayMenu(items: [MenuItem], title: String) {
         guard let webView = webView else { return }
         
         let itemTitles = items.map { $0.title }
@@ -387,39 +462,11 @@ class HTMLConsoleController: NSObject, ObservableObject {
         webView.evaluateJavaScript(script, completionHandler: nil)
     }
     
-    private func selectMenuItem(items: [MenuItem], index: Int) {
-        guard index >= 0 && index < items.count else { return }
-        
-        let selectedItem = items[index]
-        selectedItem.execute(controller: self)
-    }
-    
-    
-    internal func goBackInMenu() {
-        guard !menuStack.isEmpty else {
-            exitMenu()
-            return
-        }
-        
-        let previousMenu = menuStack.removeLast()
-        currentMenu = previousMenu
-        sendMenuToJS(items: previousMenu.items, title: buildMenuPath())
-    }
-    
-    private func getCurrentMenuTitle() -> String {
-        return currentMenu?.title ?? ""
-    }
-    
-    
-    internal func exitMenu() {
-        currentMenu = nil
-        menuStack = [] // Clear menu stack when exiting
-        
-        // Hide menu and restore normal input
+    // Method called by MenuManager to hide menu
+    internal func hideMenu() {
         guard let webView = webView else { return }
         let script = "hideMenu();"
         webView.evaluateJavaScript(script, completionHandler: nil)
-        
         showPrompt()
     }
     
