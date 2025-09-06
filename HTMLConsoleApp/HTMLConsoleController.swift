@@ -171,13 +171,13 @@ class HTMLConsoleController: NSObject, ObservableObject {
             MenuItem(id: "cancel", title: "Cancel", action: { [weak self] in
                 self?.exitMenu()
             })
-        ], title: "Menu")
+        ], title: "/")
     }
     
     private func showRootMenu() {
         currentMenu = rootMenu
         menuStack = [] // Clear menu stack for root menu
-        sendMenuToJS(items: rootMenu.items, title: rootMenu.title)
+        sendMenuToJS(items: rootMenu.items, title: buildMenuPath())
     }
     
     private func showSubmenu(_ submenu: Menu?) {
@@ -189,7 +189,39 @@ class HTMLConsoleController: NSObject, ObservableObject {
         }
         
         currentMenu = submenu
-        sendMenuToJS(items: submenu.items, title: submenu.title)
+        sendMenuToJS(items: submenu.items, title: buildMenuPath())
+    }
+    
+    private func buildMenuPath() -> String {
+        var path = ""
+        
+        // Add all menus from the stack
+        for menu in menuStack {
+            if path.isEmpty {
+                path = menu.title
+            } else {
+                // Only add "/" if the current path doesn't end with "/"
+                if !path.hasSuffix("/") {
+                    path += "/"
+                }
+                path += menu.title
+            }
+        }
+        
+        // Add current menu
+        if let currentMenu = currentMenu {
+            if path.isEmpty {
+                path = currentMenu.title
+            } else {
+                // Only add "/" if the current path doesn't end with "/"
+                if !path.hasSuffix("/") {
+                    path += "/"
+                }
+                path += currentMenu.title
+            }
+        }
+        
+        return path
     }
     
     private func sendMenuToJS(items: [MenuItem], title: String) {
@@ -228,7 +260,7 @@ class HTMLConsoleController: NSObject, ObservableObject {
         
         let previousMenu = menuStack.removeLast()
         currentMenu = previousMenu
-        sendMenuToJS(items: previousMenu.items, title: previousMenu.title)
+        sendMenuToJS(items: previousMenu.items, title: buildMenuPath())
     }
     
     private func getCurrentMenuTitle() -> String {
