@@ -38,6 +38,19 @@ struct MenuItem {
         self.title = title
         self.type = .separator
     }
+    
+    // Execute the menu item's behavior
+    func execute(controller: HTMLConsoleController) {
+        switch type {
+        case .submenu(let menu):
+            controller.showSubmenu(menu)
+        case .action(let action):
+            action()
+        case .separator:
+            // Do nothing for separators
+            break
+        }
+    }
 }
 
 struct Menu {
@@ -46,6 +59,77 @@ struct Menu {
     
     var isEmpty: Bool {
         return items.isEmpty
+    }
+    
+    // Find a menu item by title (case-insensitive)
+    func findItem(withTitle title: String) -> MenuItem? {
+        return items.first { item in
+            item.title.lowercased() == title.lowercased() && !item.title.isEmpty
+        }
+    }
+    
+    // Navigate to a submenu by path components
+    func navigate(to pathComponents: [String], buildingStack stack: inout [Menu]) -> Menu? {
+        var currentMenu = self
+        
+        for component in pathComponents {
+            // Find the menu item with matching title
+            guard let menuItem = currentMenu.findItem(withTitle: component) else {
+                return nil // Path component not found
+            }
+            
+            // Check if this menu item has a submenu
+            guard case .submenu(let nextMenu) = menuItem.type else {
+                return nil // Menu item doesn't lead to a submenu
+            }
+            
+            // Add current menu to stack before moving to next
+            stack.append(currentMenu)
+            currentMenu = nextMenu
+        }
+        
+        return currentMenu
+    }
+    
+    // Factory method to create a theme selection menu
+    static func createThemeMenu(with themes: [String], controller: HTMLConsoleController) -> Menu {
+        let themeItems = themes.map { theme in
+            MenuItem(id: "theme_\(theme)", title: theme, action: { [weak controller] in
+                controller?.switchTheme(to: theme)
+                controller?.exitMenu()
+            })
+        }
+        
+        let menuItems = themeItems + [
+            MenuItem(id: "separator", title: ""), // Empty item for spacing
+            MenuItem(id: "back", title: "Back", action: { [weak controller] in
+                controller?.goBackInMenu()
+            })
+        ]
+        
+        return Menu(items: menuItems, title: "Theme")
+    }
+    
+    // Factory method to create the admin menu
+    static func createAdminMenu(themeMenu: Menu, controller: HTMLConsoleController) -> Menu {
+        return Menu(items: [
+            MenuItem(id: "theme_menu", title: "Theme", submenu: themeMenu),
+            MenuItem(id: "separator", title: ""), // Empty item for spacing
+            MenuItem(id: "back", title: "Back", action: { [weak controller] in
+                controller?.goBackInMenu()
+            })
+        ], title: "Admin")
+    }
+    
+    // Factory method to create the root menu
+    static func createRootMenu(adminMenu: Menu, controller: HTMLConsoleController) -> Menu {
+        return Menu(items: [
+            MenuItem(id: "admin_menu", title: "Admin", submenu: adminMenu),
+            MenuItem(id: "separator", title: ""), // Empty item for spacing
+            MenuItem(id: "cancel", title: "Cancel", action: { [weak controller] in
+                controller?.exitMenu()
+            })
+        ], title: "/")
     }
 }
 
@@ -176,40 +260,9 @@ class HTMLConsoleController: NSObject, ObservableObject {
     }
     
     private func createMenus() {
-        // Create theme menu items (leaf actions)
-        let themeItems = availableThemes.map { theme in
-            MenuItem(id: "theme_\(theme)", title: theme, action: { [weak self] in
-                self?.switchTheme(to: theme)
-                self?.exitMenu()
-            })
-        }
-        
-        // Create theme menu with back action
-        let themeMenuItems = themeItems + [
-            MenuItem(id: "separator", title: ""), // Empty item for spacing
-            MenuItem(id: "back", title: "Back", action: { [weak self] in
-                self?.goBackInMenu()
-            })
-        ]
-        let themeMenu = Menu(items: themeMenuItems, title: "Theme")
-        
-        // Create admin menu with direct reference to theme submenu
-        let adminMenu = Menu(items: [
-            MenuItem(id: "theme_menu", title: "Theme", submenu: themeMenu),
-            MenuItem(id: "separator", title: ""), // Empty item for spacing
-            MenuItem(id: "back", title: "Back", action: { [weak self] in
-                self?.goBackInMenu()
-            })
-        ], title: "Admin")
-        
-        // Create root menu with direct reference to admin submenu
-        rootMenu = Menu(items: [
-            MenuItem(id: "admin_menu", title: "Admin", submenu: adminMenu),
-            MenuItem(id: "separator", title: ""), // Empty item for spacing
-            MenuItem(id: "cancel", title: "Cancel", action: { [weak self] in
-                self?.exitMenu()
-            })
-        ], title: "/")
+        let themeMenu = Menu.createThemeMenu(with: availableThemes, controller: self)
+        let adminMenu = Menu.createAdminMenu(themeMenu: themeMenu, controller: self)
+        rootMenu = Menu.createRootMenu(adminMenu: adminMenu, controller: self)
     }
     
     private func showRootMenu() {
@@ -218,7 +271,7 @@ class HTMLConsoleController: NSObject, ObservableObject {
         sendMenuToJS(items: rootMenu.items, title: buildMenuPath())
     }
     
-    private func showSubmenu(_ submenu: Menu?) {
+    internal func showSubmenu(_ submenu: Menu?) {
         guard let submenu = submenu else { return }
         
         // Push current menu to stack before entering submenu
@@ -264,35 +317,18 @@ class HTMLConsoleController: NSObject, ObservableObject {
     
     private func navigateToMenuPath(_ path: String) -> Bool {
         // Split the path into components
-        let components = path.split(separator: "/").map { $0.lowercased() }
+        let components = path.split(separator: "/").map(String.init)
         
-        // Start from root menu
-        var currentMenu = rootMenu!
+        // Use the menu's navigation method
         var menuStack: [Menu] = []
-        
-        // Navigate through each component
-        for component in components {
-            // Find the menu item with matching title (case-insensitive)
-            guard let menuItem = currentMenu.items.first(where: { 
-                $0.title.lowercased() == component && !$0.title.isEmpty 
-            }) else {
-                return false // Path component not found
-            }
-            
-            // Check if this menu item has a submenu
-            guard case .submenu(let nextMenu) = menuItem.type else {
-                return false // Menu item doesn't lead to a submenu
-            }
-            
-            // Add current menu to stack before moving to next
-            menuStack.append(currentMenu)
-            currentMenu = nextMenu
+        guard let targetMenu = rootMenu.navigate(to: components, buildingStack: &menuStack) else {
+            return false // Path not found
         }
         
         // Set the current menu and stack
-        self.currentMenu = currentMenu
+        self.currentMenu = targetMenu
         self.menuStack = menuStack
-        sendMenuToJS(items: currentMenu.items, title: buildMenuPath())
+        sendMenuToJS(items: targetMenu.items, title: buildMenuPath())
         return true
     }
     
@@ -312,20 +348,11 @@ class HTMLConsoleController: NSObject, ObservableObject {
         guard index >= 0 && index < items.count else { return }
         
         let selectedItem = items[index]
-        
-        switch selectedItem.type {
-        case .submenu(let menu):
-            showSubmenu(menu)
-        case .action(let action):
-            action()
-        case .separator:
-            // Do nothing for separators
-            break
-        }
+        selectedItem.execute(controller: self)
     }
     
     
-    private func goBackInMenu() {
+    internal func goBackInMenu() {
         guard !menuStack.isEmpty else {
             exitMenu()
             return
@@ -341,7 +368,7 @@ class HTMLConsoleController: NSObject, ObservableObject {
     }
     
     
-    private func exitMenu() {
+    internal func exitMenu() {
         currentMenu = nil
         menuStack = [] // Clear menu stack when exiting
         
