@@ -12,14 +12,7 @@ import WebKit
 struct MenuItem {
     let id: String
     let title: String
-    let action: MenuAction
-}
-
-enum MenuAction {
-    case submenu([MenuItem])
-    case switchTheme(String)
-    case cancel
-    case back
+    let action: () -> Void
 }
 
 struct Menu {
@@ -145,18 +138,37 @@ class HTMLConsoleController: NSObject, ObservableObject {
     
     private func showAdminMenu() {
         let themeItems = availableThemes.map { theme in
-            MenuItem(id: "theme_\(theme)", title: theme, action: .switchTheme(theme))
+            MenuItem(id: "theme_\(theme)", title: theme, action: { [weak self] in
+                self?.switchTheme(to: theme)
+                self?.exitMenu()
+            })
         }
         
         let adminItems = [
-            MenuItem(id: "theme_menu", title: "Theme", action: .submenu(themeItems)),
-            MenuItem(id: "separator", title: "", action: .cancel), // Empty item for spacing
-            MenuItem(id: "cancel", title: "Cancel", action: .cancel)
+            MenuItem(id: "theme_menu", title: "Theme", action: { [weak self] in
+                self?.showThemeSubmenu(themeItems)
+            }),
+            MenuItem(id: "separator", title: "", action: {}), // Empty item for spacing
+            MenuItem(id: "cancel", title: "Cancel", action: { [weak self] in
+                self?.exitMenu()
+            })
         ]
         
         currentMenu = Menu(items: adminItems, title: "Admin")
         menuStack = [] // Clear menu stack for root menu
         sendMenuToJS(items: adminItems, title: "Admin")
+    }
+    
+    private func showThemeSubmenu(_ themeItems: [MenuItem]) {
+        // Push current menu to stack before entering submenu
+        if let menu = currentMenu {
+            menuStack.append(menu)
+        }
+        
+        // Create submenu with Back option
+        let submenuItems = createSubmenuWithBack(themeItems)
+        currentMenu = Menu(items: submenuItems, title: "Theme")
+        sendMenuToJS(items: submenuItems, title: "Theme")
     }
     
     private func sendMenuToJS(items: [MenuItem], title: String) {
@@ -175,32 +187,15 @@ class HTMLConsoleController: NSObject, ObservableObject {
         guard index >= 0 && index < items.count else { return }
         
         let selectedItem = items[index]
-        
-        switch selectedItem.action {
-        case .submenu(let subItems):
-            // Push current menu to stack before entering submenu
-            if let menu = currentMenu {
-                menuStack.append(menu)
-            }
-            
-            // Create submenu with Back option
-            let submenuItems = createSubmenuWithBack(subItems)
-            currentMenu = Menu(items: submenuItems, title: selectedItem.title)
-            sendMenuToJS(items: submenuItems, title: selectedItem.title)
-        case .switchTheme(let theme):
-            switchTheme(to: theme)
-            exitMenu()
-        case .cancel:
-            exitMenu()
-        case .back:
-            goBackInMenu()
-        }
+        selectedItem.action()
     }
     
     private func createSubmenuWithBack(_ items: [MenuItem]) -> [MenuItem] {
         var submenuItems = items
-        submenuItems.append(MenuItem(id: "separator", title: "", action: .back)) // Empty item for spacing
-        submenuItems.append(MenuItem(id: "back", title: "Back", action: .back))
+        submenuItems.append(MenuItem(id: "separator", title: "", action: {})) // Empty item for spacing
+        submenuItems.append(MenuItem(id: "back", title: "Back", action: { [weak self] in
+            self?.goBackInMenu()
+        }))
         return submenuItems
     }
     
