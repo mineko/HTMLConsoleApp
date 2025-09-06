@@ -91,45 +91,61 @@ struct Menu {
         return currentMenu
     }
     
-    // Factory method to create a theme selection menu
-    static func createThemeMenu(with themes: [String], controller: HTMLConsoleController) -> Menu {
-        let themeItems = themes.map { theme in
-            MenuItem(id: "theme_\(theme)", title: theme, action: { [weak controller] in
-                controller?.switchTheme(to: theme)
-                controller?.exitMenu()
-            })
+    // Generic factory method to create a menu with submenus and actions
+    static func createMenu(
+        title: String,
+        submenus: [(title: String, menu: Menu)] = [],
+        actions: [(title: String, action: () -> Void)] = [],
+        includeBack: Bool = false,
+        includeCancel: Bool = false,
+        controller: HTMLConsoleController? = nil
+    ) -> Menu {
+        var items: [MenuItem] = []
+        
+        // Add submenu items
+        for (title, submenu) in submenus {
+            items.append(MenuItem(id: "submenu_\(title.lowercased())", title: title, submenu: submenu))
         }
         
-        let menuItems = themeItems + [
-            MenuItem(id: "separator", title: ""), // Empty item for spacing
-            MenuItem(id: "back", title: "Back", action: { [weak controller] in
-                controller?.goBackInMenu()
-            })
-        ]
+        // Add action items
+        for (title, action) in actions {
+            items.append(MenuItem(id: "action_\(title.lowercased())", title: title, action: action))
+        }
         
-        return Menu(items: menuItems, title: "Theme")
-    }
-    
-    // Factory method to create the admin menu
-    static func createAdminMenu(themeMenu: Menu, controller: HTMLConsoleController) -> Menu {
-        return Menu(items: [
-            MenuItem(id: "theme_menu", title: "Theme", submenu: themeMenu),
-            MenuItem(id: "separator", title: ""), // Empty item for spacing
-            MenuItem(id: "back", title: "Back", action: { [weak controller] in
+        // Add separator before navigation items if we have content items
+        if !items.isEmpty && (includeBack || includeCancel) {
+            items.append(MenuItem(id: "separator", title: ""))
+        }
+        
+        // Add back button if requested
+        if includeBack, let controller = controller {
+            items.append(MenuItem(id: "back", title: "Back", action: { [weak controller] in
                 controller?.goBackInMenu()
-            })
-        ], title: "Admin")
+            }))
+        }
+        
+        // Add cancel button if requested
+        if includeCancel, let controller = controller {
+            items.append(MenuItem(id: "cancel", title: "Cancel", action: { [weak controller] in
+                controller?.exitMenu()
+            }))
+        }
+        
+        return Menu(items: items, title: title)
     }
     
-    // Factory method to create the root menu
-    static func createRootMenu(adminMenu: Menu, controller: HTMLConsoleController) -> Menu {
-        return Menu(items: [
-            MenuItem(id: "admin_menu", title: "Admin", submenu: adminMenu),
-            MenuItem(id: "separator", title: ""), // Empty item for spacing
-            MenuItem(id: "cancel", title: "Cancel", action: { [weak controller] in
-                controller?.exitMenu()
-            })
-        ], title: "/")
+    // Convenience method to create an action menu (leaf menu with actions)
+    static func createActionMenu(
+        title: String,
+        actions: [(title: String, action: () -> Void)],
+        controller: HTMLConsoleController
+    ) -> Menu {
+        return createMenu(
+            title: title,
+            actions: actions,
+            includeBack: true,
+            controller: controller
+        )
     }
 }
 
@@ -260,9 +276,36 @@ class HTMLConsoleController: NSObject, ObservableObject {
     }
     
     private func createMenus() {
-        let themeMenu = Menu.createThemeMenu(with: availableThemes, controller: self)
-        let adminMenu = Menu.createAdminMenu(themeMenu: themeMenu, controller: self)
-        rootMenu = Menu.createRootMenu(adminMenu: adminMenu, controller: self)
+        // Create theme actions
+        let themeActions = availableThemes.map { theme in
+            (title: theme, action: { [weak self] in
+                self?.switchTheme(to: theme)
+                self?.exitMenu()
+            })
+        }
+        
+        // Create theme menu (leaf menu with actions)
+        let themeMenu = Menu.createActionMenu(
+            title: "Theme",
+            actions: themeActions,
+            controller: self
+        )
+        
+        // Create admin menu (has submenu)
+        let adminMenu = Menu.createMenu(
+            title: "Admin",
+            submenus: [("Theme", themeMenu)],
+            includeBack: true,
+            controller: self
+        )
+        
+        // Create root menu (has submenu and cancel)
+        rootMenu = Menu.createMenu(
+            title: "/",
+            submenus: [("Admin", adminMenu)],
+            includeCancel: true,
+            controller: self
+        )
     }
     
     private func showRootMenu() {
