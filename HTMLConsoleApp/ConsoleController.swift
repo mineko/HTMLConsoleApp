@@ -196,6 +196,13 @@ class ConsoleController: NSObject, ObservableObject {
         webView.evaluateJavaScript(script, completionHandler: nil)
     }
     
+    func addImage(_ imageName: String, alignment: String = "left") {
+        guard let webView = webView else { return }
+        
+        let script = "addImage('\(imageName)', '\(alignment)');"
+        webView.evaluateJavaScript(script, completionHandler: nil)
+    }
+    
     // StatusBar methods
     internal func displayStatusBar(lines: [StatusLine]) {
         guard let webView = webView else { return }

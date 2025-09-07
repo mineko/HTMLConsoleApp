@@ -12,12 +12,31 @@ class Engine {
     private weak var controller: ConsoleController?
     private var statusBar: StatusBar?
     private var inputCount: Int = 0
+    private var availableImages: [String] = []
     
     init(controller: ConsoleController) {
         self.controller = controller
         self.statusBar = controller.getStatusBar()
+        self.availableImages = discoverAvailableImages()
     
         configureStatusBar()
+    }
+    
+    private func discoverAvailableImages() -> [String] {
+        guard let bundlePath = Bundle.main.resourcePath else {
+            return []
+        }
+        
+        do {
+            let contents = try FileManager.default.contentsOfDirectory(atPath: bundlePath)
+            let imageFiles = contents
+                .filter { $0.hasSuffix(".png") || $0.hasSuffix(".jpg") || $0.hasSuffix(".jpeg") || $0.hasSuffix(".gif") }
+                .sorted()
+            
+            return imageFiles
+        } catch {
+            return []
+        }
     }
     
     func configureStatusBar() {
@@ -57,8 +76,27 @@ class Engine {
         
         incrementInputCount()
 
-        controller.addOutput("\n" + input)
+        controller.addOutput("\n")
+
+        // Occasionally add a random image (20% chance)
+        if !availableImages.isEmpty && Int.random(in: 1...20) == 1 {
+            addRandomImage()
+        }
+        
+        controller.addOutput(input)
+        
         controller.showPrompt()
+    }
+    
+    private func addRandomImage() {
+        guard let controller = controller,
+              let randomImage = availableImages.randomElement() else { return }
+        
+        // Random alignment: left, right, or center
+        let alignments = ["left", "right", "center"]
+        let randomAlignment = alignments.randomElement() ?? "left"
+        
+        controller.addImage(randomImage, alignment: randomAlignment)
     }
     
     func incrementInputCount() {

@@ -52,6 +52,7 @@ body {
     margin-bottom: 10px;
     background-color: #fafafa;
     box-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    overflow: hidden; /* Establish containing block for floated images */
 }
 
 #input-line {
@@ -92,6 +93,7 @@ body {
 .output-line {
     margin-bottom: 4px;
     text-shadow: 1px 1px 0px rgba(255,255,255,0.8);
+    overflow: hidden; /* Contain floated images within text blocks */
 }
 
 .new-output {
@@ -186,5 +188,20 @@ body {
 
 .status-right {
     text-align: right;
+}
+
+.console-image {
+    max-width: 300px;
+    max-height: 200px;
+    border: 2px inset #c0c0c0;
+}
+
+.console-image-center {
+    display: block;
+    margin: 0 auto;
+}
+
+.image-container-center {
+    clear: both;
 }
 

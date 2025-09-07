@@ -51,6 +51,42 @@
             scrollToBottom();
         }
         
+        function addImage(imageName, alignment = 'left') {
+            // Mark existing output as old only on the first new output after user interaction
+            if (shouldMarkOldOnNextOutput) {
+                markAllOutputAsOld();
+                shouldMarkOldOnNextOutput = false;
+            }
+            
+            const img = document.createElement('img');
+            img.src = imageName;
+            img.className = `console-image console-image-${alignment} new-output`;
+            
+            // Set alignment-specific styling
+            if (alignment === 'center') {
+                const container = document.createElement('div');
+                container.className = 'output-line new-output image-container-center';
+                container.style.textAlign = 'center';
+                container.style.clear = 'both';
+                container.style.margin = '10px 0';
+                container.appendChild(img);
+                output.appendChild(container);
+            } else {
+                // For left/right alignment, add image directly to output container
+                // This allows subsequent text to flow around it
+                img.style.float = alignment;
+                if (alignment === 'left') {
+                    img.style.margin = '0 10px 10px 0';
+                } else if (alignment === 'right') {
+                    img.style.margin = '0 0 10px 10px';
+                }
+                
+                output.appendChild(img);
+            }
+            
+            scrollToBottom();
+        }
+        
         function markAllOutputAsOld() {
             // Change all existing output from new-output to old-output
             const allOutputLines = output.querySelectorAll('.output-line');

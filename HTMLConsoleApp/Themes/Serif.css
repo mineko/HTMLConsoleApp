@@ -46,6 +46,7 @@ body {
     white-space: pre-wrap;
     user-select: text;
     -webkit-user-select: text;
+    overflow: hidden; /* Establish containing block for floated images */
 }
 
 #input-line {
@@ -78,6 +79,7 @@ body {
 
 .output-line {
     margin-bottom: 2px;
+    overflow: hidden; /* Contain floated images within text blocks */
 }
 
 .new-output {
@@ -168,4 +170,20 @@ body {
 
 .status-right {
     text-align: right;
+}
+
+.console-image {
+    max-width: 300px;
+    max-height: 200px;
+    border-radius: 4px;
+    border: 1px solid #cccccc;
+}
+
+.console-image-center {
+    display: block;
+    margin: 0 auto;
+}
+
+.image-container-center {
+    clear: both;
 }
