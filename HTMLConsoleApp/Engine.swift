@@ -10,6 +10,7 @@ import Foundation
 // Core application engine handling console logic
 class Engine {
     private weak var controller: ConsoleController?
+    private var inputCount: Int = 0
     
     init(controller: ConsoleController) {
         self.controller = controller
@@ -35,7 +36,13 @@ class Engine {
     func processInput(_ input: String) {
         guard let controller = controller else { return }
         
+        inputCount += 1
         controller.addOutput("\n" + input)
         controller.showPrompt()
+    }
+    
+    // Get the current input count
+    func getInputCount() -> Int {
+        return inputCount
     }
 }
