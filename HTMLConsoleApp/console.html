@@ -271,48 +271,96 @@
         function scrollMenuIntoView() {
             if (!menuContainer || menuContainer.style.display === 'none') return;
             
+            const scrollContainer = document.getElementById('scroll-container');
+            if (!scrollContainer) return;
+            
             const menuRect = menuContainer.getBoundingClientRect();
-            const windowHeight = window.innerHeight;
+            const viewportHeight = window.innerHeight;
+            const statusBarHeight = statusBar.style.display === 'none' ? 0 : statusBar.offsetHeight;
+            const availableHeight = viewportHeight - statusBarHeight;
+            const buffer = 20;
             
-            // Check if menu is clipped at bottom
-            if (menuRect.bottom > windowHeight) {
-                const scrollAmount = menuRect.bottom - windowHeight + 20; // 20px buffer
+            // Get menu position relative to viewport (accounting for status bar)
+            const menuTop = menuRect.top - statusBarHeight;
+            const menuBottom = menuRect.bottom - statusBarHeight;
+            const menuHeight = menuBottom - menuTop;
+            
+            // First, try to show the entire menu if it fits
+            if (menuHeight <= availableHeight - (2 * buffer)) {
+                // Menu can fit entirely - prioritize showing it all
                 
-                // Check if scrolling would clip the top
-                if (menuRect.top - scrollAmount < 20) { // 20px buffer from top
-                    // Only scroll enough to keep top visible
-                    const maxScroll = menuRect.top - 20;
-                    window.scrollBy(0, Math.min(scrollAmount, maxScroll));
-                } else {
-                    window.scrollBy(0, scrollAmount);
+                // If menu bottom is clipped, scroll to show bottom
+                if (menuBottom > availableHeight - buffer) {
+                    const scrollAmount = menuBottom - availableHeight + buffer;
+                    scrollContainer.scrollBy(0, scrollAmount);
                 }
-            }
-            
-            // Check if menu is clipped at top
-            if (menuRect.top < 20) {
-                window.scrollBy(0, 20 - menuRect.top);
+                // If menu top is clipped, scroll to show top
+                else if (menuTop < buffer) {
+                    const scrollAmount = buffer - menuTop;
+                    scrollContainer.scrollBy(0, -scrollAmount);
+                }
+            } else {
+                // Menu is too large to show entirely - ensure selection is visible
+                const selectedItem = menuItems.querySelector('.menu-selected');
+                if (selectedItem) {
+                    const itemRect = selectedItem.getBoundingClientRect();
+                    const itemTop = itemRect.top - statusBarHeight;
+                    const itemBottom = itemRect.bottom - statusBarHeight;
+                    
+                    // Check if selected item is below visible area
+                    if (itemBottom > availableHeight - buffer) {
+                        const scrollAmount = itemBottom - availableHeight + buffer;
+                        scrollContainer.scrollBy(0, scrollAmount);
+                    }
+                    // Check if selected item is above visible area
+                    else if (itemTop < buffer) {
+                        const scrollAmount = buffer - itemTop;
+                        scrollContainer.scrollBy(0, -scrollAmount);
+                    }
+                } else {
+                    // No selection, default to showing menu top
+                    if (menuTop < buffer) {
+                        const scrollAmount = buffer - menuTop;
+                        scrollContainer.scrollBy(0, -scrollAmount);
+                    }
+                }
             }
         }
         
         function scrollSelectedItemIntoView() {
             if (!menuContainer || menuContainer.style.display === 'none') return;
             
+            const scrollContainer = document.getElementById('scroll-container');
             const selectedItem = menuItems.querySelector('.menu-selected');
-            if (!selectedItem) return;
+            if (!scrollContainer || !selectedItem) return;
             
             const itemRect = selectedItem.getBoundingClientRect();
-            const windowHeight = window.innerHeight;
+            const menuRect = menuContainer.getBoundingClientRect();
+            const viewportHeight = window.innerHeight;
+            const statusBarHeight = statusBar.style.display === 'none' ? 0 : statusBar.offsetHeight;
+            const availableHeight = viewportHeight - statusBarHeight;
+            const buffer = 20;
+            
+            // Get positions relative to viewport (accounting for status bar)
+            const itemTop = itemRect.top - statusBarHeight;
+            const itemBottom = itemRect.bottom - statusBarHeight;
+            const menuBottom = menuRect.bottom - statusBarHeight;
             
             // Check if selected item is below the visible area
-            if (itemRect.bottom > windowHeight - 20) {
-                const scrollAmount = itemRect.bottom - windowHeight + 40; // Extra buffer
-                window.scrollBy(0, scrollAmount);
+            if (itemBottom > availableHeight - buffer) {
+                // Try to show the menu bottom along with the selection
+                const menuBottomScrollAmount = menuBottom - availableHeight + buffer;
+                const itemScrollAmount = itemBottom - availableHeight + buffer + 20; // Extra buffer
+                
+                // Use the larger scroll amount to prioritize showing menu bottom
+                const scrollAmount = Math.max(menuBottomScrollAmount, itemScrollAmount);
+                scrollContainer.scrollBy(0, scrollAmount);
             }
             
-            // Check if selected item is above the visible area
-            if (itemRect.top < 20) {
-                const scrollAmount = 20 - itemRect.top;
-                window.scrollBy(0, -scrollAmount);
+            // Check if selected item is above the visible area  
+            else if (itemTop < buffer) {
+                const scrollAmount = buffer - itemTop;
+                scrollContainer.scrollBy(0, -scrollAmount);
             }
         }
         
