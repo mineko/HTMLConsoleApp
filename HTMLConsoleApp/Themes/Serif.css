@@ -139,10 +139,11 @@ body {
 
 #status-bar {
     background-color: #f8f8f8;
-    color: #000000;
+    color: #444444;
     border-bottom: 1px solid #cccccc;
     padding: 4px 20px;
     pointer-events: auto;
+    font-size: 0.9em;
 }
 
 .status-line {
@@ -150,7 +151,7 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 1px 8px;
-    min-height: 1.2em;
+    min-height: 0.9em
 }
 
 .status-region {

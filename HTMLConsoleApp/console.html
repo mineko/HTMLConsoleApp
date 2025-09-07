@@ -76,7 +76,7 @@
             const inputLine = document.getElementById('input-line');
             inputLine.style.display = 'flex';
             input.focus();
-            scrollToBottom();
+            scrollPromptIntoView();
         }
         
         function hidePrompt() {
@@ -119,6 +119,36 @@
             // Check if error is above visible area  
             else if (errorTop < buffer) {
                 const scrollAmount = buffer - errorTop;
+                scrollContainer.scrollBy(0, -scrollAmount);
+            }
+        }
+        
+        function scrollPromptIntoView() {
+            const inputLine = document.getElementById('input-line');
+            if (inputLine.style.display === 'none') return;
+            
+            const scrollContainer = document.getElementById('scroll-container');
+            if (!scrollContainer) return;
+            
+            const inputRect = inputLine.getBoundingClientRect();
+            const viewportHeight = window.innerHeight;
+            const statusBarHeight = statusBar.style.display === 'none' ? 0 : statusBar.offsetHeight;
+            const availableHeight = viewportHeight - statusBarHeight;
+            const buffer = 40; // Buffer to show input prompt with comfortable spacing
+            
+            // Get input position relative to viewport (accounting for status bar)
+            const inputTop = inputRect.top - statusBarHeight;
+            const inputBottom = inputRect.bottom - statusBarHeight;
+            
+            // Check if input prompt is below visible area - scroll with extra space
+            if (inputBottom > availableHeight - buffer) {
+                const scrollAmount = inputBottom - availableHeight + buffer + 20; // Extra margin
+                scrollContainer.scrollBy(0, scrollAmount);
+            }
+            
+            // Check if input prompt is above visible area  
+            else if (inputTop < buffer) {
+                const scrollAmount = buffer - inputTop;
                 scrollContainer.scrollBy(0, -scrollAmount);
             }
         }
