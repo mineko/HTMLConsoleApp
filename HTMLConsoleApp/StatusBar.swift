@@ -165,7 +165,7 @@ class StatusBar {
         guard line >= 0 && line < lines.count else { return }
         
         // Find the region with matching alignment, or create new line if needed
-        var currentLine = lines[line]
+        let currentLine = lines[line]
         var updatedRegions = currentLine.regions
         
         // Find existing region with same alignment
