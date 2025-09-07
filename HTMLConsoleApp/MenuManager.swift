@@ -205,8 +205,8 @@ class MenuManager {
             menuManager: menuManager
         )
         
-        // Create view menu (actions for display options)
-        let viewActions = [
+        // Create admin menu (has submenus and actions)
+        let adminActions = [
             ("Toggle Status Bar", { [weak menuManager] in
                 if let statusBar = menuManager?.controller?.getStatusBar() {
                     statusBar.toggle()
@@ -215,16 +215,10 @@ class MenuManager {
             })
         ]
         
-        let viewMenu = Menu.createActionMenu(
-            title: "View",
-            actions: viewActions,
-            menuManager: menuManager
-        )
-        
-        // Create admin menu (has submenus)
         let adminMenu = Menu.createMenu(
             title: "Admin",
-            submenus: [("Theme", themeMenu), ("View", viewMenu)],
+            submenus: [("Theme", themeMenu)],
+            actions: adminActions,
             includeBack: true,
             menuManager: menuManager
         )
