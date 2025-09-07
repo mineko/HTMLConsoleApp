@@ -8,6 +8,12 @@
 import Foundation
 import WebKit
 
+// Menu navigation result
+enum MenuNavigationResult {
+    case menu(Menu)
+    case action(() -> Void)
+}
+
 // Menu system data structures
 enum MenuItemType {
     case submenu(Menu)
@@ -68,27 +74,45 @@ struct Menu {
         }
     }
     
-    // Navigate to a submenu by path components
-    func navigate(to pathComponents: [String], buildingStack stack: inout [Menu]) -> Menu? {
+    // Navigate to a submenu by path components, or execute action if at leaf
+    func navigate(to pathComponents: [String], buildingStack stack: inout [Menu]) -> MenuNavigationResult? {
         var currentMenu = self
         
-        for component in pathComponents {
+        for (index, component) in pathComponents.enumerated() {
             // Find the menu item with matching title
             guard let menuItem = currentMenu.findItem(withTitle: component) else {
                 return nil // Path component not found
             }
             
-            // Check if this menu item has a submenu
-            guard case .submenu(let nextMenu) = menuItem.type else {
-                return nil // Menu item doesn't lead to a submenu
-            }
+            let isLastComponent = (index == pathComponents.count - 1)
             
-            // Add current menu to stack before moving to next
-            stack.append(currentMenu)
-            currentMenu = nextMenu
+            switch menuItem.type {
+            case .submenu(let nextMenu):
+                if isLastComponent {
+                    // Last component is a submenu - navigate to it
+                    stack.append(currentMenu)
+                    return .menu(nextMenu)
+                } else {
+                    // Intermediate submenu - continue navigation
+                    stack.append(currentMenu)
+                    currentMenu = nextMenu
+                }
+            case .action(let action):
+                if isLastComponent {
+                    // Last component is an action - execute it
+                    return .action(action)
+                } else {
+                    // Action in middle of path - invalid
+                    return nil
+                }
+            case .separator:
+                // Separator can't be navigated to
+                return nil
+            }
         }
         
-        return currentMenu
+        // Should never reach here due to the isLastComponent logic
+        return .menu(currentMenu)
     }
     
     // Generic factory method to create a menu with submenus and actions
@@ -205,21 +229,29 @@ class MenuManager {
         sendMenuToController(menu: rootMenu)
     }
     
-    // Navigate to a menu path
+    // Navigate to a menu path or execute action
     func navigateToPath(_ path: String) -> Bool {
         // Split the path into components
         let components = path.split(separator: "/").map(String.init)
         
         // Use the menu's navigation method
         var menuStack: [Menu] = []
-        guard let targetMenu = rootMenu.navigate(to: components, buildingStack: &menuStack) else {
+        guard let result = rootMenu.navigate(to: components, buildingStack: &menuStack) else {
             return false // Path not found
         }
         
-        // Set the current menu and stack
-        self.currentMenu = targetMenu
-        self.menuStack = menuStack
-        sendMenuToController(menu: targetMenu)
+        switch result {
+        case .menu(let targetMenu):
+            // Navigate to the menu
+            self.currentMenu = targetMenu
+            self.menuStack = menuStack
+            sendMenuToController(menu: targetMenu)
+        case .action(let action):
+            // Execute the action directly
+            action()
+            // Don't change menu state - user executed action via path
+        }
+        
         return true
     }
     
