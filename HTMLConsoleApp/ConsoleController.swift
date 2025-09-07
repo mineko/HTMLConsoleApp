@@ -85,8 +85,8 @@ class ConsoleController: NSObject, ObservableObject {
     private func showWelcomeMessage() {
         // Show status bar with sample content
         statusBar?.setLines([
-            StatusLine.leftRight(left: "HTMLConsole v1.0", right: "Ready"),
-            StatusLine.leftCenterRight(left: "Theme: \(currentTheme)", center: "Status Demo", right: "Connected")
+            StatusLine.leftCenterRight(left: "HTMLConsole v1.0", center: "Status Demo", right: "Ready"),
+            StatusLine.leftRight(left: "Theme: \(currentTheme)", right: "Connected")
         ])
         statusBar?.show()
         
