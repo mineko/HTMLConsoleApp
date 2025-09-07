@@ -87,11 +87,40 @@
         function showError(message) {
             errorMessage.textContent = message;
             errorMessage.style.display = 'block';
-            scrollToBottom();
+            scrollErrorIntoView();
         }
         
         function hideError() {
             errorMessage.style.display = 'none';
+        }
+        
+        function scrollErrorIntoView() {
+            if (errorMessage.style.display === 'none') return;
+            
+            const scrollContainer = document.getElementById('scroll-container');
+            if (!scrollContainer) return;
+            
+            const errorRect = errorMessage.getBoundingClientRect();
+            const viewportHeight = window.innerHeight;
+            const statusBarHeight = statusBar.style.display === 'none' ? 0 : statusBar.offsetHeight;
+            const availableHeight = viewportHeight - statusBarHeight;
+            const buffer = 60; // Larger buffer to show error text with padding
+            
+            // Get error position relative to viewport (accounting for status bar)
+            const errorTop = errorRect.top - statusBarHeight;
+            const errorBottom = errorRect.bottom - statusBarHeight;
+            
+            // Check if error is below visible area - scroll with extra space
+            if (errorBottom > availableHeight - buffer) {
+                const scrollAmount = errorBottom - availableHeight + buffer + 20; // Extra margin
+                scrollContainer.scrollBy(0, scrollAmount);
+            }
+            
+            // Check if error is above visible area  
+            else if (errorTop < buffer) {
+                const scrollAmount = buffer - errorTop;
+                scrollContainer.scrollBy(0, -scrollAmount);
+            }
         }
         
         function showStatusBar(lines) {

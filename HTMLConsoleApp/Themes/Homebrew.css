@@ -130,10 +130,10 @@ body {
 
 #error-message {
     color: #ffbf00;
-    font-style: italic;
+    /* font-style: italic; */
     padding: 4px 0;
     margin-top: 4px;
-    font-size: 0.9em;
+    /*font-size: 0.9em;*/
 }
 
 #status-bar {
