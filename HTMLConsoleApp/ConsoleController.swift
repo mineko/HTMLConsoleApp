@@ -15,6 +15,7 @@ class ConsoleController: NSObject, ObservableObject {
     private var currentTheme: String
     private var menuManager: MenuManager!
     private var statusBar: StatusBar?
+    private var engine: Engine!
     
     override init() {
         // Initialize with placeholder values
@@ -32,6 +33,9 @@ class ConsoleController: NSObject, ObservableObject {
         
         // Create status bar
         self.statusBar = StatusBar(controller: self)
+        
+        // Create engine
+        self.engine = Engine(controller: self)
     }
     
     private func discoverAvailableThemes() -> [String] {
@@ -77,22 +81,10 @@ class ConsoleController: NSObject, ObservableObject {
     }
     
     func start() {
-        showWelcomeMessage()
         // Switch to the selected theme immediately after WebView loads
         switchTheme(to: currentTheme)
-    }
-    
-    private func showWelcomeMessage() {
-        // Show status bar with sample content
-        statusBar?.setLines([
-            StatusLine.leftCenterRight(left: "HTMLConsole v1.0", center: "Status Demo", right: "Ready"),
-            StatusLine.leftRight(left: "Theme: \(currentTheme)", right: "Connected")
-        ])
-        statusBar?.show()
-        
-        addOutput("Welcome to HTMLConsole")
-        addOutput("Type something and press Enter...")
-        showPrompt()
+
+        engine.start()
     }
     
     func showPrompt() {
@@ -123,9 +115,8 @@ class ConsoleController: NSObject, ObservableObject {
                 return
             }
         } else {
-            // Normal echo functionality
-            addOutput("\n" + input)
-            showPrompt()
+            // Process input - delegate to engine
+            engine.processInput(input)
         }
     }
     
