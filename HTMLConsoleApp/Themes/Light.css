@@ -94,3 +94,11 @@ body {
     color: #ffffff;
     padding: 2px 4px;
 }
+
+#error-message {
+    color: #cc0000;
+    font-style: italic;
+    padding: 4px 0;
+    margin-top: 4px;
+    font-size: 0.9em;
+}

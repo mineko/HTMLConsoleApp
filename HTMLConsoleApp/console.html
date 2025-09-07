@@ -14,6 +14,7 @@
         <span id="prompt">></span>
         <textarea id="input" rows="1"></textarea>
     </div>
+    <div id="error-message" style="display: none;"></div>
     
     <script>
         const output = document.getElementById('output');
@@ -21,6 +22,7 @@
         const menuContainer = document.getElementById('menu-container');
         const menuTitle = document.getElementById('menu-title');
         const menuItems = document.getElementById('menu-items');
+        const errorMessage = document.getElementById('error-message');
         
         let menuMode = false;
         let currentMenuData = null;
@@ -74,7 +76,20 @@
             inputLine.style.display = 'none';
         }
         
-        input.addEventListener('input', autoResizeTextArea);
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            scrollToBottom();
+        }
+        
+        function hideError() {
+            errorMessage.style.display = 'none';
+        }
+        
+        input.addEventListener('input', function() {
+            autoResizeTextArea();
+            hideError(); // Clear any error message when user starts typing
+        });
         
         input.addEventListener('keydown', function(e) {
             if (menuMode) {

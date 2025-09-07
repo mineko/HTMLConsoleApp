@@ -106,8 +106,8 @@ class ConsoleController: NSObject, ObservableObject {
                 // Successfully navigated to menu path
                 return
             } else {
-                // Path not found, show error and continue with normal processing
-                addOutput("Menu path not found: \(input)")
+                // Path not found, show temporary error message
+                showError("Menu path not found: \(input)")
                 showPrompt()
                 return
             }
@@ -170,6 +170,17 @@ class ConsoleController: NSObject, ObservableObject {
         let script = "hideMenu();"
         webView.evaluateJavaScript(script, completionHandler: nil)
         showPrompt()
+    }
+    
+    // Show temporary error message
+    private func showError(_ message: String) {
+        guard let webView = webView else { return }
+        
+        let escapedMessage = message.replacingOccurrences(of: "\\", with: "\\\\")
+                                    .replacingOccurrences(of: "'", with: "\\'")
+        
+        let script = "showError('\(escapedMessage)');"
+        webView.evaluateJavaScript(script, completionHandler: nil)
     }
     
     func addOutput(_ text: String) {
