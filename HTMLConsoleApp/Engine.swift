@@ -22,19 +22,20 @@ class Engine {
     
     func configureStatusBar() {
         // Configure status bar with named fields
-        statusBar?.setLineCount(2)
+        //statusBar?.setLineCount(2)
+        statusBar?.setLineCount(1)
         
         // Register named fields
-        statusBar?.registerField(name: "app_name", line: 0, alignment: .left)
-        statusBar?.registerField(name: "status", line: 0, alignment: .center)
-        statusBar?.registerField(name: "ready", line: 0, alignment: .right)
-        statusBar?.registerField(name: "input_count", line: 1, alignment: .left)
-        statusBar?.registerField(name: "version", line: 1, alignment: .right)
+        statusBar?.registerField(name: "app_name", line: 0, alignment: .center)
+        //statusBar?.registerField(name: "status", line: 0, alignment: .center)
+        //statusBar?.registerField(name: "ready", line: 0, alignment: .right)
+        statusBar?.registerField(name: "input_count", line: 0, alignment: .left)
+        statusBar?.registerField(name: "version", line: 0, alignment: .right)
         
         // Set initial field values
-        statusBar?.updateField(name: "app_name", text: "HTMLConsole v1.0")
-        statusBar?.updateField(name: "status", text: "Status Demo")
-        statusBar?.updateField(name: "ready", text: "Ready")
+//        statusBar?.updateField(name: "app_name", text: "HTMLConsole v1.0")
+    statusBar?.updateField(name: "app_name", text: "Status Demo")
+    //    statusBar?.updateField(name: "ready", text: "Ready")
         statusBar?.updateField(name: "input_count", text: "Inputs: 0")
         statusBar?.updateField(name: "version", text: "Build 2025.09.07")
     }
