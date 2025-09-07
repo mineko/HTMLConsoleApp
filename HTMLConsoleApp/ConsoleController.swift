@@ -14,6 +14,7 @@ class ConsoleController: NSObject, ObservableObject {
     private var availableThemes: [String] = []
     private var currentTheme: String
     private var menuManager: MenuManager!
+    private var statusBar: StatusBar?
     
     override init() {
         // Initialize with placeholder values
@@ -28,6 +29,9 @@ class ConsoleController: NSObject, ObservableObject {
         
         // Create menu manager
         self.menuManager = MenuManager(controller: self)
+        
+        // Create status bar
+        self.statusBar = StatusBar(controller: self)
     }
     
     private func discoverAvailableThemes() -> [String] {
@@ -79,6 +83,13 @@ class ConsoleController: NSObject, ObservableObject {
     }
     
     private func showWelcomeMessage() {
+        // Show status bar with sample content
+        statusBar?.setLines([
+            StatusLine.leftRight(left: "HTMLConsole v1.0", right: "Ready"),
+            StatusLine.leftCenterRight(left: "Theme: \(currentTheme)", center: "Status Demo", right: "Connected")
+        ])
+        statusBar?.show()
+        
         addOutput("Welcome to HTMLConsole")
         addOutput("Type something and press Enter...")
         showPrompt()
@@ -192,5 +203,37 @@ class ConsoleController: NSObject, ObservableObject {
         
         let script = "addOutput('\(escapedText)');"
         webView.evaluateJavaScript(script, completionHandler: nil)
+    }
+    
+    // StatusBar methods
+    internal func displayStatusBar(lines: [StatusLine]) {
+        guard let webView = webView else { return }
+        
+        let linesData = lines.map { line in
+            let regionsData = line.regions.map { region in
+                ["text": region.text, "alignment": "\(region.alignment)"]
+            }
+            return ["regions": regionsData]
+        }
+        
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: linesData, options: [])
+            let jsonString = String(data: jsonData, encoding: .utf8)!
+            let script = "showStatusBar(\(jsonString));"
+            webView.evaluateJavaScript(script, completionHandler: nil)
+        } catch {
+            print("Error serializing status bar data: \(error)")
+        }
+    }
+    
+    internal func hideStatusBar() {
+        guard let webView = webView else { return }
+        let script = "hideStatusBar();"
+        webView.evaluateJavaScript(script, completionHandler: nil)
+    }
+    
+    // Public methods for StatusBar access
+    func getStatusBar() -> StatusBar? {
+        return statusBar
     }
 }

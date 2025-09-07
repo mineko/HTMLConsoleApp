@@ -1,13 +1,46 @@
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
 body {
     font-family: Times, "Times New Roman", serif;
     font-size: 16px;
     background-color: #c0c0c0;
     color: #000000;
-    margin: 0;
-    padding: 20px;
     overflow-wrap: break-word;
     line-height: 1.2;
     background-image: url("data:image/svg+xml,%3Csvg width='2' height='2' viewBox='0 0 2 2' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23b8b8b8' fill-opacity='0.4'%3E%3Cpath d='M1 0h1v1H1zM0 1h1v1H0z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    position: relative;
+    height: 100vh;
+}
+
+#status-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+#scroll-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: auto;
+}
+
+#content {
+    padding: 20px;
+    min-height: calc(100% + 1px);
+    box-sizing: border-box;
 }
 
 #output {
@@ -119,5 +152,39 @@ body {
     margin-top: 4px;
     font-size: 0.9em;
     text-shadow: 1px 1px 0px rgba(255,255,255,0.8);
+}
+
+#status-bar {
+    background-color: #e0e0e0;
+    color: #000080;
+    border: 2px inset #c0c0c0;
+    border-bottom: 2px outset #c0c0c0;
+    padding: 4px 20px;
+    text-shadow: 1px 1px 0px rgba(255,255,255,0.8);
+    pointer-events: auto;
+}
+
+.status-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1px 8px;
+    min-height: 1.2em;
+}
+
+.status-region {
+    flex: 1;
+}
+
+.status-left {
+    text-align: left;
+}
+
+.status-center {
+    text-align: center;
+}
+
+.status-right {
+    text-align: right;
 }
 

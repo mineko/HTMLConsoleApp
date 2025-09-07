@@ -1,12 +1,45 @@
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
 body {
     font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
     font-size: 14px;
     background-color: #ffffff;
     color: #333333;
-    margin: 0;
-    padding: 20px;
     overflow-wrap: break-word;
     line-height: 1.4;
+    position: relative;
+    height: 100vh;
+}
+
+#status-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+#scroll-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: auto;
+}
+
+#content {
+    padding: 20px;
+    min-height: calc(100% + 1px);
+    box-sizing: border-box;
 }
 
 #output {
@@ -101,4 +134,36 @@ body {
     padding: 4px 0;
     margin-top: 4px;
     font-size: 0.9em;
+}
+
+#status-bar {
+    background-color: #f0f0f0;
+    color: #000000;
+    border-bottom: 1px solid #cccccc;
+    padding: 4px 20px;
+    pointer-events: auto;
+}
+
+.status-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1px 8px;
+    min-height: 1.2em;
+}
+
+.status-region {
+    flex: 1;
+}
+
+.status-left {
+    text-align: left;
+}
+
+.status-center {
+    text-align: center;
+}
+
+.status-right {
+    text-align: right;
 }

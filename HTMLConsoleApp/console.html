@@ -5,7 +5,12 @@
     <link rel="stylesheet" type="text/css" href="default.css">
 </head>
 <body>
-    <div id="output"></div>
+    <div id="status-container">
+        <div id="status-bar" style="display: none;"></div>
+    </div>
+    <div id="scroll-container">
+        <div id="content">
+            <div id="output"></div>
     <div id="menu-container" style="display: none;">
         <div id="menu-title"></div>
         <div id="menu-items"></div>
@@ -15,6 +20,8 @@
         <textarea id="input" rows="1"></textarea>
     </div>
     <div id="error-message" style="display: none;"></div>
+        </div>
+    </div>
     
     <script>
         const output = document.getElementById('output');
@@ -23,6 +30,7 @@
         const menuTitle = document.getElementById('menu-title');
         const menuItems = document.getElementById('menu-items');
         const errorMessage = document.getElementById('error-message');
+        const statusBar = document.getElementById('status-bar');
         
         let menuMode = false;
         let currentMenuData = null;
@@ -84,6 +92,42 @@
         
         function hideError() {
             errorMessage.style.display = 'none';
+        }
+        
+        function showStatusBar(lines) {
+            statusBar.innerHTML = '';
+            
+            lines.forEach(line => {
+                const lineDiv = document.createElement('div');
+                lineDiv.className = 'status-line';
+                
+                line.regions.forEach(region => {
+                    const regionSpan = document.createElement('span');
+                    regionSpan.className = `status-region status-${region.alignment}`;
+                    regionSpan.textContent = region.text;
+                    lineDiv.appendChild(regionSpan);
+                });
+                
+                statusBar.appendChild(lineDiv);
+            });
+            
+            statusBar.style.display = 'block';
+            updateContentPadding();
+        }
+        
+        function hideStatusBar() {
+            statusBar.style.display = 'none';
+            updateContentPadding();
+        }
+        
+        function updateContentPadding() {
+            const content = document.getElementById('content');
+            if (statusBar.style.display === 'none') {
+                content.style.paddingTop = '20px';
+            } else {
+                const statusBarHeight = statusBar.offsetHeight;
+                content.style.paddingTop = (statusBarHeight + 20) + 'px';
+            }
         }
         
         input.addEventListener('input', function() {
