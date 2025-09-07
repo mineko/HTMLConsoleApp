@@ -187,5 +187,4 @@ body {
 
 .output-line {
     margin-bottom: 2px;
-    overflow: hidden; /* Contain floated images within text blocks */
 }
