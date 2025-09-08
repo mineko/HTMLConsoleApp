@@ -121,7 +121,7 @@ body {
 }
 
 .menu-item {
-    padding: 2px 4px;
+    padding: 2px 8px;
     margin: 4px 0;
 }
 
@@ -133,7 +133,7 @@ body {
 .menu-selected {
     background-color: #000000;
     color: #ffffff;
-    padding: 2px 4px;
+    padding: 2px 8px;
 }
 
 #error-message {
