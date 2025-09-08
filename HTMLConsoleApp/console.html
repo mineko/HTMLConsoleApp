@@ -475,14 +475,29 @@
             console.log('Menu position:', menuRect.top, menuRect.bottom, menuRect.width);
             console.log('Content width:', contentRect.width);
             
-            // Look for the most recent floated images that could be positioned next to the menu
+            // Look for all floated images that could affect menu positioning
             const floatedImages = output.querySelectorAll('img');
             console.log('Found images:', floatedImages.length);
             
-            let bestImage = null;
-            let bestImageRect = null;
-            let bestImageFloat = null;
+            // Calculate total width consumed by images on each side that are relevant to menu position
+            let leftImagesTotalWidth = 0;
+            let rightImagesTotalWidth = 0;
+            let leftImagesCount = 0;
+            let rightImagesCount = 0;
             
+            // Find the prompt position to determine which images are relevant
+            const outputLines = output.querySelectorAll('.output-line');
+            let promptTargetTop = menuRect.top; // Default to menu top
+            
+            if (outputLines.length > 0) {
+                const lastOutputLine = outputLines[outputLines.length - 1];
+                const lastLineRect = lastOutputLine.getBoundingClientRect();
+                const paddingBelowText = 10;
+                promptTargetTop = lastLineRect.bottom + paddingBelowText;
+                console.log('Last output line bottom with padding:', promptTargetTop);
+            }
+            
+            // Analyze all images to see which ones affect the menu area
             floatedImages.forEach((img, index) => {
                 const imgRect = img.getBoundingClientRect();
                 const imgFloat = img.style.float;
@@ -495,68 +510,83 @@
                     height: imgRect.height
                 });
                 
-                // Look for images that are positioned near where the menu would appear
+                // Check if image extends down to where the menu/prompt would appear
                 if ((imgFloat === 'left' || imgFloat === 'right') && 
-                    imgRect.bottom > menuRect.top - 50) { // Image extends down near menu area
-                    bestImage = img;
-                    bestImageRect = imgRect;
-                    bestImageFloat = imgFloat;
-                    console.log(`Using image ${index} as positioning reference`);
+                    imgRect.bottom > promptTargetTop - 50) { // Image affects menu area
+                    
+                    if (imgFloat === 'left') {
+                        leftImagesTotalWidth = Math.max(leftImagesTotalWidth, imgRect.width);
+                        leftImagesCount++;
+                        console.log(`Left image ${index} affects menu area - width: ${imgRect.width}`);
+                    } else if (imgFloat === 'right') {
+                        rightImagesTotalWidth = Math.max(rightImagesTotalWidth, imgRect.width);
+                        rightImagesCount++;
+                        console.log(`Right image ${index} affects menu area - width: ${imgRect.width}`);
+                    }
                 }
             });
             
-            if (bestImage && bestImageRect) {
-                // Calculate available space next to the image with a small gap
-                const gapSize = 15; // Small gap between menu and image
-                const availableWidth = contentRect.width - bestImageRect.width - 40 - gapSize; // Account for margins, padding, and gap
+            console.log('Image analysis:', {
+                leftImagesTotalWidth,
+                rightImagesTotalWidth,
+                leftImagesCount,
+                rightImagesCount
+            });
+            
+            // Determine if we have images affecting the layout
+            const hasLeftImages = leftImagesCount > 0;
+            const hasRightImages = rightImagesCount > 0;
+            
+            if (hasLeftImages || hasRightImages) {
+                const gapSize = 15; // Small gap between menu and images
+                const imageMargin = 10; // Standard image margin from CSS
+                
+                let availableWidth = contentRect.width - 40; // Base padding
+                let leftMargin = 0;
+                let rightMargin = 0;
+                
+                // Account for left-side images
+                if (hasLeftImages) {
+                    const leftSpaceUsed = leftImagesTotalWidth + imageMargin + gapSize;
+                    availableWidth -= leftSpaceUsed;
+                    leftMargin = leftSpaceUsed;
+                }
+                
+                // Account for right-side images  
+                if (hasRightImages) {
+                    const rightSpaceUsed = rightImagesTotalWidth + imageMargin + gapSize;
+                    availableWidth -= rightSpaceUsed;
+                    rightMargin = rightSpaceUsed;
+                }
+                
+                console.log('Space calculations:', {
+                    availableWidth,
+                    leftMargin,
+                    rightMargin
+                });
                 
                 if (availableWidth > 200) { // Minimum width check
-                    // Find where the input prompt would appear by looking at the last text output
-                    const outputLines = output.querySelectorAll('.output-line');
-                    let promptTargetTop = bestImageRect.top; // Default to image top
-                    
-                    if (outputLines.length > 0) {
-                        const lastOutputLine = outputLines[outputLines.length - 1];
-                        const lastLineRect = lastOutputLine.getBoundingClientRect();
-                        // Input prompt would appear after the last line of text, with a little extra padding
-                        const paddingBelowText = 10; // Add some breathing room below the text
-                        promptTargetTop = lastLineRect.bottom + paddingBelowText;
-                        console.log('Last output line bottom with padding:', promptTargetTop);
-                    }
-                    
-                    // Calculate how much to move the menu up to align with where the prompt would be
+                    // Calculate vertical positioning
                     const menuNaturalTop = menuRect.top;
                     const verticalOffset = menuNaturalTop - promptTargetTop;
                     
-                    // Use relative positioning to move menu to align with prompt position
+                    // Apply positioning
                     menuContainer.style.position = 'relative';
                     menuContainer.style.top = -verticalOffset + 'px';
                     menuContainer.style.width = availableWidth + 'px';
                     
-                    console.log('Vertical positioning:', {
-                        menuNaturalTop,
-                        promptTargetTop,
-                        verticalOffset,
-                        topAdjustment: -verticalOffset
-                    });
-                    
-                    if (bestImageFloat === 'left') {
-                        // Image is on left, menu goes to the right with a small gap
-                        // Reduce the left margin slightly to prevent right-side clipping
-                        menuContainer.style.marginLeft = (bestImageRect.width + gapSize) + 'px'; // Image width + gap only
-                        menuContainer.style.marginRight = '';
-                        console.log(`Positioning menu to right of left-floated image with ${gapSize}px gap, moved up by ${verticalOffset}px`);
-                    } else if (bestImageFloat === 'right') {
-                        // Image is on right, menu stays on left with reduced width for the gap
-                        menuContainer.style.marginLeft = '';
-                        menuContainer.style.marginRight = (bestImageRect.width + 20 + gapSize) + 'px'; // 20px image margin + gap
-                        console.log(`Positioning menu to left of right-floated image with ${gapSize}px gap, moved up by ${verticalOffset}px`);
+                    if (leftMargin > 0) {
+                        menuContainer.style.marginLeft = leftMargin + 'px';
+                    }
+                    if (rightMargin > 0) {
+                        menuContainer.style.marginRight = rightMargin + 'px';
                     }
                     
                     console.log('Applied menu adjustments:', {
                         width: availableWidth + 'px',
                         marginLeft: menuContainer.style.marginLeft,
-                        marginRight: menuContainer.style.marginRight
+                        marginRight: menuContainer.style.marginRight,
+                        verticalOffset: -verticalOffset
                     });
                 }
             }
