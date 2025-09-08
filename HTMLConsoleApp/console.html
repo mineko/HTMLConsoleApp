@@ -173,15 +173,19 @@
                     e.preventDefault();
                     const userText = inputSpan.textContent;
                     console.log('Enter pressed, text:', userText);
-                    if (userText.trim()) {
-                        // Send input to Swift controller for processing
-                        window.webkit.messageHandlers.consoleInput.postMessage(userText);
-                    }
                     
-                    // Remove the input container
+                    // Remove the input container first
                     const inputContainer = document.getElementById('input-container');
                     if (inputContainer) {
                         inputContainer.remove();
+                    }
+                    
+                    if (userText.trim()) {
+                        // Send input to Swift controller for processing
+                        window.webkit.messageHandlers.consoleInput.postMessage(userText);
+                    } else {
+                        // Empty input - just show a new prompt
+                        setTimeout(() => showPrompt(), 10);
                     }
                 }
             });
@@ -212,13 +216,53 @@
         }
         
         function showError(message) {
-            errorMessage.textContent = message;
-            errorMessage.style.display = 'block';
-            scrollErrorIntoView();
+            // Use a small delay to ensure the error appears after the input prompt
+            setTimeout(() => {
+                const outputContainer = document.getElementById('output');
+                
+                // Remove any existing flowing error
+                const existingError = document.getElementById('flowing-error');
+                if (existingError) {
+                    existingError.remove();
+                }
+                
+                // Create error as a simple output line with error styling
+                const errorLine = document.createElement('div');
+                errorLine.id = 'flowing-error';
+                errorLine.className = 'output-line new-output';
+                errorLine.textContent = message;
+                
+                // Apply error-specific styling
+                errorLine.style.color = getComputedStyle(document.getElementById('error-message')).color;
+                errorLine.style.fontStyle = getComputedStyle(document.getElementById('error-message')).fontStyle;
+                errorLine.style.fontSize = getComputedStyle(document.getElementById('error-message')).fontSize;
+                
+                // Add to the end of output container - should now appear after the input
+                outputContainer.appendChild(errorLine);
+                
+                // Auto-hide the error after a delay
+                setTimeout(() => {
+                    if (errorLine) {
+                        errorLine.remove();
+                    }
+                }, 5000);
+                
+                scrollToBottom();
+            }, 10); // Small delay to let DOM settle
+            
+            // Hide the original error message
+            errorMessage.style.display = 'none';
         }
         
         function hideError() {
+            // Hide the original error message
             errorMessage.style.display = 'none';
+            
+            // Remove any flowing error
+            const flowingError = document.getElementById('flowing-error');
+            if (flowingError) {
+                flowingError.remove();
+            }
         }
         
         function scrollErrorIntoView() {
