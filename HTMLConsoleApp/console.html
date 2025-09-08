@@ -469,9 +469,10 @@
                     if (outputLines.length > 0) {
                         const lastOutputLine = outputLines[outputLines.length - 1];
                         const lastLineRect = lastOutputLine.getBoundingClientRect();
-                        // Input prompt would appear after the last line of text
-                        promptTargetTop = lastLineRect.bottom;
-                        console.log('Last output line bottom:', lastLineRect.bottom);
+                        // Input prompt would appear after the last line of text, with a little extra padding
+                        const paddingBelowText = 10; // Add some breathing room below the text
+                        promptTargetTop = lastLineRect.bottom + paddingBelowText;
+                        console.log('Last output line bottom with padding:', promptTargetTop);
                     }
                     
                     // Calculate how much to move the menu up to align with where the prompt would be
@@ -492,7 +493,8 @@
                     
                     if (bestImageFloat === 'left') {
                         // Image is on left, menu goes to the right with a small gap
-                        menuContainer.style.marginLeft = (bestImageRect.width + 20 + gapSize) + 'px'; // 20px image margin + gap
+                        // Reduce the left margin slightly to prevent right-side clipping
+                        menuContainer.style.marginLeft = (bestImageRect.width + gapSize) + 'px'; // Image width + gap only
                         menuContainer.style.marginRight = '';
                         console.log(`Positioning menu to right of left-floated image with ${gapSize}px gap, moved up by ${verticalOffset}px`);
                     } else if (bestImageFloat === 'right') {
