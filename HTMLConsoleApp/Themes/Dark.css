@@ -52,6 +52,7 @@ body {
 #input-line {
     display: flex;
     align-items: flex-start;
+    clear: none; /* Allow input to wrap around floated images */
 }
 
 #prompt {
@@ -75,6 +76,8 @@ body {
     min-height: 1.4em;
     line-height: 1.4;
     word-wrap: break-word;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .output-line {

@@ -109,13 +109,94 @@
         function showPrompt() {
             // Set flag to mark old output when first new output is added
             shouldMarkOldOnNextOutput = true;
+            
+            // Add prompt and input directly to output container as flowing text
+            const outputContainer = document.getElementById('output');
+            
+            // Remove any existing prompt span
+            const existingPromptSpan = document.getElementById('prompt-span');
+            if (existingPromptSpan) {
+                existingPromptSpan.remove();
+            }
+            
+            // Create inline prompt and input that flow like text
+            const inputContainer = document.createElement('span');
+            inputContainer.id = 'input-container';
+            inputContainer.className = 'new-output';
+            inputContainer.style.display = 'inline';
+            
+            // Add prompt as inline text
+            const promptSpan = document.createElement('span');
+            promptSpan.textContent = '>';
+            promptSpan.style.marginRight = '5px';
+            promptSpan.style.color = getComputedStyle(document.getElementById('prompt')).color;
+            
+            // Create a contenteditable span that acts like flowing text
+            const inputSpan = document.createElement('span');
+            inputSpan.id = 'flowing-input';
+            inputSpan.contentEditable = true;
+            inputSpan.style.outline = 'none';
+            inputSpan.style.minWidth = '1px';
+            inputSpan.style.display = 'inline';
+            inputSpan.style.fontFamily = 'inherit';
+            inputSpan.style.fontSize = 'inherit';
+            inputSpan.style.color = getComputedStyle(input).color;
+            inputSpan.style.backgroundColor = 'transparent';
+            inputSpan.style.whiteSpace = 'pre-wrap';
+            
+            inputContainer.appendChild(promptSpan);
+            inputContainer.appendChild(inputSpan);
+            
+            // Add to output container so it flows naturally around images
+            outputContainer.appendChild(inputContainer);
+            
+            // Hide the original input line
             const inputLine = document.getElementById('input-line');
-            inputLine.style.display = 'flex';
-            input.focus();
+            inputLine.style.display = 'none';
+            
+            // Set up event handlers for the flowing input
+            setupFlowingInputHandlers(inputSpan);
+            
+            inputSpan.focus();
             scrollPromptIntoView();
         }
         
+        function setupFlowingInputHandlers(inputSpan) {
+            inputSpan.addEventListener('keydown', function(e) {
+                if (menuMode) {
+                    handleMenuKeydown(e);
+                    return;
+                }
+                
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    const userText = inputSpan.textContent;
+                    if (userText.trim()) {
+                        // Send input to Swift controller for processing
+                        window.webkit.messageHandlers.consoleInput.postMessage(userText);
+                    }
+                    
+                    // Remove the input container
+                    const inputContainer = document.getElementById('input-container');
+                    if (inputContainer) {
+                        inputContainer.remove();
+                    }
+                }
+            });
+            
+            inputSpan.addEventListener('input', function() {
+                hideError(); // Clear any error message when user starts typing
+            });
+        }
+        
         function hidePrompt() {
+            // Remove the flowing input container
+            const inputContainer = document.getElementById('input-container');
+            if (inputContainer) {
+                inputContainer.remove();
+            }
+            
+            // Also hide the original input line
             const inputLine = document.getElementById('input-line');
             inputLine.style.display = 'none';
         }
@@ -291,7 +372,7 @@
             selectedIndex = 0;
             
             // Hide input line and show menu
-            document.getElementById('input-line').style.display = 'none';
+            hidePrompt();
             menuContainer.style.display = 'block';
             
             // Set title and render items
@@ -309,8 +390,7 @@
             
             // Hide menu and show input line
             menuContainer.style.display = 'none';
-            document.getElementById('input-line').style.display = 'flex';
-            input.focus();
+            showPrompt(); // Use showPrompt to properly position input line
         }
         
         function renderMenuItems() {
@@ -461,12 +541,22 @@
         
         // Focus input when page loads
         window.addEventListener('load', function() {
-            input.focus();
+            const flowingInput = document.getElementById('flowing-input');
+            if (flowingInput) {
+                flowingInput.focus();
+            } else {
+                input.focus();
+            }
         });
         
         // Maintain focus on input
         document.addEventListener('click', function() {
-            input.focus();
+            const flowingInput = document.getElementById('flowing-input');
+            if (flowingInput) {
+                flowingInput.focus();
+            } else {
+                input.focus();
+            }
         });
     </script>
 </body>

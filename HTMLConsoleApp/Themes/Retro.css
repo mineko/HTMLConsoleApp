@@ -58,6 +58,7 @@ body {
 #input-line {
     display: flex;
     align-items: flex-start;
+    clear: none; /* Allow input to wrap around floated images */
     border: 2px inset #c0c0c0;
     padding: 8px;
     background-color: #f8f8f8;
@@ -88,6 +89,8 @@ body {
     line-height: 1.2;
     word-wrap: break-word;
     padding: 2px 4px;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .output-line {

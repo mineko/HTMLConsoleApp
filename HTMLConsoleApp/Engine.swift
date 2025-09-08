@@ -77,13 +77,13 @@ class Engine {
         incrementInputCount()
 
         controller.addOutput("\n")
-
-        // Occasionally add a random image (20% chance)
+        
+        controller.addOutput(input)
+        
+        // Occasionally add a random image (20% chance) after the text output
         if !availableImages.isEmpty && Int.random(in: 1...5) == 1 {
             addRandomImage()
         }
-        
-        controller.addOutput(input)
         
         controller.showPrompt()
     }
