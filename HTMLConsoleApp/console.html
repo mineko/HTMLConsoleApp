@@ -174,18 +174,17 @@
                     const userText = inputSpan.textContent;
                     console.log('Enter pressed, text:', userText);
                     
-                    // Remove the input container first
-                    const inputContainer = document.getElementById('input-container');
-                    if (inputContainer) {
-                        inputContainer.remove();
-                    }
-                    
                     if (userText.trim()) {
-                        // Send input to Swift controller for processing
+                        // Non-empty input - remove container and send to Swift
+                        const inputContainer = document.getElementById('input-container');
+                        if (inputContainer) {
+                            inputContainer.remove();
+                        }
                         window.webkit.messageHandlers.consoleInput.postMessage(userText);
                     } else {
-                        // Empty input - just show a new prompt
-                        setTimeout(() => showPrompt(), 10);
+                        // Empty input - just clear the input without removing the prompt
+                        inputSpan.textContent = '';
+                        inputSpan.focus();
                     }
                 }
             });
