@@ -107,6 +107,8 @@
         }
         
         function showPrompt() {
+            console.log('showPrompt() called');
+            
             // Set flag to mark old output when first new output is added
             shouldMarkOldOnNextOutput = true;
             
@@ -143,6 +145,7 @@
             
             // Add to output container so it flows naturally around images
             outputContainer.appendChild(inputContainer);
+            console.log('Created flowing input container');
             
             // Always hide the original input line to prevent double prompts
             const inputLine = document.getElementById('input-line');
@@ -152,11 +155,15 @@
             setupFlowingInputHandlers(inputSpan);
             
             inputSpan.focus();
+            console.log('Focused on flowing input');
             scrollPromptIntoView();
         }
         
         function setupFlowingInputHandlers(inputSpan) {
+            console.log('Setting up flowing input handlers');
             inputSpan.addEventListener('keydown', function(e) {
+                console.log('Key pressed in flowing input:', e.key);
+                
                 if (menuMode) {
                     handleMenuKeydown(e);
                     return;
@@ -165,6 +172,7 @@
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     const userText = inputSpan.textContent;
+                    console.log('Enter pressed, text:', userText);
                     if (userText.trim()) {
                         // Send input to Swift controller for processing
                         window.webkit.messageHandlers.consoleInput.postMessage(userText);
@@ -373,22 +381,147 @@
             currentMenuData = data;
             selectedIndex = 0;
             
-            // Hide input line and show menu
+            // Hide input line
             hidePrompt();
+            
+            // Keep menu in its original position but adjust width for images
             menuContainer.style.display = 'block';
             
             // Set title and render items
             menuTitle.textContent = data.title;
             renderMenuItems();
             
-            // Scroll menu into view after rendering
-            setTimeout(() => scrollMenuIntoView(), 10);
+            // Adjust menu width to flow around images after it's fully rendered
+            setTimeout(() => {
+                adjustMenuWidth();
+                scrollMenuIntoView();
+            }, 50);
+        }
+        
+        function adjustMenuWidth() {
+            const output = document.getElementById('output');
+            const content = document.getElementById('content');
+            
+            if (!menuContainer || menuContainer.style.display === 'none' || !menuMode) {
+                console.log('Skipping menu adjustment - menu not active');
+                return;
+            }
+            
+            console.log('Adjusting menu width - menu is active');
+            
+            // Reset menu positioning and width
+            menuContainer.style.width = '';
+            menuContainer.style.marginLeft = '';
+            menuContainer.style.marginRight = '';
+            menuContainer.style.position = '';
+            menuContainer.style.top = '';
+            
+            // Force a reflow to get accurate measurements
+            menuContainer.offsetHeight;
+            
+            // Get the content and menu dimensions
+            const contentRect = content.getBoundingClientRect();
+            const menuRect = menuContainer.getBoundingClientRect();
+            
+            console.log('Menu position:', menuRect.top, menuRect.bottom, menuRect.width);
+            console.log('Content width:', contentRect.width);
+            
+            // Look for the most recent floated images that could be positioned next to the menu
+            const floatedImages = output.querySelectorAll('img');
+            console.log('Found images:', floatedImages.length);
+            
+            let bestImage = null;
+            let bestImageRect = null;
+            let bestImageFloat = null;
+            
+            floatedImages.forEach((img, index) => {
+                const imgRect = img.getBoundingClientRect();
+                const imgFloat = img.style.float;
+                
+                console.log(`Image ${index}:`, {
+                    float: imgFloat,
+                    top: imgRect.top,
+                    bottom: imgRect.bottom,
+                    width: imgRect.width,
+                    height: imgRect.height
+                });
+                
+                // Look for images that are positioned near where the menu would appear
+                if ((imgFloat === 'left' || imgFloat === 'right') && 
+                    imgRect.bottom > menuRect.top - 50) { // Image extends down near menu area
+                    bestImage = img;
+                    bestImageRect = imgRect;
+                    bestImageFloat = imgFloat;
+                    console.log(`Using image ${index} as positioning reference`);
+                }
+            });
+            
+            if (bestImage && bestImageRect) {
+                // Calculate available space next to the image with a small gap
+                const gapSize = 15; // Small gap between menu and image
+                const availableWidth = contentRect.width - bestImageRect.width - 40 - gapSize; // Account for margins, padding, and gap
+                
+                if (availableWidth > 200) { // Minimum width check
+                    // Find where the input prompt would appear by looking at the last text output
+                    const outputLines = output.querySelectorAll('.output-line');
+                    let promptTargetTop = bestImageRect.top; // Default to image top
+                    
+                    if (outputLines.length > 0) {
+                        const lastOutputLine = outputLines[outputLines.length - 1];
+                        const lastLineRect = lastOutputLine.getBoundingClientRect();
+                        // Input prompt would appear after the last line of text
+                        promptTargetTop = lastLineRect.bottom;
+                        console.log('Last output line bottom:', lastLineRect.bottom);
+                    }
+                    
+                    // Calculate how much to move the menu up to align with where the prompt would be
+                    const menuNaturalTop = menuRect.top;
+                    const verticalOffset = menuNaturalTop - promptTargetTop;
+                    
+                    // Use relative positioning to move menu to align with prompt position
+                    menuContainer.style.position = 'relative';
+                    menuContainer.style.top = -verticalOffset + 'px';
+                    menuContainer.style.width = availableWidth + 'px';
+                    
+                    console.log('Vertical positioning:', {
+                        menuNaturalTop,
+                        promptTargetTop,
+                        verticalOffset,
+                        topAdjustment: -verticalOffset
+                    });
+                    
+                    if (bestImageFloat === 'left') {
+                        // Image is on left, menu goes to the right with a small gap
+                        menuContainer.style.marginLeft = (bestImageRect.width + 20 + gapSize) + 'px'; // 20px image margin + gap
+                        menuContainer.style.marginRight = '';
+                        console.log(`Positioning menu to right of left-floated image with ${gapSize}px gap, moved up by ${verticalOffset}px`);
+                    } else if (bestImageFloat === 'right') {
+                        // Image is on right, menu stays on left with reduced width for the gap
+                        menuContainer.style.marginLeft = '';
+                        menuContainer.style.marginRight = (bestImageRect.width + 20 + gapSize) + 'px'; // 20px image margin + gap
+                        console.log(`Positioning menu to left of right-floated image with ${gapSize}px gap, moved up by ${verticalOffset}px`);
+                    }
+                    
+                    console.log('Applied menu adjustments:', {
+                        width: availableWidth + 'px',
+                        marginLeft: menuContainer.style.marginLeft,
+                        marginRight: menuContainer.style.marginRight
+                    });
+                }
+            }
         }
         
         function hideMenu() {
             menuMode = false;
             currentMenuData = null;
             selectedIndex = 0;
+            
+            // Reset all menu styling and positioning
+            menuContainer.style.width = '';
+            menuContainer.style.marginLeft = '';
+            menuContainer.style.marginRight = '';
+            menuContainer.style.position = '';
+            menuContainer.style.top = '';
             
             // Hide menu and show input line
             menuContainer.style.display = 'none';
