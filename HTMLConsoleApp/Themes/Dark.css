@@ -175,6 +175,7 @@ body {
 .console-image {
     border-radius: 4px;
     border: 1px solid #444444;
+    margin-top: 10px;
 }
 
 .console-image-small {

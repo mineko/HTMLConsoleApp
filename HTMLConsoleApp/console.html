@@ -76,9 +76,15 @@
                 // This allows subsequent text to flow around it
                 img.style.float = alignment;
                 if (alignment === 'left') {
-                    img.style.margin = '0 10px 10px 0';
+                    // Set individual margins to preserve CSS top margin
+                    img.style.marginRight = '10px';
+                    img.style.marginBottom = '5px';
+                    img.style.marginLeft = '0';
                 } else if (alignment === 'right') {
-                    img.style.margin = '0 0 10px 10px';
+                    // Set individual margins to preserve CSS top margin
+                    img.style.marginRight = '0';
+                    img.style.marginBottom = '5px';
+                    img.style.marginLeft = '10px';
                 }
                 
                 output.appendChild(img);

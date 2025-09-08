@@ -194,6 +194,7 @@ body {
 
 .console-image {
     border: 2px inset #c0c0c0;
+    margin-top: 10px;
 }
 
 .console-image-small {
