@@ -110,14 +110,11 @@
             // Set flag to mark old output when first new output is added
             shouldMarkOldOnNextOutput = true;
             
+            // Always clean up any existing flowing input first
+            hidePrompt();
+            
             // Add prompt and input directly to output container as flowing text
             const outputContainer = document.getElementById('output');
-            
-            // Remove any existing prompt span
-            const existingPromptSpan = document.getElementById('prompt-span');
-            if (existingPromptSpan) {
-                existingPromptSpan.remove();
-            }
             
             // Create inline prompt and input that flow like text
             const inputContainer = document.createElement('span');
@@ -147,7 +144,7 @@
             // Add to output container so it flows naturally around images
             outputContainer.appendChild(inputContainer);
             
-            // Hide the original input line
+            // Always hide the original input line to prevent double prompts
             const inputLine = document.getElementById('input-line');
             inputLine.style.display = 'none';
             
@@ -193,9 +190,17 @@
                 inputContainer.remove();
             }
             
-            // Also hide the original input line
+            // Also remove any lingering prompt spans
+            const existingPromptSpan = document.getElementById('prompt-span');
+            if (existingPromptSpan) {
+                existingPromptSpan.remove();
+            }
+            
+            // Hide the original input line
             const inputLine = document.getElementById('input-line');
-            inputLine.style.display = 'none';
+            if (inputLine) {
+                inputLine.style.display = 'none';
+            }
         }
         
         function showError(message) {
