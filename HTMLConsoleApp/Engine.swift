@@ -79,7 +79,7 @@ class Engine {
         controller.addOutput("\n")
 
         // Occasionally add a random image (20% chance)
-        if !availableImages.isEmpty && Int.random(in: 1...20) == 1 {
+        if !availableImages.isEmpty && Int.random(in: 1...5) == 1 {
             addRandomImage()
         }
         
@@ -96,7 +96,13 @@ class Engine {
         let alignments = ["left", "right", "center"]
         let randomAlignment = alignments.randomElement() ?? "left"
         
-        controller.addImage(randomImage, alignment: randomAlignment)
+        // Random size: small, medium, or large
+        let sizes = ["small", "medium", "large"]
+        let randomSize = sizes.randomElement() ?? "medium"
+        
+        controller.addImage(randomImage, alignment: randomAlignment, size: randomSize)
+        
+        controller.addOutput("Image Size: " + randomSize + "\n")
     }
     
     func incrementInputCount() {

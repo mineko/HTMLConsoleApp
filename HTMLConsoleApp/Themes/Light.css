@@ -170,10 +170,23 @@ body {
 }
 
 .console-image {
-    max-width: 300px;
-    max-height: 200px;
     border-radius: 4px;
     border: 1px solid #cccccc;
+}
+
+.console-image-small {
+    max-width: 250px;
+    max-height: 188px;
+}
+
+.console-image-medium {
+    max-width: 500px;
+    max-height: 375px;
+}
+
+.console-image-large {
+    max-width: 750px;
+    max-height: 563px;
 }
 
 .console-image-center {

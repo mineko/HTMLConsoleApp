@@ -196,10 +196,10 @@ class ConsoleController: NSObject, ObservableObject {
         webView.evaluateJavaScript(script, completionHandler: nil)
     }
     
-    func addImage(_ imageName: String, alignment: String = "left") {
+    func addImage(_ imageName: String, alignment: String = "left", size: String = "medium") {
         guard let webView = webView else { return }
         
-        let script = "addImage('\(imageName)', '\(alignment)');"
+        let script = "addImage('\(imageName)', '\(alignment)', '\(size)');"
         webView.evaluateJavaScript(script, completionHandler: nil)
     }
     

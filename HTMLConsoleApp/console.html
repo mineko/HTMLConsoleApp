@@ -51,7 +51,7 @@
             scrollToBottom();
         }
         
-        function addImage(imageName, alignment = 'left') {
+        function addImage(imageName, alignment = 'left', size = 'medium') {
             // Mark existing output as old only on the first new output after user interaction
             if (shouldMarkOldOnNextOutput) {
                 markAllOutputAsOld();
@@ -60,7 +60,7 @@
             
             const img = document.createElement('img');
             img.src = imageName;
-            img.className = `console-image console-image-${alignment} new-output`;
+            img.className = `console-image console-image-${alignment} console-image-${size} new-output`;
             
             // Set alignment-specific styling
             if (alignment === 'center') {
