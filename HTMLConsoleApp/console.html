@@ -433,7 +433,11 @@
             // Hide input line
             hidePrompt();
             
-            // Keep menu in its original position but adjust width for images
+            // Move menu into the output container so it flows inline with text
+            const outputContainer = document.getElementById('output');
+            outputContainer.appendChild(menuContainer);
+            
+            // Show menu
             menuContainer.style.display = 'block';
             
             // Set title and render items
@@ -448,148 +452,8 @@
         }
         
         function adjustMenuWidth() {
-            const output = document.getElementById('output');
-            const content = document.getElementById('content');
-            
-            if (!menuContainer || menuContainer.style.display === 'none' || !menuMode) {
-                console.log('Skipping menu adjustment - menu not active');
-                return;
-            }
-            
-            console.log('Adjusting menu width - menu is active');
-            
-            // Reset menu positioning and width
-            menuContainer.style.width = '';
-            menuContainer.style.marginLeft = '';
-            menuContainer.style.marginRight = '';
-            menuContainer.style.position = '';
-            menuContainer.style.top = '';
-            
-            // Force a reflow to get accurate measurements
-            menuContainer.offsetHeight;
-            
-            // Get the content and menu dimensions
-            const contentRect = content.getBoundingClientRect();
-            const menuRect = menuContainer.getBoundingClientRect();
-            
-            console.log('Menu position:', menuRect.top, menuRect.bottom, menuRect.width);
-            console.log('Content width:', contentRect.width);
-            
-            // Look for all floated images that could affect menu positioning
-            const floatedImages = output.querySelectorAll('img');
-            console.log('Found images:', floatedImages.length);
-            
-            // Calculate total width consumed by images on each side that are relevant to menu position
-            let leftImagesTotalWidth = 0;
-            let rightImagesTotalWidth = 0;
-            let leftImagesCount = 0;
-            let rightImagesCount = 0;
-            
-            // Find the prompt position to determine which images are relevant
-            const outputLines = output.querySelectorAll('.output-line');
-            let promptTargetTop = menuRect.top; // Default to menu top
-            
-            if (outputLines.length > 0) {
-                const lastOutputLine = outputLines[outputLines.length - 1];
-                const lastLineRect = lastOutputLine.getBoundingClientRect();
-                const paddingBelowText = 10;
-                promptTargetTop = lastLineRect.bottom + paddingBelowText;
-                console.log('Last output line bottom with padding:', promptTargetTop);
-            }
-            
-            // Analyze all images to see which ones affect the menu area
-            floatedImages.forEach((img, index) => {
-                const imgRect = img.getBoundingClientRect();
-                const imgFloat = img.style.float;
-                
-                console.log(`Image ${index}:`, {
-                    float: imgFloat,
-                    top: imgRect.top,
-                    bottom: imgRect.bottom,
-                    width: imgRect.width,
-                    height: imgRect.height
-                });
-                
-                // Check if image extends down to where the menu/prompt would appear
-                if ((imgFloat === 'left' || imgFloat === 'right') && 
-                    imgRect.bottom > promptTargetTop - 50) { // Image affects menu area
-                    
-                    if (imgFloat === 'left') {
-                        leftImagesTotalWidth = Math.max(leftImagesTotalWidth, imgRect.width);
-                        leftImagesCount++;
-                        console.log(`Left image ${index} affects menu area - width: ${imgRect.width}`);
-                    } else if (imgFloat === 'right') {
-                        rightImagesTotalWidth = Math.max(rightImagesTotalWidth, imgRect.width);
-                        rightImagesCount++;
-                        console.log(`Right image ${index} affects menu area - width: ${imgRect.width}`);
-                    }
-                }
-            });
-            
-            console.log('Image analysis:', {
-                leftImagesTotalWidth,
-                rightImagesTotalWidth,
-                leftImagesCount,
-                rightImagesCount
-            });
-            
-            // Determine if we have images affecting the layout
-            const hasLeftImages = leftImagesCount > 0;
-            const hasRightImages = rightImagesCount > 0;
-            
-            if (hasLeftImages || hasRightImages) {
-                const gapSize = 15; // Small gap between menu and images
-                const imageMargin = 10; // Standard image margin from CSS
-                
-                let availableWidth = contentRect.width - 40; // Base padding
-                let leftMargin = 0;
-                let rightMargin = 0;
-                
-                // Account for left-side images
-                if (hasLeftImages) {
-                    const leftSpaceUsed = leftImagesTotalWidth + imageMargin + gapSize;
-                    availableWidth -= leftSpaceUsed;
-                    leftMargin = leftSpaceUsed;
-                }
-                
-                // Account for right-side images  
-                if (hasRightImages) {
-                    const rightSpaceUsed = rightImagesTotalWidth + imageMargin + gapSize;
-                    availableWidth -= rightSpaceUsed;
-                    rightMargin = rightSpaceUsed;
-                }
-                
-                console.log('Space calculations:', {
-                    availableWidth,
-                    leftMargin,
-                    rightMargin
-                });
-                
-                if (availableWidth > 200) { // Minimum width check
-                    // Calculate vertical positioning
-                    const menuNaturalTop = menuRect.top;
-                    const verticalOffset = menuNaturalTop - promptTargetTop;
-                    
-                    // Apply positioning
-                    menuContainer.style.position = 'relative';
-                    menuContainer.style.top = -verticalOffset + 'px';
-                    menuContainer.style.width = availableWidth + 'px';
-                    
-                    if (leftMargin > 0) {
-                        menuContainer.style.marginLeft = leftMargin + 'px';
-                    }
-                    if (rightMargin > 0) {
-                        menuContainer.style.marginRight = rightMargin + 'px';
-                    }
-                    
-                    console.log('Applied menu adjustments:', {
-                        width: availableWidth + 'px',
-                        marginLeft: menuContainer.style.marginLeft,
-                        marginRight: menuContainer.style.marginRight,
-                        verticalOffset: -verticalOffset
-                    });
-                }
-            }
+            // Do nothing - let the menu flow exactly like output and input text
+            // No custom styling, no margins, no positioning - just pure CSS flow
         }
         
         function hideMenu() {
@@ -604,8 +468,14 @@
             menuContainer.style.position = '';
             menuContainer.style.top = '';
             
-            // Hide menu and show input line
+            // Hide menu
             menuContainer.style.display = 'none';
+            
+            // Move menu back to its original position outside output container
+            const contentContainer = document.getElementById('content');
+            contentContainer.appendChild(menuContainer);
+            
+            // Show input line
             showPrompt(); // Use showPrompt to properly position input line
         }
         
@@ -625,7 +495,7 @@
                     if (index === selectedIndex) {
                         itemDiv.classList.add('menu-selected');
                     }
-                    itemDiv.textContent = `  ${item}`;
+                    itemDiv.textContent = item;
                 }
                 menuItems.appendChild(itemDiv);
             });
