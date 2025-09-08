@@ -179,18 +179,18 @@ body {
 }
 
 .console-image-small {
-    max-width: 250px;
-    max-height: 188px;
+    max-width: 313px;
+    max-height: 235px;
 }
 
 .console-image-medium {
-    max-width: 500px;
-    max-height: 375px;
+    max-width: 625px;
+    max-height: 469px;
 }
 
 .console-image-large {
-    max-width: 750px;
-    max-height: 563px;
+    max-width: 938px;
+    max-height: 704px;
 }
 
 .console-image-center {
