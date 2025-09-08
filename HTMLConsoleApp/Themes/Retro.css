@@ -220,3 +220,20 @@ body {
     clear: both;
 }
 
+.flowing-prompt {
+    color: #000080;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: bold;
+    text-shadow: 1px 1px 0px rgba(255,255,255,0.8);
+}
+
+.flowing-input {
+    color: #000000;
+    font-family: inherit;
+    font-size: inherit;
+    background: transparent;
+    caret-color: #000000;
+    text-shadow: 1px 1px 0px rgba(255,255,255,0.8);
+}
+

@@ -201,3 +201,17 @@ body {
 .image-container-center {
     clear: both;
 }
+
+.flowing-prompt {
+    color: #000000;
+    font-family: inherit;
+    font-size: inherit;
+}
+
+.flowing-input {
+    color: #000000;
+    font-family: inherit;
+    font-size: inherit;
+    background: transparent;
+    caret-color: #000000;
+}

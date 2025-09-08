@@ -125,23 +125,20 @@
             inputContainer.className = 'new-output';
             inputContainer.style.display = 'inline';
             
-            // Add prompt as inline text
+            // Add prompt as inline text with proper theme styling
             const promptSpan = document.createElement('span');
+            promptSpan.className = 'flowing-prompt';
             promptSpan.textContent = '>';
             promptSpan.style.marginRight = '5px';
-            promptSpan.style.color = getComputedStyle(document.getElementById('prompt')).color;
             
             // Create a contenteditable span that acts like flowing text
             const inputSpan = document.createElement('span');
             inputSpan.id = 'flowing-input';
+            inputSpan.className = 'flowing-input';
             inputSpan.contentEditable = true;
             inputSpan.style.outline = 'none';
             inputSpan.style.minWidth = '1px';
             inputSpan.style.display = 'inline';
-            inputSpan.style.fontFamily = 'inherit';
-            inputSpan.style.fontSize = 'inherit';
-            inputSpan.style.color = getComputedStyle(input).color;
-            inputSpan.style.backgroundColor = 'transparent';
             inputSpan.style.whiteSpace = 'pre-wrap';
             
             inputContainer.appendChild(promptSpan);
