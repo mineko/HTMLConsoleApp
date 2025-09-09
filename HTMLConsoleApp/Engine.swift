@@ -17,6 +17,8 @@ class Engine {
     private var restrictionCount: Int = 0
     private var lastImageTimestamp: TimeInterval = 0
     private var lastImagePlacementTime: TimeInterval = 0
+    private var linesSinceClearance: Int = 0
+    private let requiredLinesAfterClearance: Int = 3
     
     init(controller: ConsoleController) {
         self.controller = controller
@@ -114,7 +116,13 @@ class Engine {
         
         // Smart image placement with real-time clearance checking
         if lastImageSide == nil {
-            // First image - place normally to allow text flowing
+            // Check if we're still in the buffer period after clearance
+            if linesSinceClearance < requiredLinesAfterClearance {
+                print("DEBUG: IMAGE PLACEMENT - In buffer period (\(linesSinceClearance)/\(requiredLinesAfterClearance) lines), skipping image")
+                return
+            }
+            
+            // No restriction and buffer period passed - place image
             print("DEBUG: IMAGE PLACEMENT - No restriction, placing first \(proposedAlignment) image")
             let timestamp = Date().timeIntervalSince1970
             controller.addImageWithTimestamp(randomImage, alignment: proposedAlignment, size: randomSize, timestamp: timestamp)
@@ -123,6 +131,7 @@ class Engine {
             lastImageTimestamp = timestamp
             lastImagePlacementTime = currentTime
             restrictionCount = 0
+            linesSinceClearance = 0  // Reset buffer counter when placing new image
         } else {
             // There's a restriction - check if clearance exists before placing
             print("DEBUG: IMAGE PLACEMENT - Restriction active (\(lastImageSide!)), checking clearance for \(proposedAlignment) image")
@@ -146,8 +155,13 @@ class Engine {
     
     // Method for ConsoleController to call after adding output text
     func checkTextFlowClearance() {
-        // Disable background clearance checking to prevent race conditions
-        // Clearance will only be checked when actually trying to place an image
+        // Count lines after clearance to add buffer
+        if lastImageSide == nil && linesSinceClearance < requiredLinesAfterClearance {
+            linesSinceClearance += 1
+            print("DEBUG: BUFFER - Line \(linesSinceClearance) of \(requiredLinesAfterClearance) after clearance")
+        }
+        
+        // Don't do background clearance checking to prevent race conditions
         print("DEBUG: BACKGROUND CHECK - Skipping to prevent race conditions")
     }
     
@@ -188,19 +202,14 @@ class Engine {
         controller.evaluateJavaScript(script) { [weak self] result, error in
             DispatchQueue.main.async {
                 if let hasTextFlowed = result as? Bool, hasTextFlowed {
-                    // Clearance exists - place the image and immediately set new restriction
-                    print("DEBUG: Clearance exists, placing \(alignment) image")
-                    let timestamp = Date().timeIntervalSince1970
-                    
-                    // Set the restriction FIRST to prevent race conditions
-                    self?.lastImageSide = alignment
-                    self?.lastImageTimestamp = timestamp
-                    self?.lastImagePlacementTime = Date().timeIntervalSince1970
+                    // Clearance exists - clear restriction and start buffer period
+                    print("DEBUG: Clearance detected, clearing restriction and starting buffer period")
+                    self?.lastImageSide = nil
+                    self?.linesSinceClearance = 0  // Start buffer period
                     self?.restrictionCount = 0
                     
-                    // Then place the image
-                    controller.addImageWithTimestamp(image, alignment: alignment, size: size, timestamp: timestamp)
-                    controller.addOutput("\nImage Size: " + size + "\n")
+                    // Don't place the image yet - it will be attempted again after buffer period
+                    print("DEBUG: Image placement deferred until after buffer period")
                 } else {
                     // No clearance - reject the image placement
                     print("DEBUG: No clearance, rejecting \(alignment) image")
