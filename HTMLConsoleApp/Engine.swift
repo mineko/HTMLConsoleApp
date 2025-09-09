@@ -102,7 +102,7 @@ class Engine {
         
         controller.addImage(randomImage, alignment: randomAlignment, size: randomSize)
         
-        controller.addOutput("Image Size: " + randomSize + "\n")
+        controller.addOutput("\nImage Size: " + randomSize + "\n")
     }
     
     func incrementInputCount() {
