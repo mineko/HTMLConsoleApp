@@ -193,13 +193,25 @@ class ConsoleController: NSObject, ObservableObject {
                              .replacingOccurrences(of: "\n", with: "\\n")
         
         let script = "addOutput('\(escapedText)');"
-        webView.evaluateJavaScript(script, completionHandler: nil)
+        webView.evaluateJavaScript(script) { [weak self] _, _ in
+            // After text is added to DOM, check if floating images now have clearance
+            DispatchQueue.main.async {
+                self?.engine.checkTextFlowClearance()
+            }
+        }
     }
     
     func addImage(_ imageName: String, alignment: String = "left", size: String = "medium") {
         guard let webView = webView else { return }
         
         let script = "addImage('\(imageName)', '\(alignment)', '\(size)');"
+        webView.evaluateJavaScript(script, completionHandler: nil)
+    }
+    
+    func addImageWithTimestamp(_ imageName: String, alignment: String = "left", size: String = "medium", timestamp: TimeInterval) {
+        guard let webView = webView else { return }
+        
+        let script = "addImageWithTimestamp('\(imageName)', '\(alignment)', '\(size)', \(timestamp));"
         webView.evaluateJavaScript(script, completionHandler: nil)
     }
     

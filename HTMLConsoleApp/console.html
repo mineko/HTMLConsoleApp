@@ -90,7 +90,76 @@
                 output.appendChild(img);
             }
             
-            scrollToBottom();
+            // Smart scroll to show the new image
+            scrollToShowImage(img);
+        }
+        
+        function addImageWithTimestamp(imageName, alignment = 'left', size = 'medium', timestamp) {
+            // Mark existing output as old only on the first new output after user interaction
+            if (shouldMarkOldOnNextOutput) {
+                markAllOutputAsOld();
+                shouldMarkOldOnNextOutput = false;
+            }
+            
+            const img = document.createElement('img');
+            img.src = imageName;
+            img.className = `console-image console-image-${alignment} console-image-${size} new-output`;
+            img.dataset.timestamp = timestamp; // Add timestamp as data attribute
+            
+            // Set alignment-specific styling (same as regular addImage)
+            if (alignment === 'center') {
+                const container = document.createElement('div');
+                container.className = 'output-line new-output image-container-center';
+                container.style.textAlign = 'center';
+                container.style.clear = 'both';
+                container.style.margin = '10px 0';
+                container.appendChild(img);
+                output.appendChild(container);
+            } else {
+                img.style.float = alignment;
+                if (alignment === 'left') {
+                    img.style.marginRight = '17px';
+                    img.style.marginBottom = '5px';
+                    img.style.marginLeft = '16px';
+                } else if (alignment === 'right') {
+                    img.style.marginRight = '16px';
+                    img.style.marginBottom = '5px';
+                    img.style.marginLeft = '12px';
+                }
+                output.appendChild(img);
+            }
+            
+            // Smart scroll to show the new image
+            scrollToShowImage(img);
+        }
+        
+        function scrollToShowImage(imageElement) {
+            // Wait a moment for the image to be positioned in the DOM
+            setTimeout(() => {
+                const imageRect = imageElement.getBoundingClientRect();
+                const viewportHeight = window.innerHeight;
+                const scrollContainer = document.getElementById('scroll-container');
+                
+                // Calculate where we need to scroll to show the entire image
+                const imageTop = imageElement.offsetTop;
+                const imageBottom = imageTop + imageElement.offsetHeight;
+                const bottomMargin = 20; // Desired margin below the image
+                
+                // Calculate the ideal scroll position to show the bottom of the image plus margin
+                const idealScrollTop = imageBottom + bottomMargin - viewportHeight;
+                
+                // Check if this would clip the top of the image
+                const imageTopInViewport = imageTop - idealScrollTop;
+                const topPadding = 20; // Padding from top when showing top
+                
+                if (imageTopInViewport >= topPadding) {
+                    // Image fits entirely with margin - scroll to show the bottom plus margin
+                    scrollContainer.scrollTop = idealScrollTop;
+                } else {
+                    // Image too tall or margin would clip top - scroll to show the top without clipping
+                    scrollContainer.scrollTop = imageTop - topPadding;
+                }
+            }, 50);
         }
         
         function markAllOutputAsOld() {
@@ -300,13 +369,20 @@
         }
         
         function scrollPromptIntoView() {
+            // Check for flowing input first, then fall back to regular input line
+            let inputElement = document.getElementById('input-container');
             const inputLine = document.getElementById('input-line');
-            if (inputLine.style.display === 'none') return;
+            
+            if (!inputElement && inputLine.style.display !== 'none') {
+                inputElement = inputLine;
+            }
+            
+            if (!inputElement) return;
             
             const scrollContainer = document.getElementById('scroll-container');
             if (!scrollContainer) return;
             
-            const inputRect = inputLine.getBoundingClientRect();
+            const inputRect = inputElement.getBoundingClientRect();
             const viewportHeight = window.innerHeight;
             const statusBarHeight = statusBar.style.display === 'none' ? 0 : statusBar.offsetHeight;
             const availableHeight = viewportHeight - statusBarHeight;
@@ -703,8 +779,157 @@
             return currentContentBottom >= requiredBottom;
         }
         
-        // Expose function to Swift
+        // Check clearance for centered images (they conflict with any floating images)
+        function checkCenteredImageClearance() {
+            const output = document.getElementById('output');
+            const floatingImages = output.querySelectorAll('img[style*="float"]');
+            
+            if (floatingImages.length === 0) {
+                return true; // No floating images, safe to place centered image
+            }
+            
+            // Check if there's any floating image that would conflict
+            // Since centered images take full width, they conflict with any floating image
+            // Check if there's enough vertical clearance from the last floating image
+            let lastFloatingImage = null;
+            for (let i = floatingImages.length - 1; i >= 0; i--) {
+                const img = floatingImages[i];
+                if (img.style.float === 'left' || img.style.float === 'right') {
+                    lastFloatingImage = img;
+                    break;
+                }
+            }
+            
+            if (!lastFloatingImage) {
+                return true; // No floating images found
+            }
+            
+            // Check vertical clearance similar to the existing logic
+            const imageBottom = lastFloatingImage.offsetTop + lastFloatingImage.offsetHeight;
+            const currentContentBottom = output.scrollHeight;
+            const requiredClearance = 60; // Minimum space needed
+            const requiredBottom = imageBottom + requiredClearance;
+            
+            return currentContentBottom >= requiredBottom;
+        }
+        
+        // Check if text has actually flowed below floating images
+        function hasTextFlowedBelowFloatingImages() {
+            const output = document.getElementById('output');
+            const floatingImages = output.querySelectorAll('img[style*="float"]');
+            
+            console.log('DEBUG: Checking text flow for', floatingImages.length, 'floating images');
+            
+            if (floatingImages.length === 0) {
+                console.log('DEBUG: No floating images, text flow OK');
+                return true;
+            }
+            
+            // Check each floating image to see if text has flowed below it
+            for (const img of floatingImages) {
+                if (img.style.float === 'left' || img.style.float === 'right') {
+                    const imageRect = img.getBoundingClientRect();
+                    const imageBottom = img.offsetTop + img.offsetHeight;
+                    
+                    console.log('DEBUG: Checking image at offsetTop:', img.offsetTop, 'height:', img.offsetHeight, 'bottom:', imageBottom);
+                    
+                    // Look for text content that appears below this image
+                    // We'll check all text elements (div.output-line) to see if any are positioned below the image
+                    const textLines = output.querySelectorAll('.output-line');
+                    let hasTextBelow = false;
+                    
+                    for (const textLine of textLines) {
+                        const textTop = textLine.offsetTop;
+                        const textHeight = textLine.offsetHeight;
+                        const textBottom = textTop + textHeight;
+                        
+                        // Check if this text line is positioned below the image and has actual content
+                        if (textTop > imageBottom - 20 && textLine.textContent.trim().length > 0) {
+                            console.log('DEBUG: Found text below image at offsetTop:', textTop, 'content:', textLine.textContent.substring(0, 50));
+                            hasTextBelow = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!hasTextBelow) {
+                        console.log('DEBUG: No text found below floating image');
+                        return false;
+                    }
+                }
+            }
+            
+            console.log('DEBUG: Text has flowed below all floating images');
+            return true;
+        }
+        
+        // Check if text has flowed below floating images using proper bounding rect comparison
+        function hasTextFlowedBelowMostRecentImage(targetTimestamp) {
+            const output = document.getElementById('output');
+            const floatingImages = output.querySelectorAll('img[style*="float"]');
+            
+            console.log('DEBUG: Checking text flow for', floatingImages.length, 'floating images');
+            
+            if (floatingImages.length === 0) {
+                console.log('DEBUG: No floating images found, clearance OK');
+                return true;
+            }
+            
+            // Helper function from your provided code
+            function hasTextFlowedBelowFloat(imageElement, textElement) {
+                const imageRect = imageElement.getBoundingClientRect();
+                const textRect = textElement.getBoundingClientRect();
+
+                // Check if the top of the text element is below the bottom of the image
+                if (textRect.top > imageRect.bottom) {
+                    return true; // Text has flowed below the image
+                }
+
+                // If text is not below, check for wrapping (optional, but useful for clarity)
+                // This part assumes a left-floated image for simplicity
+                if (textRect.top <= imageRect.bottom && textRect.left >= imageRect.right) {
+                    return false; // Text is wrapping around the image
+                }
+
+                return false; // Default case, text is not below and not wrapping
+            }
+            
+            // Check each floating image against recent text elements
+            for (const img of floatingImages) {
+                if (img.style.float === 'left' || img.style.float === 'right') {
+                    console.log('DEBUG: Checking clearance for floating image');
+                    
+                    // Get recent text elements to check against this image
+                    const textElements = output.querySelectorAll('.output-line');
+                    let hasTextBelow = false;
+                    
+                    // Check the last few text elements
+                    for (let i = Math.max(0, textElements.length - 5); i < textElements.length; i++) {
+                        const textElement = textElements[i];
+                        if (textElement.textContent.trim().length > 0) {
+                            if (hasTextFlowedBelowFloat(img, textElement)) {
+                                console.log('DEBUG: Found text below floating image:', textElement.textContent.substring(0, 30));
+                                hasTextBelow = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (!hasTextBelow) {
+                        console.log('DEBUG: No text found below this floating image yet');
+                        return false;
+                    }
+                }
+            }
+            
+            console.log('DEBUG: Text has flowed below all floating images');
+            return true;
+        }
+        
+        // Expose functions to Swift
         window.checkImageClearance = checkImageClearance;
+        window.checkCenteredImageClearance = checkCenteredImageClearance;
+        window.hasTextFlowedBelowFloatingImages = hasTextFlowedBelowFloatingImages;
+        window.hasTextFlowedBelowMostRecentImage = hasTextFlowedBelowMostRecentImage;
     </script>
 </body>
 </html>

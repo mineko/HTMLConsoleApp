@@ -14,6 +14,9 @@ class Engine {
     private var inputCount: Int = 0
     private var availableImages: [String] = []
     private var lastImageSide: String? = nil
+    private var restrictionCount: Int = 0
+    private var lastImageTimestamp: TimeInterval = 0
+    private var lastImagePlacementTime: TimeInterval = 0
     
     init(controller: ConsoleController) {
         self.controller = controller
@@ -81,6 +84,7 @@ class Engine {
         
         controller.addOutput(input)
         
+        
         // Occasionally add a random image (20% chance) after the text output
         if !availableImages.isEmpty && Int.random(in: 1...2) == 1 {
             addRandomImage()
@@ -93,6 +97,14 @@ class Engine {
         guard let controller = controller,
               let randomImage = availableImages.randomElement() else { return }
         
+        let currentTime = Date().timeIntervalSince1970
+        
+        // Prevent rapid successive image placements (minimum 1 second between images)
+        if currentTime - lastImagePlacementTime < 1.0 {
+            print("DEBUG: IMAGE PLACEMENT - Too soon after last image, skipping")
+            return
+        }
+        
         // Random size: small, medium, or large
         let sizes = ["small", "medium", "large"]
         let randomSize = sizes.randomElement() ?? "medium"
@@ -100,24 +112,21 @@ class Engine {
         // Smart side selection with clearance detection
         let proposedAlignment = selectImageAlignment()
         
-        if proposedAlignment == "center" {
-            // Center images don't conflict, place immediately
-            controller.addImage(randomImage, alignment: proposedAlignment, size: randomSize)
+        // Smart image placement with real-time clearance checking
+        if lastImageSide == nil {
+            // First image - place normally to allow text flowing
+            print("DEBUG: IMAGE PLACEMENT - No restriction, placing first \(proposedAlignment) image")
+            let timestamp = Date().timeIntervalSince1970
+            controller.addImageWithTimestamp(randomImage, alignment: proposedAlignment, size: randomSize, timestamp: timestamp)
             controller.addOutput("\nImage Size: " + randomSize + "\n")
             lastImageSide = proposedAlignment
+            lastImageTimestamp = timestamp
+            lastImagePlacementTime = currentTime
+            restrictionCount = 0
         } else {
-            // For left/right, check if we need clearance detection
-            let needsClearanceCheck = (lastImageSide == proposedAlignment)
-            
-            if needsClearanceCheck {
-                // Same side as last image - check clearance first
-                checkClearanceAndAddImage(image: randomImage, alignment: proposedAlignment, size: randomSize)
-            } else {
-                // Different side or no previous image - safe to place
-                controller.addImage(randomImage, alignment: proposedAlignment, size: randomSize)
-                controller.addOutput("\nImage Size: " + randomSize + "\n")
-                lastImageSide = proposedAlignment
-            }
+            // There's a restriction - check if clearance exists before placing
+            print("DEBUG: IMAGE PLACEMENT - Restriction active (\(lastImageSide!)), checking clearance for \(proposedAlignment) image")
+            checkClearanceAndPlaceImage(image: randomImage, alignment: proposedAlignment, size: randomSize)
         }
     }
     
@@ -127,33 +136,77 @@ class Engine {
         return alignments.randomElement() ?? "left"
     }
     
-    private func checkClearanceAndAddImage(image: String, alignment: String, size: String) {
-        guard let controller = controller else { return }
-        
-        let script = "window.checkImageClearance('\(alignment)')"
-        
-        controller.evaluateJavaScript(script) { [weak self] result, error in
-            DispatchQueue.main.async {
-                if let hasEnoughClearance = result as? Bool, hasEnoughClearance {
-                    // Enough clearance - place the image
-                    controller.addImage(image, alignment: alignment, size: size)
-                    controller.addOutput("\nImage Size: " + size + "\n")
-                    self?.lastImageSide = alignment
-                } else {
-                    // Not enough clearance - try opposite side
-                    let oppositeSide = (alignment == "left") ? "right" : "left"
-                    controller.addImage(image, alignment: oppositeSide, size: size)
-                    controller.addOutput("\nImage Size: " + size + "\n")
-                    self?.lastImageSide = oppositeSide
-                }
-            }
-        }
-    }
     
     func incrementInputCount() {
         inputCount += 1
         
         // Update input count in status bar
         statusBar?.updateField(name: "input_count", text: "Inputs: \(inputCount)")
-    } 
+    }
+    
+    // Method for ConsoleController to call after adding output text
+    func checkTextFlowClearance() {
+        // Disable background clearance checking to prevent race conditions
+        // Clearance will only be checked when actually trying to place an image
+        print("DEBUG: BACKGROUND CHECK - Skipping to prevent race conditions")
+    }
+    
+    private func checkRealTextFlow() {
+        guard let controller = controller else { return }
+        
+        // Use JavaScript to check if text has flowed below the most recent floating image
+        let script = "window.hasTextFlowedBelowMostRecentImage(\(lastImageTimestamp))"
+        
+        controller.evaluateJavaScript(script) { [weak self] result, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    print("DEBUG: BACKGROUND CHECK - JavaScript error:", error)
+                    return
+                }
+                
+                if let hasTextFlowed = result as? Bool {
+                    if hasTextFlowed {
+                        print("DEBUG: BACKGROUND CHECK - Text has flowed, clearing restriction (lastImageSide was: \(self?.lastImageSide ?? "nil"))")
+                        self?.lastImageSide = nil
+                        self?.restrictionCount = 0
+                    } else {
+                        print("DEBUG: BACKGROUND CHECK - No clearance yet, keeping restriction \(self?.lastImageSide ?? "nil")")
+                    }
+                } else {
+                    print("DEBUG: BACKGROUND CHECK - Invalid result from JavaScript:", result ?? "nil")
+                }
+            }
+        }
+    }
+    
+    private func checkClearanceAndPlaceImage(image: String, alignment: String, size: String) {
+        guard let controller = controller else { return }
+        
+        // Check clearance for the most recent image before placing new image
+        let script = "window.hasTextFlowedBelowMostRecentImage(\(lastImageTimestamp))"
+        
+        controller.evaluateJavaScript(script) { [weak self] result, error in
+            DispatchQueue.main.async {
+                if let hasTextFlowed = result as? Bool, hasTextFlowed {
+                    // Clearance exists - place the image and immediately set new restriction
+                    print("DEBUG: Clearance exists, placing \(alignment) image")
+                    let timestamp = Date().timeIntervalSince1970
+                    
+                    // Set the restriction FIRST to prevent race conditions
+                    self?.lastImageSide = alignment
+                    self?.lastImageTimestamp = timestamp
+                    self?.lastImagePlacementTime = Date().timeIntervalSince1970
+                    self?.restrictionCount = 0
+                    
+                    // Then place the image
+                    controller.addImageWithTimestamp(image, alignment: alignment, size: size, timestamp: timestamp)
+                    controller.addOutput("\nImage Size: " + size + "\n")
+                } else {
+                    // No clearance - reject the image placement
+                    print("DEBUG: No clearance, rejecting \(alignment) image")
+                    // Don't place image, don't update lastImageSide
+                }
+            }
+        }
+    }
 }
