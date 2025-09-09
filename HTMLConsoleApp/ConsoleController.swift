@@ -234,4 +234,13 @@ class ConsoleController: NSObject, ObservableObject {
     func getStatusBar() -> StatusBar? {
         return statusBar
     }
+    
+    // Public method to execute JavaScript - for Engine use
+    func evaluateJavaScript(_ script: String, completionHandler: ((Any?, Error?) -> Void)? = nil) {
+        guard let webView = webView else { 
+            completionHandler?(nil, NSError(domain: "WebViewError", code: 1, userInfo: [NSLocalizedDescriptionKey: "WebView not available"]))
+            return 
+        }
+        webView.evaluateJavaScript(script, completionHandler: completionHandler)
+    }
 }

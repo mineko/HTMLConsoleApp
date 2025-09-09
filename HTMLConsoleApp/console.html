@@ -452,8 +452,19 @@
         }
         
         function adjustMenuWidth() {
-            // Do nothing - let the menu flow exactly like output and input text
-            // No custom styling, no margins, no positioning - just pure CSS flow
+            // Simple approach: just let the menu flow inline like text with minimal padding from images
+            const outputContainer = document.getElementById('output');
+            const images = Array.from(outputContainer.querySelectorAll('.console-image'));
+            
+            if (images.length === 0) {
+                // No images - use default flow
+                return;
+            }
+            
+            // Add just a small margin to create space between menu and any adjacent images
+            // This preserves the inline flow behavior while adding the requested padding
+            menuContainer.style.marginLeft = '8px';
+            menuContainer.style.marginRight = '8px';
         }
         
         function hideMenu() {
@@ -467,6 +478,7 @@
             menuContainer.style.marginRight = '';
             menuContainer.style.position = '';
             menuContainer.style.top = '';
+            menuContainer.style.clear = '';
             
             // Hide menu
             menuContainer.style.display = 'none';
@@ -644,6 +656,55 @@
                 input.focus();
             }
         });
+        
+        // Image clearance detection for same-side placement
+        function checkImageClearance(proposedSide) {
+            const output = document.getElementById('output');
+            const images = output.querySelectorAll('img[style*="float"]');
+            
+            if (images.length === 0) {
+                return true; // No images, always OK
+            }
+            
+            // Find the most recent image on the same side
+            let lastSameSideImage = null;
+            for (let i = images.length - 1; i >= 0; i--) {
+                const img = images[i];
+                const imgFloat = img.style.float;
+                if (imgFloat === proposedSide) {
+                    lastSameSideImage = img;
+                    break;
+                }
+            }
+            
+            if (!lastSameSideImage) {
+                return true; // No images on this side, OK to place
+            }
+            
+            // Check vertical clearance from the last same-side image
+            const lastImageRect = lastSameSideImage.getBoundingClientRect();
+            const outputRect = output.getBoundingClientRect();
+            
+            // Calculate how much content has been added since the image
+            // We want at least 120px of clearance (roughly 6-8 lines of text)
+            const clearanceNeeded = 120;
+            const currentContentBottom = outputRect.bottom;
+            const requiredBottom = lastImageRect.bottom + clearanceNeeded;
+            
+            console.log('Clearance check:', {
+                proposedSide,
+                lastImageBottom: lastImageRect.bottom,
+                currentContentBottom,
+                requiredBottom,
+                clearanceNeeded,
+                hasEnoughClearance: currentContentBottom >= requiredBottom
+            });
+            
+            return currentContentBottom >= requiredBottom;
+        }
+        
+        // Expose function to Swift
+        window.checkImageClearance = checkImageClearance;
     </script>
 </body>
 </html>

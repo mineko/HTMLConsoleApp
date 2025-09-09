@@ -13,6 +13,7 @@ class Engine {
     private var statusBar: StatusBar?
     private var inputCount: Int = 0
     private var availableImages: [String] = []
+    private var lastImageSide: String? = nil
     
     init(controller: ConsoleController) {
         self.controller = controller
@@ -92,17 +93,61 @@ class Engine {
         guard let controller = controller,
               let randomImage = availableImages.randomElement() else { return }
         
-        // Random alignment: left, right, or center
-        let alignments = ["left", "right", "center"]
-        let randomAlignment = alignments.randomElement() ?? "left"
-        
         // Random size: small, medium, or large
         let sizes = ["small", "medium", "large"]
         let randomSize = sizes.randomElement() ?? "medium"
         
-        controller.addImage(randomImage, alignment: randomAlignment, size: randomSize)
+        // Smart side selection with clearance detection
+        let proposedAlignment = selectImageAlignment()
         
-        controller.addOutput("\nImage Size: " + randomSize + "\n")
+        if proposedAlignment == "center" {
+            // Center images don't conflict, place immediately
+            controller.addImage(randomImage, alignment: proposedAlignment, size: randomSize)
+            controller.addOutput("\nImage Size: " + randomSize + "\n")
+            lastImageSide = proposedAlignment
+        } else {
+            // For left/right, check if we need clearance detection
+            let needsClearanceCheck = (lastImageSide == proposedAlignment)
+            
+            if needsClearanceCheck {
+                // Same side as last image - check clearance first
+                checkClearanceAndAddImage(image: randomImage, alignment: proposedAlignment, size: randomSize)
+            } else {
+                // Different side or no previous image - safe to place
+                controller.addImage(randomImage, alignment: proposedAlignment, size: randomSize)
+                controller.addOutput("\nImage Size: " + randomSize + "\n")
+                lastImageSide = proposedAlignment
+            }
+        }
+    }
+    
+    private func selectImageAlignment() -> String {
+        // Random alignment: left, right, or center
+        let alignments = ["left", "right", "center"]
+        return alignments.randomElement() ?? "left"
+    }
+    
+    private func checkClearanceAndAddImage(image: String, alignment: String, size: String) {
+        guard let controller = controller else { return }
+        
+        let script = "window.checkImageClearance('\(alignment)')"
+        
+        controller.evaluateJavaScript(script) { [weak self] result, error in
+            DispatchQueue.main.async {
+                if let hasEnoughClearance = result as? Bool, hasEnoughClearance {
+                    // Enough clearance - place the image
+                    controller.addImage(image, alignment: alignment, size: size)
+                    controller.addOutput("\nImage Size: " + size + "\n")
+                    self?.lastImageSide = alignment
+                } else {
+                    // Not enough clearance - try opposite side
+                    let oppositeSide = (alignment == "left") ? "right" : "left"
+                    controller.addImage(image, alignment: oppositeSide, size: size)
+                    controller.addOutput("\nImage Size: " + size + "\n")
+                    self?.lastImageSide = oppositeSide
+                }
+            }
+        }
     }
     
     func incrementInputCount() {
