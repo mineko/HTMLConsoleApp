@@ -13,8 +13,7 @@ class Engine {
     private var statusBar: StatusBar?
     private var inputCount: Int = 0
     private var availableImages: [String] = []
-    private var lastImageSide: String? = nil
-    private var restrictionCount: Int = 0
+    private var imagePlacementRestricted: Bool = false
     private var lastImageTimestamp: TimeInterval = 0
     private var lastImagePlacementTime: TimeInterval = 0
     private var linesSinceClearance: Int = 0
@@ -115,7 +114,7 @@ class Engine {
         let proposedAlignment = selectImageAlignment()
         
         // Smart image placement with real-time clearance checking
-        if lastImageSide == nil {
+        if !imagePlacementRestricted {
             // Check if we're still in the buffer period after clearance
             if linesSinceClearance < requiredLinesAfterClearance {
                 print("DEBUG: IMAGE PLACEMENT - In buffer period (\(linesSinceClearance)/\(requiredLinesAfterClearance) lines), skipping image")
@@ -127,14 +126,13 @@ class Engine {
             let timestamp = Date().timeIntervalSince1970
             controller.addImageWithTimestamp(randomImage, alignment: proposedAlignment, size: randomSize, timestamp: timestamp)
             controller.addOutput("\nImage Size: " + randomSize + "\n")
-            lastImageSide = proposedAlignment
+            imagePlacementRestricted = true
             lastImageTimestamp = timestamp
             lastImagePlacementTime = currentTime
-            restrictionCount = 0
             linesSinceClearance = 0  // Reset buffer counter when placing new image
         } else {
             // There's a restriction - check if clearance exists before placing
-            print("DEBUG: IMAGE PLACEMENT - Restriction active (\(lastImageSide!)), checking clearance for \(proposedAlignment) image")
+            print("DEBUG: IMAGE PLACEMENT - Restriction active, checking clearance for \(proposedAlignment) image")
             checkClearanceAndPlaceImage(image: randomImage, alignment: proposedAlignment, size: randomSize)
         }
     }
@@ -156,40 +154,9 @@ class Engine {
     // Method for ConsoleController to call after adding output text
     func checkTextFlowClearance() {
         // Count lines after clearance to add buffer
-        if lastImageSide == nil && linesSinceClearance < requiredLinesAfterClearance {
+        if !imagePlacementRestricted && linesSinceClearance < requiredLinesAfterClearance {
             linesSinceClearance += 1
             print("DEBUG: BUFFER - Line \(linesSinceClearance) of \(requiredLinesAfterClearance) after clearance")
-        }
-        
-        // Don't do background clearance checking to prevent race conditions
-        print("DEBUG: BACKGROUND CHECK - Skipping to prevent race conditions")
-    }
-    
-    private func checkRealTextFlow() {
-        guard let controller = controller else { return }
-        
-        // Use JavaScript to check if text has flowed below the most recent floating image
-        let script = "window.hasTextFlowedBelowMostRecentImage(\(lastImageTimestamp))"
-        
-        controller.evaluateJavaScript(script) { [weak self] result, error in
-            DispatchQueue.main.async {
-                if let error = error {
-                    print("DEBUG: BACKGROUND CHECK - JavaScript error:", error)
-                    return
-                }
-                
-                if let hasTextFlowed = result as? Bool {
-                    if hasTextFlowed {
-                        print("DEBUG: BACKGROUND CHECK - Text has flowed, clearing restriction (lastImageSide was: \(self?.lastImageSide ?? "nil"))")
-                        self?.lastImageSide = nil
-                        self?.restrictionCount = 0
-                    } else {
-                        print("DEBUG: BACKGROUND CHECK - No clearance yet, keeping restriction \(self?.lastImageSide ?? "nil")")
-                    }
-                } else {
-                    print("DEBUG: BACKGROUND CHECK - Invalid result from JavaScript:", result ?? "nil")
-                }
-            }
         }
     }
     
@@ -204,9 +171,8 @@ class Engine {
                 if let hasTextFlowed = result as? Bool, hasTextFlowed {
                     // Clearance exists - clear restriction and start buffer period
                     print("DEBUG: Clearance detected, clearing restriction and starting buffer period")
-                    self?.lastImageSide = nil
+                    self?.imagePlacementRestricted = false
                     self?.linesSinceClearance = 0  // Start buffer period
-                    self?.restrictionCount = 0
                     
                     // Don't place the image yet - it will be attempted again after buffer period
                     print("DEBUG: Image placement deferred until after buffer period")
