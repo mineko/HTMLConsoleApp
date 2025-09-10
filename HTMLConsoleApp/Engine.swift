@@ -14,8 +14,7 @@ class Engine {
     private var inputCount: Int = 0
     private var availableImages: [String] = []
     private var imagePlacementRestricted: Bool = false
-    private var lastImageTimestamp: TimeInterval = 0
-    private var lastImagePlacementTime: TimeInterval = 0
+    private var lastImageTime: TimeInterval = 0
     private var linesSinceClearance: Int = 0
     private let requiredLinesAfterClearance: Int = 3
     
@@ -101,7 +100,7 @@ class Engine {
         let currentTime = Date().timeIntervalSince1970
         
         // Prevent rapid successive image placements (minimum 1 second between images)
-        if currentTime - lastImagePlacementTime < 1.0 {
+        if currentTime - lastImageTime < 1.0 {
             print("DEBUG: IMAGE PLACEMENT - Too soon after last image, skipping")
             return
         }
@@ -127,8 +126,7 @@ class Engine {
             controller.addImageWithTimestamp(randomImage, alignment: proposedAlignment, size: randomSize, timestamp: timestamp)
             controller.addOutput("\nImage Size: " + randomSize + "\n")
             imagePlacementRestricted = true
-            lastImageTimestamp = timestamp
-            lastImagePlacementTime = currentTime
+            lastImageTime = timestamp
             linesSinceClearance = 0  // Reset buffer counter when placing new image
         } else {
             // There's a restriction - check if clearance exists before placing
@@ -164,7 +162,7 @@ class Engine {
         guard let controller = controller else { return }
         
         // Check clearance for the most recent image before placing new image
-        let script = "window.hasTextFlowedBelowMostRecentImage(\(lastImageTimestamp))"
+        let script = "window.hasTextFlowedBelowMostRecentImage(\(lastImageTime))"
         
         controller.evaluateJavaScript(script) { [weak self] result, error in
             DispatchQueue.main.async {
