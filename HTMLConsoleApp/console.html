@@ -797,8 +797,98 @@
             return true;
         }
         
+        // Image placement state management (moved from Swift Engine)
+        let imagePlacementRestricted = false;
+        let lastImageTime = 0;
+        let linesSinceClearance = 0;
+        const requiredLinesAfterClearance = 3;
+        
+        // Smart image placement with clearance checking
+        function checkAndPlaceImage(imageName, alignment, size) {
+            const currentTime = Date.now() / 1000; // Convert to seconds to match Swift TimeInterval
+            
+            // Prevent rapid successive image placements (minimum 1 second between images)
+            if (currentTime - lastImageTime < 1.0) {
+                console.log("DEBUG: IMAGE PLACEMENT - Too soon after last image, skipping");
+                return false;
+            }
+            
+            // Smart image placement with real-time clearance checking
+            if (!imagePlacementRestricted) {
+                // Check if we're still in the buffer period after clearance
+                if (linesSinceClearance < requiredLinesAfterClearance) {
+                    console.log(`DEBUG: IMAGE PLACEMENT - In buffer period (${linesSinceClearance}/${requiredLinesAfterClearance} lines), skipping image`);
+                    return false;
+                }
+                
+                // No restriction and buffer period passed - place image
+                console.log(`DEBUG: IMAGE PLACEMENT - No restriction, placing first ${alignment} image`);
+                const timestamp = Date.now() / 1000;
+                addImageWithTimestamp(imageName, alignment, size, timestamp);
+                addOutput(`\nImage Size: ${size}\n`);
+                imagePlacementRestricted = true;
+                lastImageTime = timestamp;
+                linesSinceClearance = 0;  // Reset buffer counter when placing new image
+                return true;
+            } else {
+                // There's a restriction - check if clearance exists before placing
+                console.log(`DEBUG: IMAGE PLACEMENT - Restriction active, checking clearance for ${alignment} image`);
+                return checkClearanceAndPlaceImageJS(imageName, alignment, size);
+            }
+        }
+        
+        function checkClearanceAndPlaceImageJS(imageName, alignment, size) {
+            // Check clearance for the most recent image before placing new image
+            const hasTextFlowed = hasTextFlowedBelowMostRecentImage(lastImageTime);
+            
+            if (hasTextFlowed) {
+                // Clearance exists - clear restriction and start buffer period
+                console.log("DEBUG: Clearance detected, clearing restriction and starting buffer period");
+                imagePlacementRestricted = false;
+                linesSinceClearance = 0;  // Start buffer period
+                
+                // Don't place the image yet - it will be attempted again after buffer period
+                console.log("DEBUG: Image placement deferred until after buffer period");
+                return false;
+            } else {
+                // No clearance - reject the image placement
+                console.log(`DEBUG: No clearance, rejecting ${alignment} image`);
+                return false;
+            }
+        }
+        
+        // Method to be called after adding output text (from Swift)
+        function checkTextFlowClearance() {
+            // Count lines after clearance to add buffer
+            if (!imagePlacementRestricted && linesSinceClearance < requiredLinesAfterClearance) {
+                linesSinceClearance++;
+                console.log(`DEBUG: BUFFER - Line ${linesSinceClearance} of ${requiredLinesAfterClearance} after clearance`);
+            }
+        }
+        
+        // Simple clearance check for Swift to call
+        function checkImageClearance() {
+            const currentTime = Date.now() / 1000;
+            
+            // Check timing
+            if (currentTime - lastImageTime < 1.0) {
+                return false;
+            }
+            
+            // Check restriction and buffer
+            if (!imagePlacementRestricted) {
+                return linesSinceClearance >= requiredLinesAfterClearance;
+            } else {
+                // Check if clearance exists
+                return hasTextFlowedBelowMostRecentImage(lastImageTime);
+            }
+        }
+        
         // Expose functions to Swift
         window.hasTextFlowedBelowMostRecentImage = hasTextFlowedBelowMostRecentImage;
+        window.checkAndPlaceImage = checkAndPlaceImage;
+        window.checkImageClearance = checkImageClearance;
+        window.checkTextFlowClearance = checkTextFlowClearance;
     </script>
 </body>
 </html>

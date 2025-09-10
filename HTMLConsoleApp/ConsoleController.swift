@@ -194,10 +194,8 @@ class ConsoleController: NSObject, ObservableObject {
         
         let script = "addOutput('\(escapedText)');"
         webView.evaluateJavaScript(script) { [weak self] _, _ in
-            // After text is added to DOM, check if floating images now have clearance
-            DispatchQueue.main.async {
-                self?.engine.checkTextFlowClearance()
-            }
+            // After text is added to DOM, check text flow clearance in JavaScript
+            self?.evaluateJavaScript("window.checkTextFlowClearance()")
         }
     }
     
@@ -254,5 +252,32 @@ class ConsoleController: NSObject, ObservableObject {
             return 
         }
         webView.evaluateJavaScript(script, completionHandler: completionHandler)
+    }
+    
+    // Image placement methods for Engine use
+    func checkImageClearance(completion: @escaping (Bool) -> Void) {
+        let script = "window.checkImageClearance()"
+        evaluateJavaScript(script) { result, error in
+            DispatchQueue.main.async {
+                if let canPlace = result as? Bool {
+                    completion(canPlace)
+                } else {
+                    completion(false) // Default to false if error
+                }
+            }
+        }
+    }
+    
+    func tryPlaceImage(_ imageName: String, alignment: String, size: String, completion: @escaping (Bool) -> Void) {
+        let script = "window.checkAndPlaceImage('\(imageName)', '\(alignment)', '\(size)')"
+        evaluateJavaScript(script) { result, error in
+            DispatchQueue.main.async {
+                if let wasPlaced = result as? Bool {
+                    completion(wasPlaced)
+                } else {
+                    completion(false) // Default to false if error
+                }
+            }
+        }
     }
 }
