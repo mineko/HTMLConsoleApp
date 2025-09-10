@@ -802,20 +802,12 @@
         
         // Image placement state management (moved from Swift Engine)
         let imagePlacementRestricted = false;
-        let lastImageTime = 0;
+        let lastImageTimestamp = 0;
         let linesSinceClearance = 0;
         const requiredLinesAfterClearance = 3;
         
         // Smart image placement with clearance checking
         function checkAndPlaceImage(imageName, alignment, size) {
-            const currentTime = Date.now() / 1000; // Convert to seconds to match Swift TimeInterval
-            
-            // Prevent rapid successive image placements (minimum 1 second between images)
-            if (currentTime - lastImageTime < 1.0) {
-                console.log("DEBUG: IMAGE PLACEMENT - Too soon after last image, skipping");
-                return false;
-            }
-            
             // Smart image placement with real-time clearance checking
             if (!imagePlacementRestricted) {
                 // Check if we're still in the buffer period after clearance
@@ -830,7 +822,7 @@
                 addImageWithTimestamp(imageName, alignment, size, timestamp);
                 addOutput(`\nImage Size: ${size}\n`);
                 imagePlacementRestricted = true;
-                lastImageTime = timestamp;
+                lastImageTimestamp = timestamp;
                 linesSinceClearance = 0;  // Reset buffer counter when placing new image
                 return true;
             } else {
@@ -842,7 +834,7 @@
         
         function checkClearanceAndPlaceImageJS(imageName, alignment, size) {
             // Check clearance for the most recent image before placing new image
-            const hasTextFlowed = hasTextFlowedBelowMostRecentImage(lastImageTime);
+            const hasTextFlowed = hasTextFlowedBelowMostRecentImage(lastImageTimestamp);
             
             if (hasTextFlowed) {
                 // Clearance exists - clear restriction and start buffer period
@@ -871,19 +863,12 @@
         
         // Simple clearance check for Swift to call
         function checkImageClearance() {
-            const currentTime = Date.now() / 1000;
-            
-            // Check timing
-            if (currentTime - lastImageTime < 1.0) {
-                return false;
-            }
-            
             // Check restriction and buffer
             if (!imagePlacementRestricted) {
                 return linesSinceClearance >= requiredLinesAfterClearance;
             } else {
                 // Check if clearance exists
-                return hasTextFlowedBelowMostRecentImage(lastImageTime);
+                return hasTextFlowedBelowMostRecentImage(lastImageTimestamp);
             }
         }
         
