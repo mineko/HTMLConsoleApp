@@ -738,7 +738,7 @@
         
         
         // Check if text has flowed below floating images using proper bounding rect comparison
-        function hasTextFlowedBelowMostRecentImage(targetTimestamp) {
+        function hasTextFlowedBelowFloatingImages() {
             const output = document.getElementById('output');
             const floatingImages = output.querySelectorAll('img[style*="float"]');
             
@@ -802,7 +802,6 @@
         
         // Image placement state management (moved from Swift Engine)
         let imagePlacementRestricted = false;
-        let lastImageTimestamp = 0;
         let linesSinceClearance = 0;
         const requiredLinesAfterClearance = 3;
         
@@ -818,11 +817,9 @@
                 
                 // No restriction and buffer period passed - place image
                 console.log(`DEBUG: IMAGE PLACEMENT - No restriction, placing first ${alignment} image`);
-                const timestamp = Date.now() / 1000;
-                addImageWithTimestamp(imageName, alignment, size, timestamp);
+                addImage(imageName, alignment, size);
                 addOutput(`\nImage Size: ${size}\n`);
                 imagePlacementRestricted = true;
-                lastImageTimestamp = timestamp;
                 linesSinceClearance = 0;  // Reset buffer counter when placing new image
                 return true;
             } else {
@@ -833,8 +830,8 @@
         }
         
         function checkClearanceAndPlaceImageJS(imageName, alignment, size) {
-            // Check clearance for the most recent image before placing new image
-            const hasTextFlowed = hasTextFlowedBelowMostRecentImage(lastImageTimestamp);
+            // Check clearance for floating images before placing new image
+            const hasTextFlowed = hasTextFlowedBelowFloatingImages();
             
             if (hasTextFlowed) {
                 // Clearance exists - clear restriction and start buffer period
@@ -868,7 +865,7 @@
                 return linesSinceClearance >= requiredLinesAfterClearance;
             } else {
                 // Check if clearance exists
-                return hasTextFlowedBelowMostRecentImage(lastImageTimestamp);
+                return hasTextFlowedBelowFloatingImages();
             }
         }
         
