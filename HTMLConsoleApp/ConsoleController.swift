@@ -203,12 +203,6 @@ class ConsoleController: NSObject, ObservableObject {
         webView.evaluateJavaScript(script, completionHandler: nil)
     }
     
-    func addImageWithTimestamp(_ imageName: String, alignment: String = "left", size: String = "medium", timestamp: TimeInterval) {
-        guard let webView = webView else { return }
-        
-        let script = "addImageWithTimestamp('\(imageName)', '\(alignment)', '\(size)', \(timestamp));"
-        webView.evaluateJavaScript(script, completionHandler: nil)
-    }
     
     // StatusBar methods
     internal func displayStatusBar(lines: [StatusLine]) {
