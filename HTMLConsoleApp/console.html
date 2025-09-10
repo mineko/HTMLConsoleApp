@@ -49,6 +49,9 @@
             line.textContent = text;
             output.appendChild(line);
             scrollToBottom();
+            
+            // Check text flow clearance after adding output
+            checkTextFlowClearance();
         }
         
         function addImage(imageName, alignment = 'left', size = 'medium') {
@@ -885,10 +888,8 @@
         }
         
         // Expose functions to Swift
-        window.hasTextFlowedBelowMostRecentImage = hasTextFlowedBelowMostRecentImage;
         window.checkAndPlaceImage = checkAndPlaceImage;
         window.checkImageClearance = checkImageClearance;
-        window.checkTextFlowClearance = checkTextFlowClearance;
     </script>
 </body>
 </html>

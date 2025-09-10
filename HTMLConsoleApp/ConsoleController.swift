@@ -193,10 +193,7 @@ class ConsoleController: NSObject, ObservableObject {
                              .replacingOccurrences(of: "\n", with: "\\n")
         
         let script = "addOutput('\(escapedText)');"
-        webView.evaluateJavaScript(script) { [weak self] _, _ in
-            // After text is added to DOM, check text flow clearance in JavaScript
-            self?.evaluateJavaScript("window.checkTextFlowClearance()")
-        }
+        webView.evaluateJavaScript(script, completionHandler: nil)
     }
     
     func addImage(_ imageName: String, alignment: String = "left", size: String = "medium") {
