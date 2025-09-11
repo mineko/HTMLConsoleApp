@@ -82,7 +82,7 @@ class Engine {
         
         
         // Occasionally add a random image (20% chance) after the text output
-        if !availableImages.isEmpty && Int.random(in: 1...2) == 1 {
+        if !availableImages.isEmpty && Int.random(in: 1...1) == 1 {
             addRandomImage()
         }
         

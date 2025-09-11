@@ -32,6 +32,16 @@ class ConsoleInputHandler: NSObject, WKScriptMessageHandler {
     }
 }
 
+// Script message handler for console logs
+class ConsoleLogHandler: NSObject, WKScriptMessageHandler {
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        guard message.name == "consoleLog", let logMessage = message.body as? String else {
+            return
+        }
+        print("[JS] \(logMessage)")
+    }
+}
+
 // Script message handler for menu actions
 class MenuActionHandler: NSObject, WKScriptMessageHandler {
     let controller: ConsoleController
@@ -78,8 +88,10 @@ struct WebViewRepresentable: NSViewRepresentable {
         // Add separate script message handlers for console input and menu actions
         let inputHandler = ConsoleInputHandler(controller: consoleController)
         let menuHandler = MenuActionHandler(controller: consoleController)
+        let consoleLogHandler = ConsoleLogHandler()
         configuration.userContentController.add(inputHandler, name: "consoleInput")
         configuration.userContentController.add(menuHandler, name: "menuAction")
+        configuration.userContentController.add(consoleLogHandler, name: "consoleLog")
         
         let webView = WKWebView(frame: .zero, configuration: configuration)
         consoleController.setWebView(webView)

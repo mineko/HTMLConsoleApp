@@ -24,6 +24,22 @@
     </div>
     
     <script>
+        // Override console.log to send messages to Swift
+        const originalConsoleLog = console.log;
+        console.log = function(...args) {
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+            ).join(' ');
+            
+            // Send to Swift
+            if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.consoleLog) {
+                window.webkit.messageHandlers.consoleLog.postMessage(message);
+            }
+            
+            // Also call original console.log for browser dev tools
+            originalConsoleLog.apply(console, args);
+        };
+        
         const output = document.getElementById('output');
         const input = document.getElementById('input');
         const menuContainer = document.getElementById('menu-container');
@@ -763,16 +779,22 @@
         
         // Image placement state management (moved from Swift Engine)
         let imagePlacementRestricted = false;
-        let linesSinceClearance = 0;
-        const requiredLinesAfterClearance = 3;
+        let imageBottomPosition = 0;
+        const requiredPixelsAfterClearance = 50;
         
         // Smart image placement with clearance checking
         function checkAndPlaceImage(imageName, alignment, size) {
             // Smart image placement with real-time clearance checking
             if (!imagePlacementRestricted) {
-                // Check if we're still in the buffer period after clearance
-                if (linesSinceClearance < requiredLinesAfterClearance) {
-                    console.log(`DEBUG: IMAGE PLACEMENT - In buffer period (${linesSinceClearance}/${requiredLinesAfterClearance} lines), skipping image`);
+                // Check if we're still in the buffer period after image bottom
+                const currentHeight = output.scrollHeight;
+                const pixelsSinceImageBottom = imageBottomPosition > 0 ? currentHeight - imageBottomPosition : currentHeight;
+                console.log(`DEBUG: IMAGE PLACEMENT - Height check: current=${currentHeight}, imageBottom=${imageBottomPosition}, pixels=${pixelsSinceImageBottom}, required=${requiredPixelsAfterClearance}`);
+                
+                // If imageBottomPosition is 0, this is the first image - allow it
+                // Otherwise, check if we have enough pixels since the image bottom
+                if (imageBottomPosition > 0 && pixelsSinceImageBottom < requiredPixelsAfterClearance) {
+                    console.log(`DEBUG: IMAGE PLACEMENT - In buffer period (${pixelsSinceImageBottom}/${requiredPixelsAfterClearance} pixels), skipping image`);
                     return false;
                 }
                 
@@ -781,7 +803,19 @@
                 addImage(imageName, alignment, size);
                 addOutput(`\nImage Size: ${size}\n`);
                 imagePlacementRestricted = true;
-                linesSinceClearance = 0;  // Reset buffer counter when placing new image
+                
+                // Set the image bottom position for buffer calculation
+                setTimeout(() => {
+                    const images = output.querySelectorAll('img[style*="float"]');
+                    if (images.length > 0) {
+                        const lastImage = images[images.length - 1];
+                        const rect = lastImage.getBoundingClientRect();
+                        const outputRect = output.getBoundingClientRect();
+                        imageBottomPosition = lastImage.offsetTop + lastImage.offsetHeight;
+                        console.log(`DEBUG: Set imageBottomPosition to ${imageBottomPosition} for new image`);
+                    }
+                }, 100); // Wait for image to load and position
+                
                 return true;
             } else {
                 // There's a restriction - check if clearance exists before placing
@@ -795,10 +829,10 @@
             const hasTextFlowed = hasTextFlowedBelowFloatingImages();
             
             if (hasTextFlowed) {
-                // Clearance exists - clear restriction and start buffer period
-                console.log("DEBUG: Clearance detected, clearing restriction and starting buffer period");
+                // Clearance exists - clear restriction, keep measuring from image bottom
+                console.log("DEBUG: Clearance detected, clearing restriction");
                 imagePlacementRestricted = false;
-                linesSinceClearance = 0;  // Start buffer period
+                // Keep imageBottomPosition - we still measure buffer from the image bottom
                 
                 // Don't place the image yet - it will be attempted again after buffer period
                 console.log("DEBUG: Image placement deferred until after buffer period");
@@ -812,10 +846,13 @@
         
         // Method to be called after adding output text (from Swift)
         function checkTextFlowClearance() {
-            // Count lines after clearance to add buffer
-            if (!imagePlacementRestricted && linesSinceClearance < requiredLinesAfterClearance) {
-                linesSinceClearance++;
-                console.log(`DEBUG: BUFFER - Line ${linesSinceClearance} of ${requiredLinesAfterClearance} after clearance`);
+            console.log(`DEBUG: BUFFER - checkTextFlowClearance imagePlacementRestricted = ${imagePlacementRestricted} imageBottomPosition = ${imageBottomPosition}`);
+
+            // Check pixel buffer from image bottom
+            if (!imagePlacementRestricted && imageBottomPosition > 0) {
+                const currentHeight = output.scrollHeight;
+                const pixelsSinceImageBottom = currentHeight - imageBottomPosition;
+                console.log(`DEBUG: BUFFER - ${pixelsSinceImageBottom} of ${requiredPixelsAfterClearance} pixels since image bottom`);
             }
         }
         
@@ -823,7 +860,13 @@
         function checkImageClearance() {
             // Check restriction and buffer
             if (!imagePlacementRestricted) {
-                return linesSinceClearance >= requiredLinesAfterClearance;
+                // If imageBottomPosition is 0, this is the first image - allow it
+                if (imageBottomPosition === 0) {
+                    return true;
+                }
+                const currentHeight = output.scrollHeight;
+                const pixelsSinceImageBottom = currentHeight - imageBottomPosition;
+                return pixelsSinceImageBottom >= requiredPixelsAfterClearance;
             } else {
                 // Check if clearance exists
                 return hasTextFlowedBelowFloatingImages();
