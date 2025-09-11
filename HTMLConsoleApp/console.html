@@ -714,17 +714,14 @@
         });
         
         
-        // Check if text has flowed below floating images using proper bounding rect comparison
+        // Check if text has flowed below the most recent floating image
         function hasTextFlowedBelowFloatingImages() {
-            const output = document.getElementById('output');
-            const floatingImages = output.querySelectorAll('img[style*="float"]');
-            
-            console.log('DEBUG: Checking text flow for', floatingImages.length, 'floating images');
-            
-            if (floatingImages.length === 0) {
-                console.log('DEBUG: No floating images found, clearance OK');
+            if (!lastFloatingImage) {
+                console.log('DEBUG: No floating image to check, clearance OK');
                 return true;
             }
+            
+            console.log('DEBUG: Checking text flow for most recent floating image');
             
             // Helper function - fixed to compare bottom of text with bottom of image
             function hasTextFlowedBelowFloat(imageElement, textElement) {
@@ -738,52 +735,32 @@
                     return true; // Text has flowed below the image
                 }
 
-                // If text is not below, check for wrapping (optional, but useful for clarity)
-                // This part assumes a left-floated image for simplicity
-                if (textRect.top <= imageRect.bottom && textRect.left >= imageRect.right) {
-                    console.log(`DEBUG: Text is wrapping around image`);
-                    return false; // Text is wrapping around the image
-                }
-
-                console.log(`DEBUG: Text has not flowed below image yet`);
-                return false; // Default case, text is not below and not wrapping
+                console.log(`DEBUG: Text bottom (${textRect.bottom}) <= Image bottom (${imageRect.bottom}) - no clearance yet`);
+                return false; // Text has not flowed below the image
             }
             
-            // Check each floating image against recent text elements
-            for (const img of floatingImages) {
-                if (img.style.float === 'left' || img.style.float === 'right') {
-                    console.log('DEBUG: Checking clearance for floating image');
-                    
-                    // Get recent text elements to check against this image
-                    const textElements = output.querySelectorAll('.output-line');
-                    let hasTextBelow = false;
-                    
-                    // Check the last few text elements
-                    for (let i = Math.max(0, textElements.length - 5); i < textElements.length; i++) {
-                        const textElement = textElements[i];
-                        if (textElement.textContent.trim().length > 0) {
-                            if (hasTextFlowedBelowFloat(img, textElement)) {
-                                console.log('DEBUG: Found text below floating image:', textElement.textContent.substring(0, 30));
-                                hasTextBelow = true;
-                                break;
-                            }
-                        }
-                    }
-                    
-                    if (!hasTextBelow) {
-                        console.log('DEBUG: No text found below this floating image yet');
-                        return false;
+            // Only check the most recent floating image against recent text elements
+            const textElements = output.querySelectorAll('.output-line');
+            
+            // Check the last few text elements (much more efficient)
+            for (let i = Math.max(0, textElements.length - 3); i < textElements.length; i++) {
+                const textElement = textElements[i];
+                if (textElement.textContent.trim().length > 0) {
+                    if (hasTextFlowedBelowFloat(lastFloatingImage, textElement)) {
+                        console.log('DEBUG: Found text below most recent floating image:', textElement.textContent.substring(0, 30));
+                        return true;
                     }
                 }
             }
             
-            console.log('DEBUG: Text has flowed below all floating images');
-            return true;
+            console.log('DEBUG: No text found below most recent floating image yet');
+            return false;
         }
         
         // Image placement state management (moved from Swift Engine)
         let imagePlacementRestricted = false;
         let imageBottomPosition = 0;
+        let lastFloatingImage = null;
         const requiredPixelsAfterClearance = 50;
         
         // Smart image placement with clearance checking
@@ -808,15 +785,13 @@
                 addOutput(`\nImage Size: ${size}\n`);
                 imagePlacementRestricted = true;
                 
-                // Set the image bottom position for buffer calculation
+                // Set the image bottom position and track the last floating image
                 setTimeout(() => {
                     const images = output.querySelectorAll('img[style*="float"]');
                     if (images.length > 0) {
-                        const lastImage = images[images.length - 1];
-                        const rect = lastImage.getBoundingClientRect();
-                        const outputRect = output.getBoundingClientRect();
-                        imageBottomPosition = lastImage.offsetTop + lastImage.offsetHeight;
-                        console.log(`DEBUG: Set imageBottomPosition to ${imageBottomPosition} for new image`);
+                        lastFloatingImage = images[images.length - 1];
+                        imageBottomPosition = lastFloatingImage.offsetTop + lastFloatingImage.offsetHeight;
+                        console.log(`DEBUG: Set imageBottomPosition to ${imageBottomPosition} for new floating image`);
                     }
                 }, 100); // Wait for image to load and position
                 
