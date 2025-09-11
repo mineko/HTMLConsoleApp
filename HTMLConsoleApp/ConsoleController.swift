@@ -34,8 +34,8 @@ class ConsoleController: NSObject, ObservableObject {
         // Create status bar
         self.statusBar = StatusBar(controller: self)
         
-        // Create engine
-        self.engine = Engine(controller: self)
+        // Create engine (using TestEngine for demo functionality)
+        self.engine = TestEngine(controller: self)
     }
     
     private func discoverAvailableThemes() -> [String] {
