@@ -726,22 +726,26 @@
                 return true;
             }
             
-            // Helper function from your provided code
+            // Helper function - fixed to compare bottom of text with bottom of image
             function hasTextFlowedBelowFloat(imageElement, textElement) {
                 const imageRect = imageElement.getBoundingClientRect();
                 const textRect = textElement.getBoundingClientRect();
 
-                // Check if the top of the text element is below the bottom of the image
-                if (textRect.top > imageRect.bottom) {
+                // Check if the bottom of the text element is below the bottom of the image
+                // This means text has actually filled the space below the image
+                if (textRect.bottom > imageRect.bottom) {
+                    console.log(`DEBUG: Text bottom (${textRect.bottom}) > Image bottom (${imageRect.bottom}) - clearance detected`);
                     return true; // Text has flowed below the image
                 }
 
                 // If text is not below, check for wrapping (optional, but useful for clarity)
                 // This part assumes a left-floated image for simplicity
                 if (textRect.top <= imageRect.bottom && textRect.left >= imageRect.right) {
+                    console.log(`DEBUG: Text is wrapping around image`);
                     return false; // Text is wrapping around the image
                 }
 
+                console.log(`DEBUG: Text has not flowed below image yet`);
                 return false; // Default case, text is not below and not wrapping
             }
             
