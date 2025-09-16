@@ -9,6 +9,7 @@ import Foundation
 
 // Test/Demo engine with image placement and echo functionality
 class TestEngine: Engine {
+    private var inputCount: Int = 0
     private var availableImages: [String] = []
     
     override init(controller: ConsoleController) {
@@ -54,46 +55,60 @@ class TestEngine: Engine {
     }
     
     override internal func showWelcomeMessage() {
-        addOutput("Welcome to HTMLConsole Test Mode")
-        addOutput("Type something and press Enter to see echo and random images...")
+        addContent(text: "Welcome to HTMLConsole Test Mode")
+        addContent(text: "Type something and press Enter to see responsive content layout...")
     }
     
     override func processInput(_ input: String) {
-        addOutput("\n")
-        addOutput(input)
+        incrementInputCount()
         
-        // Occasionally add a random image (100% chance for testing - was 1 in 1)
-        if !availableImages.isEmpty && Int.random(in: 1...1) == 1 {
-            addRandomImage()
+        // Add user input as text content
+        addContent(text: "\n" + input)
+        
+        // Occasionally add content with a random image (50% chance)
+        if !availableImages.isEmpty && Int.random(in: 1...2) == 1 {
+            addRandomContent()
         }
         
         controller?.showPrompt()
     }
     
     
-    private func addRandomImage() {
+    private func addRandomContent() {
         guard let randomImage = availableImages.randomElement() else { return }
         
-        // Random size: small, medium, or large
-        let sizes = ["small", "medium", "large"]
-        let randomSize = sizes.randomElement() ?? "medium"
+        // Randomly decide whether to add a caption (50% chance)
+        let caption = Int.random(in: 1...2) == 1 ? randomImage : ""
         
-        // Random alignment: left, right, or center
-        let proposedAlignment = selectImageAlignment()
+        // Decide what type of content to add
+        let contentType = Int.random(in: 1...4)
         
-        // Try to place the image - JavaScript handles all the logic
-        tryPlaceImage(randomImage, alignment: proposedAlignment, size: randomSize) { wasPlaced in
-            if wasPlaced {
-                print("DEBUG: IMAGE PLACEMENT - Successfully placed \(proposedAlignment) image")
-            } else {
-                print("DEBUG: IMAGE PLACEMENT - Image placement deferred or rejected")
-            }
+        switch contentType {
+        case 1:
+            // Text only
+            addContent(text: "Some interesting text content about the current topic.")
+        case 2:
+            // Image only
+            addContent(image: randomImage, caption: caption)
+        case 3:
+            // Text with image
+            addContent(text: "Here's some descriptive text that goes with this image.", 
+                      image: randomImage, 
+                      caption: caption)
+        case 4:
+            // Just an image with caption
+            addContent(image: randomImage, caption: caption.isEmpty ? "A random image" : caption)
+        default:
+            break
         }
+        
+        print("DEBUG: CONTENT - Added content with image: \(randomImage), caption: \(caption.isEmpty ? "none" : caption)")
     }
     
-    private func selectImageAlignment() -> String {
-        // Random alignment: left, right, or center
-        let alignments = ["left", "right", "center"]
-        return alignments.randomElement() ?? "left"
+    func incrementInputCount() {
+        inputCount += 1
+        
+        // Update input count in status bar
+        statusBar?.updateField(name: "input_count", text: "Inputs: \(inputCount)")
     }
 }

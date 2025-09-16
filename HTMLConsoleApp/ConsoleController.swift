@@ -203,6 +203,23 @@ class ConsoleController: NSObject, ObservableObject {
         webView.evaluateJavaScript(script, completionHandler: nil)
     }
     
+    func addContent(text: String = "", image: String = "", caption: String = "") {
+        guard let webView = webView else { return }
+        
+        let escapedText = text.replacingOccurrences(of: "\\", with: "\\\\")
+                             .replacingOccurrences(of: "'", with: "\\'")
+                             .replacingOccurrences(of: "\n", with: "\\n")
+        
+        let escapedImage = image.replacingOccurrences(of: "\\", with: "\\\\")
+                               .replacingOccurrences(of: "'", with: "\\'")
+        
+        let escapedCaption = caption.replacingOccurrences(of: "\\", with: "\\\\")
+                                   .replacingOccurrences(of: "'", with: "\\'")
+        
+        let script = "addContent('\(escapedText)', '\(escapedImage)', '\(escapedCaption)');"
+        webView.evaluateJavaScript(script, completionHandler: nil)
+    }
+    
     
     // StatusBar methods
     internal func displayStatusBar(lines: [StatusLine]) {

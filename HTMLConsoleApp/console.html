@@ -149,6 +149,8 @@
                 line.classList.remove('new-output');
                 line.classList.add('old-output');
             });
+            
+            // Content stream doesn't need marking since it's just text nodes and images
         }
         
         function scrollToBottom() {
@@ -852,7 +854,1331 @@
             }
         }
         
+        // Simple content stream system  
+        let contentStreamContainer = null;
+        
+        function initializeContentStream() {
+            if (!contentStreamContainer) {
+                contentStreamContainer = document.createElement('div');
+                contentStreamContainer.className = 'content-stream';
+                contentStreamContainer.id = 'content-stream';
+                contentStreamContainer.style.color = 'inherit';
+                contentStreamContainer.style.fontFamily = 'inherit';
+                contentStreamContainer.style.fontSize = 'inherit';
+                contentStreamContainer.style.lineHeight = '1.6';
+                contentStreamContainer.style.wordWrap = 'break-word';
+                output.appendChild(contentStreamContainer);
+                console.log('Content stream container created and added to output');
+            }
+        }
+        
+        // Virtual template content addition
+        function addContent(text = '', image = '', caption = '') {
+            console.log(`addContent called with text="${text}", image="${image}", caption="${caption}"`);
+            
+            // Mark existing output as old only on the first new output after user interaction
+            if (shouldMarkOldOnNextOutput) {
+                markAllOutputAsOld();
+                shouldMarkOldOnNextOutput = false;
+            }
+            
+            initializeContentStream();
+            console.log(`Content stream container exists: ${!!contentStreamContainer}`);
+            
+            // Add text to continuous stream as text nodes for proper flow
+            if (text.trim()) {
+                const textNode = document.createTextNode(text + ' ');
+                contentStreamContainer.appendChild(textNode);
+                console.log(`Added text: "${text.substring(0, 30)}..." to content stream`);
+            }
+            
+            // Add image directly in the flow if provided
+            if (image.trim()) {
+                console.log(`Adding image: ${image}`);
+                addImageToFlow(image, caption);
+            }
+            
+            scrollToBottom();
+        }
+        
+        // Virtual template system
+        let virtualTemplates = [];
+        let currentTextHeight = 0;
+        let lastImageBottom = 0;
+        const TEMPLATE_MIN_SPACING = 250; // Much more spacing between templates
+        
+        function addImageToFlow(imageSrc, caption = '') {
+            console.log(`addImageToFlow called with src="${imageSrc}", caption="${caption}"`);
+            
+            // Calculate current text height in container
+            const containerHeight = contentStreamContainer.scrollHeight;
+            currentTextHeight = containerHeight;
+            
+            console.log(`Current text height: ${currentTextHeight}, Last image bottom: ${lastImageBottom}`);
+            
+            // Check if we have enough vertical space since last image
+            const spaceSinceLastImage = currentTextHeight - lastImageBottom;
+            if (spaceSinceLastImage < TEMPLATE_MIN_SPACING && virtualTemplates.length > 0) {
+                console.log(`Not enough vertical space (${spaceSinceLastImage}px), skipping image`);
+                return;
+            }
+            
+            const isMobile = window.innerWidth < 768;
+            
+            // Determine template type
+            let templateType;
+            if (isMobile) {
+                templateType = 'center';
+            } else {
+                const templateIndex = virtualTemplates.length;
+                switch (templateIndex % 3) {
+                    case 0: templateType = 'left'; break;
+                    case 1: templateType = 'right'; break;
+                    case 2: templateType = 'center'; break;
+                    default: templateType = 'left';
+                }
+            }
+            
+            console.log(`Creating virtual template ${virtualTemplates.length}: ${templateType}`);
+            
+            // Create virtual template
+            const template = {
+                type: templateType,
+                startY: currentTextHeight,
+                image: imageSrc,
+                caption: caption,
+                height: getTemplateHeight(templateType)
+            };
+            
+            template.endY = template.startY + template.height;
+            virtualTemplates.push(template);
+            
+            // Actually place the image in the text flow and get the actual image element
+            const placedImageElement = placeImageInTextFlow(imageSrc, caption, templateType);
+            
+            // Update last image bottom position - measure actual image bottom position
+            setTimeout(() => {
+                if (placedImageElement) {
+                    const imageRect = placedImageElement.getBoundingClientRect();
+                    const containerRect = contentStreamContainer.getBoundingClientRect();
+                    const imageBottomRelative = imageRect.bottom - containerRect.top;
+                    lastImageBottom = imageBottomRelative;
+                    console.log(`Updated lastImageBottom to actual image bottom: ${lastImageBottom}px`);
+                } else {
+                    // Fallback to container height
+                    lastImageBottom = contentStreamContainer.scrollHeight;
+                    console.log(`Fallback: Updated lastImageBottom to container height: ${lastImageBottom}px`);
+                }
+            }, 100); // Longer delay to allow image to load and render
+            
+            console.log(`Virtual template created: ${templateType} at ${template.startY}-${template.endY}px`);
+        }
+        
+        function getTemplateHeight(templateType) {
+            // Estimated heights for different template types - increased for more spacing
+            switch (templateType) {
+                case 'left':
+                case 'right':
+                    return 280; // Floating image with text wrap + extra spacing
+                case 'center':
+                    return 320; // Centered image with more spacing
+                default:
+                    return 280;
+            }
+        }
+        
+        function placeImageInTextFlow(imageSrc, caption, templateType) {
+            let img;
+            
+            if (templateType === 'center') {
+                // Add more substantial line breaks before center image
+                const spaceBefore = document.createTextNode('\n\n\n');
+                contentStreamContainer.appendChild(spaceBefore);
+                
+                img = document.createElement('img');
+                img.src = imageSrc;
+                img.style.display = 'block';
+                img.style.margin = '30px auto';
+                img.style.maxWidth = '400px';
+                img.style.height = 'auto';
+                img.style.borderRadius = '4px';
+                img.style.border = '1px solid #cccccc';
+                img.style.clear = 'both';
+                
+                contentStreamContainer.appendChild(img);
+                
+                if (caption && caption.trim()) {
+                    const captionText = document.createTextNode(`\n[${caption}]\n`);
+                    contentStreamContainer.appendChild(captionText);
+                }
+                
+                const spaceAfter = document.createTextNode('\n\n\n');
+                contentStreamContainer.appendChild(spaceAfter);
+                
+            } else {
+                // Add spacing before floating images too
+                const spaceBefore = document.createTextNode('\n\n');
+                contentStreamContainer.appendChild(spaceBefore);
+                
+                // Floating image - left or right
+                img = document.createElement('img');
+                img.src = imageSrc;
+                img.style.float = templateType;
+                img.style.maxWidth = '250px';
+                img.style.height = 'auto';
+                img.style.borderRadius = '4px';
+                img.style.border = '1px solid #cccccc';
+                img.style.margin = templateType === 'left' ? '15px 20px 15px 0' : '15px 0 15px 20px';
+                
+                contentStreamContainer.appendChild(img);
+                
+                if (caption && caption.trim()) {
+                    const captionText = document.createTextNode(`[${caption}] `);
+                    contentStreamContainer.appendChild(captionText);
+                }
+                
+                // Add some space after floating image
+                const spaceAfter = document.createTextNode('\n');
+                contentStreamContainer.appendChild(spaceAfter);
+            }
+            
+            console.log(`Placed ${templateType} image: ${imageSrc}`);
+            return img; // Return the image element for positioning calculations
+        }
+        
+        function determineImagePlacement() {
+            try {
+                console.log('determineImagePlacement called');
+                
+                // Simple virtual template logic based on content height and viewport
+                const contentHeight = contentStreamContainer ? contentStreamContainer.offsetHeight : 0;
+                const viewportHeight = window.innerHeight;
+                const imageCount = contentStreamContainer ? contentStreamContainer.querySelectorAll('img').length : 0;
+                
+                console.log(`Content height: ${contentHeight}, viewport: ${viewportHeight}, existing images: ${imageCount}`);
+                
+                // Calculate how many "template zones" we should have
+                const templatesPerScreen = Math.max(2, Math.floor(viewportHeight / 300));
+                const currentTemplate = imageCount % templatesPerScreen;
+                
+                console.log(`Templates per screen: ${templatesPerScreen}, current template: ${currentTemplate}`);
+                
+                // Template pattern: left, right, left, center (for 4 templates per screen)
+                // For fewer templates, adjust pattern
+                let placement;
+                if (templatesPerScreen <= 2) {
+                    placement = currentTemplate === 0 ? 'left' : 'right';
+                } else if (templatesPerScreen === 3) {
+                    const pattern = ['left', 'right', 'center'];
+                    placement = pattern[currentTemplate % 3];
+                } else {
+                    const pattern = ['left', 'right', 'left', 'center'];
+                    placement = pattern[currentTemplate % 4];
+                }
+                
+                console.log(`Determined placement: ${placement}`);
+                return placement;
+            } catch (error) {
+                console.error('Error in determineImagePlacement:', error);
+                return 'left'; // fallback
+            }
+        }
+        
+        function addFloatingImage(imageSrc, caption, direction) {
+            console.log(`addFloatingImage: creating ${direction} image with src="${imageSrc}"`);
+            
+            // Add some text space before the image to prevent horizontal stacking
+            const spaceBefore = document.createTextNode('\n\n');
+            contentStreamContainer.appendChild(spaceBefore);
+            
+            const img = document.createElement('img');
+            img.src = imageSrc;
+            img.className = `stream-image`;
+            img.style.float = direction;
+            img.style.margin = direction === 'left' ? '15px 20px 15px 0' : '15px 0 15px 20px';
+            img.style.maxWidth = '250px'; // Smaller max width
+            img.style.height = 'auto';
+            img.style.borderRadius = '4px';
+            img.style.border = '1px solid #cccccc';
+            img.style.clear = direction === 'left' ? 'left' : 'right'; // Clear previous floats
+            
+            console.log(`Appending image to contentStreamContainer: ${!!contentStreamContainer}`);
+            contentStreamContainer.appendChild(img);
+            console.log(`Image appended. Container now has ${contentStreamContainer.childNodes.length} children`);
+            
+            if (caption && caption.trim()) {
+                addCaptionText(caption);
+            }
+            
+            // Add some text space after to ensure text flows
+            const spaceAfter = document.createTextNode(' ');
+            contentStreamContainer.appendChild(spaceAfter);
+            
+            console.log(`Added ${direction}-floating image: ${imageSrc}`);
+        }
+        
+        function addCenteredImage(imageSrc, caption) {
+            console.log(`addCenteredImage: creating centered image with src="${imageSrc}"`);
+            
+            // Add some space before centered image - clear all floats
+            const spaceBefore = document.createTextNode('\n\n');
+            contentStreamContainer.appendChild(spaceBefore);
+            
+            const img = document.createElement('img');
+            img.src = imageSrc;
+            img.className = `stream-image`;
+            img.style.display = 'block';
+            img.style.margin = '20px auto';
+            img.style.maxWidth = '400px';
+            img.style.height = 'auto';
+            img.style.borderRadius = '4px';
+            img.style.border = '1px solid #cccccc';
+            img.style.clear = 'both'; // Clear all previous floats
+            
+            console.log(`Appending centered image to contentStreamContainer: ${!!contentStreamContainer}`);
+            contentStreamContainer.appendChild(img);
+            console.log(`Centered image appended. Container now has ${contentStreamContainer.childNodes.length} children`);
+            
+            if (caption && caption.trim()) {
+                addCaptionText(caption);
+            }
+            
+            // Add some space after centered image
+            const spaceAfter = document.createTextNode('\n\n');
+            contentStreamContainer.appendChild(spaceAfter);
+            
+            console.log(`Added centered image: ${imageSrc}`);
+        }
+        
+        function addCaptionText(caption) {
+            const captionText = document.createTextNode(`[${caption}] `);
+            contentStreamContainer.appendChild(captionText);
+        }
+        
+        function calculateImagePriority(image, caption) {
+            // Higher priority for images with meaningful captions
+            let priority = 0.5;
+            if (caption && caption.length > 3) {
+                priority += 0.3;
+            }
+            // Add some randomness for visual variety
+            priority += Math.random() * 0.2;
+            return priority;
+        }
+        
+        // Virtual template processing system
+        function processVirtualTemplates() {
+            console.log(`Processing virtual templates: ${textItems.length} text items, ${availableImages.length} images`);
+            
+            // Calculate current text flow height
+            const currentTextHeight = measureCurrentTextHeight();
+            
+            // Update virtual template boundaries
+            updateVirtualTemplateBoundaries(currentTextHeight);
+            
+            // Check if we need to place images in virtual templates
+            checkAndPlaceTemplateImages();
+            
+            console.log(`Virtual templates: ${virtualTemplates.length} templates, ${placedImages.length} placed images`);
+        }
+        
+        function measureCurrentTextHeight() {
+            if (textItems.length === 0) return 0;
+            
+            // Get the actual height of all text content
+            const streamRect = contentStreamContainer.getBoundingClientRect();
+            return streamRect.height;
+        }
+        
+        function updateVirtualTemplateBoundaries(totalTextHeight) {
+            const layoutParams = calculateLayoutParameters();
+            const templateHeight = layoutParams.minImageSpacing; // Each template covers this much height
+            const neededTemplates = Math.ceil(totalTextHeight / templateHeight) + 1; // +1 for future content
+            
+            // Ensure we have enough virtual templates
+            while (virtualTemplates.length < neededTemplates) {
+                const templateIndex = virtualTemplates.length;
+                const startY = templateIndex * templateHeight;
+                
+                const template = {
+                    id: templateIndex,
+                    type: getTemplateType(templateIndex),
+                    startY: startY,
+                    endY: startY + templateHeight,
+                    height: templateHeight,
+                    hasImage: false,
+                    layoutParams: layoutParams
+                };
+                
+                virtualTemplates.push(template);
+                console.log(`Created virtual template ${templateIndex}: ${template.type} at ${startY}-${template.endY}px`);
+            }
+        }
+        
+        function getTemplateType(index) {
+            const types = ['image-left', 'image-right', 'image-center'];
+            return types[index % types.length];
+        }
+        
+        function checkAndPlaceTemplateImages() {
+            const layoutParams = calculateLayoutParameters();
+            
+            // Check each virtual template to see if it needs an image
+            virtualTemplates.forEach(template => {
+                if (!template.hasImage && shouldPlaceImageInTemplate(template)) {
+                    const imageToPlace = selectImageForTemplate(template);
+                    if (imageToPlace) {
+                        placeImageInTemplate(template, imageToPlace, layoutParams);
+                    }
+                }
+            });
+        }
+        
+        function shouldPlaceImageInTemplate(template) {
+            // Don't place too many images
+            if (placedImages.length >= calculateLayoutParameters().maxImagesOnScreen) {
+                return false;
+            }
+            
+            // Place image if we have available images and sufficient text in this area
+            return availableImages.length > 0 && hasTextInTemplateArea(template);
+        }
+        
+        function hasTextInTemplateArea(template) {
+            // Check if there's text content that falls within this template's Y boundaries
+            // For now, use a simple heuristic based on template position
+            const textItemsInArea = Math.floor(template.startY / 50); // Rough estimate of text items
+            return textItemsInArea < textItems.length;
+        }
+        
+        function selectImageForTemplate(template) {
+            // Priority 1: Use image from newest text if available
+            const newestTextWithImage = textItems
+                .filter(item => item.isNew && item.associatedImage)
+                .sort((a, b) => b.timestamp - a.timestamp)[0];
+            
+            if (newestTextWithImage && newestTextWithImage.associatedImage) {
+                return newestTextWithImage.associatedImage;
+            }
+            
+            // Priority 2: Use any available image near this template area
+            const textNearTemplate = findTextNearTemplate(template);
+            if (textNearTemplate && textNearTemplate.associatedImage) {
+                return textNearTemplate.associatedImage;
+            }
+            
+            // Priority 3: Use highest priority unused image
+            const unusedImages = availableImages.filter(img => 
+                !placedImages.some(placed => placed.imageData.src === img.src)
+            );
+            
+            return unusedImages.sort((a, b) => b.priority - a.priority)[0] || null;
+        }
+        
+        function findTextNearTemplate(template) {
+            // Find text item that would be positioned near this template
+            const estimatedTextIndex = Math.floor(template.startY / 30); // Rough text positioning
+            return textItems[Math.min(estimatedTextIndex, textItems.length - 1)];
+        }
+        
+        function placeImageInTemplate(template, imageData, layoutParams) {
+            // Create image container
+            const imageContainer = document.createElement('div');
+            
+            // Determine responsive image class based on viewport and template type
+            const isMobile = window.innerWidth < layoutParams.mobileBreakpoint;
+            
+            if (isMobile) {
+                // Mobile: all images are centered and block-level
+                imageContainer.className = 'stream-image-mobile';
+            } else {
+                // Desktop/tablet: use floating images
+                imageContainer.className = 'stream-image-float';
+                
+                // Add directional class based on template type
+                if (template.type === 'image-left') {
+                    imageContainer.classList.add('stream-image-left');
+                } else if (template.type === 'image-right') {
+                    imageContainer.classList.add('stream-image-right');
+                } else {
+                    // Center images on desktop are also mobile-style (block)
+                    imageContainer.className = 'stream-image-mobile';
+                }
+            }
+            
+            // Create image element
+            const img = document.createElement('img');
+            img.src = imageData.src;
+            img.className = 'stream-image';
+            img.alt = imageData.caption || '';
+            
+            // Add image to container
+            imageContainer.appendChild(img);
+            
+            // Add caption if provided
+            if (imageData.caption && imageData.caption.trim()) {
+                const captionDiv = document.createElement('div');
+                captionDiv.className = 'stream-caption';
+                captionDiv.textContent = imageData.caption;
+                imageContainer.appendChild(captionDiv);
+            }
+            
+            // Find insertion point based on template boundaries
+            const insertionPoint = findInsertionPointForTemplate(template);
+            
+            if (insertionPoint) {
+                // Insert image at calculated position
+                if (insertionPoint.nextSibling) {
+                    contentStreamContainer.insertBefore(imageContainer, insertionPoint.nextSibling);
+                } else {
+                    contentStreamContainer.appendChild(imageContainer);
+                }
+            } else {
+                // Fallback: append to container
+                contentStreamContainer.appendChild(imageContainer);
+            }
+            
+            // Track placed image
+            const placedImage = {
+                imageData: imageData,
+                template: template,
+                element: imageContainer,
+                timestamp: Date.now()
+            };
+            
+            placedImages.push(placedImage);
+            template.hasImage = true;
+            template.placedImage = placedImage;
+            
+            // Remove image from available images
+            const imageIndex = availableImages.findIndex(img => img.src === imageData.src);
+            if (imageIndex >= 0) {
+                availableImages.splice(imageIndex, 1);
+            }
+            
+            console.log(`Placed image ${imageData.src} in ${template.type} template at Y:${template.startY}-${template.endY}`);
+        }
+        
+        function findInsertionPointForTemplate(template) {
+            // Find the text marker that corresponds to this template's position
+            const textMarkers = contentStreamContainer.querySelectorAll('.text-marker');
+            
+            // For now, use a simple approach: insert after a calculated number of text elements
+            const estimatedTextIndex = Math.floor(template.startY / 30); // Rough estimation
+            const targetIndex = Math.min(estimatedTextIndex, textMarkers.length - 1);
+            
+            if (textMarkers.length > 0 && targetIndex >= 0) {
+                return textMarkers[targetIndex];
+            }
+            
+            // Fallback: insert at the beginning of content
+            return contentStreamContainer.firstChild;
+        }
+        
+        // Template layout system
+        function rebuildTemplateLayout() {
+            console.log(`Rebuilding layout: ${textBuffer.length} text items, ${imageBuffer.length} images`);
+            
+            // Clear current layout
+            contentStreamContainer.innerHTML = '';
+            
+            // Create template stack based on available images and viewport
+            templateStack = createTemplateStack();
+            
+            // Flow text through template stack
+            flowTextThroughTemplates();
+            
+            console.log(`Layout complete: ${templateStack.length} templates created`);
+        }
+        
+        function createTemplateStack() {
+            const layoutParams = calculateLayoutParameters();
+            const templates = [];
+            
+            // Sort images by priority
+            const sortedImages = [...imageBuffer].sort((a, b) => b.priority - a.priority);
+            
+            // Determine how many images to show
+            const maxImages = Math.min(sortedImages.length, layoutParams.maxImagesOnScreen);
+            
+            console.log(`Creating templates for ${maxImages} images`);
+            
+            for (let i = 0; i < maxImages; i++) {
+                const image = sortedImages[i];
+                const template = createImageTemplate(image, i, layoutParams);
+                templates.push(template);
+            }
+            
+            return templates;
+        }
+        
+        function createImageTemplate(imageData, index, layoutParams) {
+            const templateTypes = ['image-left', 'image-right', 'image-center'];
+            const templateType = templateTypes[index % templateTypes.length];
+            
+            // Create template container
+            const templateDiv = document.createElement('div');
+            templateDiv.className = `layout-template template-${templateType}`;
+            
+            // Add image to template
+            const imageContainer = document.createElement('div');
+            imageContainer.className = 'template-image';
+            
+            if (layoutParams.isMobile || templateType === 'image-center') {
+                imageContainer.className += ' template-image-center';
+            } else {
+                imageContainer.className += ` template-image-${templateType.split('-')[1]}`;
+                imageContainer.style.maxWidth = `${layoutParams.imageScale * 300}px`;
+            }
+            
+            const img = document.createElement('img');
+            img.src = imageData.src;
+            img.className = 'template-img';
+            img.alt = imageData.caption || imageData.src;
+            imageContainer.appendChild(img);
+            
+            // Add caption if present
+            if (imageData.caption && imageData.caption.trim()) {
+                const captionDiv = document.createElement('div');
+                captionDiv.className = 'template-caption';
+                captionDiv.textContent = imageData.caption;
+                imageContainer.appendChild(captionDiv);
+            }
+            
+            // Create text flow area
+            const textArea = document.createElement('div');
+            textArea.className = 'template-text-area';
+            
+            // Add components to template
+            if (templateType === 'image-center') {
+                templateDiv.appendChild(imageContainer);
+                templateDiv.appendChild(textArea);
+            } else if (templateType === 'image-left') {
+                templateDiv.appendChild(imageContainer);
+                templateDiv.appendChild(textArea);
+            } else { // image-right
+                templateDiv.appendChild(textArea);
+                templateDiv.appendChild(imageContainer);
+            }
+            
+            return {
+                element: templateDiv,
+                textArea: textArea,
+                imageData: imageData,
+                type: templateType
+            };
+        }
+        
+        function flowTextThroughTemplates() {
+            // Add templates to DOM first
+            templateStack.forEach(template => {
+                contentStreamContainer.appendChild(template.element);
+            });
+            
+            // Flow all text through template text areas
+            let textIndex = 0;
+            let templateIndex = 0;
+            const layoutParams = calculateLayoutParameters();
+            
+            while (textIndex < textBuffer.length) {
+                const textItem = textBuffer[textIndex];
+                
+                // Determine target text area
+                let targetTextArea;
+                if (templateIndex < templateStack.length) {
+                    targetTextArea = templateStack[templateIndex].textArea;
+                } else {
+                    // Create a text-only template for remaining text
+                    const textOnlyTemplate = createTextOnlyTemplate();
+                    templateStack.push(textOnlyTemplate);
+                    contentStreamContainer.appendChild(textOnlyTemplate.element);
+                    targetTextArea = textOnlyTemplate.textArea;
+                }
+                
+                // Add text to the area
+                const textSpan = document.createElement('span');
+                textSpan.className = 'flowing-text';
+                if (textItem.isNew) {
+                    textSpan.className += ' new-output';
+                }
+                textSpan.textContent = textItem.content;
+                targetTextArea.appendChild(textSpan);
+                
+                textIndex++;
+                
+                // Move to next template based on spacing rules
+                if (shouldMoveToNextTemplate(targetTextArea, layoutParams)) {
+                    templateIndex++;
+                }
+            }
+            
+            console.log(`Text flowed through ${templateIndex + 1} templates`);
+        }
+        
+        function createTextOnlyTemplate() {
+            const templateDiv = document.createElement('div');
+            templateDiv.className = 'layout-template template-text-only';
+            
+            const textArea = document.createElement('div');
+            textArea.className = 'template-text-area';
+            templateDiv.appendChild(textArea);
+            
+            return {
+                element: templateDiv,
+                textArea: textArea,
+                imageData: null,
+                type: 'text-only'
+            };
+        }
+        
+        function shouldMoveToNextTemplate(textArea, layoutParams) {
+            // Move to next template when we have sufficient text height
+            const textHeight = textArea.getBoundingClientRect().height;
+            return textHeight > layoutParams.minImageSpacing;
+        }
+        
+        // New layout evaluation engine - processes all text-image chunks
+        function evaluateLayoutForAllChunks() {
+            console.log(`Evaluating layout for ${textImageChunks.length} chunks`);
+            
+            const layoutParams = calculateLayoutParameters();
+            let pixelsSinceLastImage = 0;
+            let imageCount = 0;
+            
+            textImageChunks.forEach((chunk, index) => {
+                // Measure distance from last image
+                if (chunk.textElement) {
+                    const textHeight = chunk.textElement.getBoundingClientRect().height || 20;
+                    pixelsSinceLastImage += textHeight;
+                }
+                
+                // Decide whether to show this chunk's image
+                if (chunk.imageData && !chunk.displayState.imageVisible) {
+                    const shouldShow = shouldShowImageForChunk(chunk, pixelsSinceLastImage, imageCount, layoutParams);
+                    
+                    if (shouldShow) {
+                        showImageForChunk(chunk, layoutParams);
+                        pixelsSinceLastImage = 0; // Reset distance counter
+                        imageCount++;
+                        console.log(`Showing image for chunk ${chunk.id} (${imageCount} total images)`);
+                    }
+                } else if (chunk.imageData && chunk.displayState.imageVisible) {
+                    // Re-evaluate existing visible images (for rescaling)
+                    updateImageForChunk(chunk, layoutParams);
+                }
+            });
+            
+            console.log(`Layout evaluation complete: ${imageCount} images visible`);
+        }
+        
+        function calculateLayoutParameters() {
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            
+            // Simple, robust parameters
+            let minImageSpacing = 300; // minimum pixels between images
+            let maxImagesOnScreen = 8;  // reasonable max
+            let imageScale = 1.0;
+            
+            // Adjust based on screen size
+            if (viewportWidth < 480) {
+                minImageSpacing = 200;
+                maxImagesOnScreen = 4;
+                imageScale = 0.8;
+            } else if (viewportWidth < 768) {
+                minImageSpacing = 250;
+                maxImagesOnScreen = 6;
+                imageScale = 0.9;
+            } else if (viewportWidth > 1400) {
+                minImageSpacing = 400;
+                maxImagesOnScreen = 10;
+                imageScale = 1.1;
+            }
+            
+            return {
+                minImageSpacing,
+                maxImagesOnScreen,
+                imageScale,
+                isMobile: viewportWidth < 768
+            };
+        }
+        
+        function shouldShowImageForChunk(chunk, pixelsSinceLastImage, currentImageCount, layoutParams) {
+            // Rule 1: Respect maximum image count
+            if (currentImageCount >= layoutParams.maxImagesOnScreen) {
+                return false;
+            }
+            
+            // Rule 2: Respect minimum spacing
+            if (pixelsSinceLastImage < layoutParams.minImageSpacing) {
+                return false;
+            }
+            
+            // Rule 3: Always show if we have very few images
+            if (currentImageCount < 2) {
+                return true;
+            }
+            
+            // Rule 4: Show based on image priority
+            return chunk.imageData.priority > 0.6;
+        }
+        
+        // Proximity-based placement: place image near its source text in the stream
+        function evaluateProximityPlacement(chunk) {
+            if (!chunk.imageData) return;
+            
+            const layoutParams = calculateLayoutParameters();
+            const shouldShow = shouldShowImageBasedOnGlobalState(chunk, layoutParams);
+            
+            if (shouldShow) {
+                placeImageNearText(chunk, layoutParams);
+                console.log(`Showing image for chunk ${chunk.id} with proximity placement`);
+            } else {
+                console.log(`Hiding image for chunk ${chunk.id} (layout rules)`);
+            }
+        }
+        
+        function shouldShowImageBasedOnGlobalState(chunk, layoutParams) {
+            // Count currently visible images
+            const visibleImageCount = textImageChunks.filter(c => c.displayState.imageVisible).length;
+            
+            // Rule 1: Respect maximum image count
+            if (visibleImageCount >= layoutParams.maxImagesOnScreen) {
+                return false;
+            }
+            
+            // Rule 2: Check spacing from last visible image
+            const pixelsSinceLastImage = calculatePixelsSinceLastVisibleImage(chunk);
+            if (pixelsSinceLastImage < layoutParams.minImageSpacing) {
+                return false;
+            }
+            
+            // Rule 3: Always show if we have very few images
+            if (visibleImageCount < 2) {
+                return true;
+            }
+            
+            // Rule 4: Show based on image priority
+            return chunk.imageData.priority > 0.6;
+        }
+        
+        function calculatePixelsSinceLastVisibleImage(currentChunk) {
+            let pixelAccumulator = 0;
+            
+            // Walk backwards from current chunk to find last visible image
+            for (let i = currentChunk.id - 1; i >= 0; i--) {
+                const chunk = textImageChunks[i];
+                if (chunk.displayState.imageVisible) {
+                    // Found last visible image, return accumulated distance
+                    return pixelAccumulator;
+                }
+                
+                // Add this chunk's text height to accumulator
+                if (chunk.textElement) {
+                    const height = chunk.textElement.getBoundingClientRect().height || 20;
+                    pixelAccumulator += height;
+                }
+            }
+            
+            // No previous visible image found, return total distance
+            return pixelAccumulator;
+        }
+        
+        function placeImageNearText(chunk, layoutParams) {
+            // Determine placement strategy
+            const visibleImageCount = textImageChunks.filter(c => c.displayState.imageVisible).length;
+            const placement = determineImagePlacement(visibleImageCount, layoutParams);
+            
+            // Create image container
+            const imageContainer = document.createElement('div');
+            
+            if (layoutParams.isMobile || placement === 'center') {
+                imageContainer.className = 'stream-image-mobile new-output';
+            } else {
+                imageContainer.className = `stream-image-float stream-image-${placement} new-output`;
+                imageContainer.style.maxWidth = `${layoutParams.imageScale * 300}px`;
+            }
+            
+            // Create image element
+            const img = document.createElement('img');
+            img.src = chunk.imageData.src;
+            img.className = 'stream-image';
+            img.alt = chunk.imageData.caption || chunk.imageData.src;
+            imageContainer.appendChild(img);
+            
+            // Add caption if present
+            if (chunk.imageData.caption && chunk.imageData.caption.trim()) {
+                const captionDiv = document.createElement('div');
+                captionDiv.className = 'stream-caption';
+                captionDiv.textContent = chunk.imageData.caption;
+                imageContainer.appendChild(captionDiv);
+            }
+            
+            // PROXIMITY PLACEMENT: Insert near the source text element
+            const insertionPoint = findOptimalInsertionPoint(chunk);
+            if (insertionPoint) {
+                contentStreamContainer.insertBefore(imageContainer, insertionPoint);
+            } else {
+                contentStreamContainer.appendChild(imageContainer);
+            }
+            
+            // Update chunk state
+            chunk.displayState.imageVisible = true;
+            chunk.displayState.imageElement = imageContainer;
+            chunk.displayState.imageScale = layoutParams.imageScale;
+            chunk.displayState.placement = placement;
+        }
+        
+        function determineImagePlacement(imageCount, layoutParams) {
+            if (layoutParams.isMobile) return 'mobile';
+            
+            // Cycle through placements for variety
+            const placements = ['left', 'right', 'center'];
+            return placements[imageCount % placements.length];
+        }
+        
+        function findOptimalInsertionPoint(chunk) {
+            // Find the best place to insert the image near the source text
+            
+            if (chunk.textElement && chunk.textElement.nextSibling) {
+                // Insert right after the source text element
+                return chunk.textElement.nextSibling;
+            } else if (chunk.textElement) {
+                // Insert right after the source text element (at end)
+                return null; // appendChild will be used
+            } else {
+                // No source text element, insert at end
+                return null;
+            }
+        }
+        
+        function updateImageForChunk(chunk, layoutParams) {
+            // Rescale existing image if needed
+            if (chunk.displayState.imageElement && chunk.displayState.imageScale !== layoutParams.imageScale) {
+                if (!layoutParams.isMobile) {
+                    chunk.displayState.imageElement.style.maxWidth = `${layoutParams.imageScale * 300}px`;
+                }
+                chunk.displayState.imageScale = layoutParams.imageScale;
+            }
+        }
+        
+        function analyzeLayoutMetrics() {
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            const aspectRatio = viewportWidth / viewportHeight;
+            
+            // REAL PIXEL MEASUREMENTS instead of character estimates
+            const actualTextHeight = measureActualTextHeight();
+            const availableTextWidth = calculateAvailableTextWidth();
+            const textDensity = actualTextHeight / viewportHeight; // how much of screen is text
+            
+            const isMobile = viewportWidth < 768;
+            const isTablet = viewportWidth >= 768 && viewportWidth < 1024;
+            const isDesktop = viewportWidth >= 1024;
+            const isUltraWide = aspectRatio > 2.0;
+            const isTallMobile = aspectRatio < 0.6;
+            
+            // Calculate optimal image spacing based on SCREEN REAL ESTATE
+            const optimalImageSpacing = calculateOptimalImageSpacing(viewportWidth, viewportHeight, actualTextHeight);
+            const maxImagesForViewport = calculateMaxImagesForViewport(viewportWidth, viewportHeight, textDensity);
+            
+            return {
+                viewportWidth,
+                viewportHeight,
+                aspectRatio,
+                actualTextHeight,
+                availableTextWidth,
+                textDensity,
+                optimalImageSpacing, // pixels between images
+                maxImagesForViewport, // absolute max based on screen space
+                isMobile,
+                isTablet,
+                isDesktop,
+                isUltraWide,
+                isTallMobile
+            };
+        }
+        
+        function measureActualTextHeight() {
+            if (!contentStreamContainer) {
+                console.log('No content stream container');
+                return 0;
+            }
+            
+            // Measure the actual rendered height of text content
+            let totalTextHeight = 0;
+            const textElements = contentStreamContainer.querySelectorAll('.text-marker');
+            
+            console.log(`Found ${textElements.length} text elements`);
+            
+            textElements.forEach(element => {
+                const rect = element.getBoundingClientRect();
+                totalTextHeight += rect.height;
+                console.log(`Text element height: ${rect.height}px`);
+            });
+            
+            console.log(`Total measured text height: ${totalTextHeight}px`);
+            return totalTextHeight;
+        }
+        
+        function calculateAvailableTextWidth() {
+            if (!contentStreamContainer) return window.innerWidth - 80;
+            
+            const containerRect = contentStreamContainer.getBoundingClientRect();
+            return containerRect.width;
+        }
+        
+        function calculateOptimalImageSpacing(viewportWidth, viewportHeight, textHeight) {
+            // Base spacing: aim for images every N pixels of text height
+            let baseSpacing = 400; // pixels of text height between images
+            
+            if (viewportWidth < 480) {
+                baseSpacing = 300; // more frequent on small mobile
+            } else if (viewportWidth < 768) {
+                baseSpacing = 350; // moderate on mobile
+            } else if (viewportWidth > 1400) {
+                baseSpacing = 500; // less frequent on large screens
+            }
+            
+            return baseSpacing;
+        }
+        
+        function calculateMaxImagesForViewport(viewportWidth, viewportHeight, textDensity) {
+            // Calculate absolute maximum images based on screen real estate
+            const screenArea = viewportWidth * viewportHeight;
+            const baseImagesPerScreenArea = 2; // base: 2 images per full screen
+            
+            let maxImages = Math.floor(screenArea / 300000) * baseImagesPerScreenArea; // ~2 per 300k pixels
+            
+            // Adjust for text density
+            if (textDensity > 0.8) {
+                maxImages = Math.floor(maxImages * 1.2); // more images if lots of text
+            } else if (textDensity < 0.3) {
+                maxImages = Math.floor(maxImages * 0.7); // fewer if little text
+            }
+            
+            // Minimum thresholds to prevent single-image scenarios
+            if (viewportWidth < 480) {
+                maxImages = Math.max(3, maxImages); // at least 3 on small mobile
+            } else if (viewportWidth < 768) {
+                maxImages = Math.max(4, maxImages); // at least 4 on mobile
+            } else {
+                maxImages = Math.max(5, maxImages); // at least 5 on desktop
+            }
+            
+            return maxImages;
+        }
+        
+        function calculateOptimalTextToImageRatio(viewportWidth, aspectRatio) {
+            // Base ratio: more text, fewer images
+            let baseRatio = 3.0; // 3:1 text to image ratio (more generous)
+            
+            // Adjust based on viewport characteristics
+            if (viewportWidth < 480) {
+                // Small mobile: frequent small images for visual breaks
+                baseRatio = 2.5;
+            } else if (viewportWidth < 768) {
+                // Mobile: moderate image frequency
+                baseRatio = 3.0;
+            } else if (aspectRatio > 2.0) {
+                // Ultra-wide: still more text-heavy but not extreme
+                baseRatio = 5.0; // reduced from 8.0
+            } else if (aspectRatio > 1.5) {
+                // Wide screens: balanced
+                baseRatio = 3.5;
+            }
+            
+            return baseRatio;
+        }
+        
+        function selectImagesForPlacement(layoutMetrics) {
+            // Sort pending images by priority (descending)
+            const sortedImages = [...pendingImages].sort((a, b) => b.priority - a.priority);
+            
+            // PIXEL-BASED APPROACH: Use actual screen measurements
+            const totalImages = pendingImages.length;
+            
+            // PRIORITY 1: Cached preference (for viewport restoration)
+            let targetImageCount;
+            if (layoutMetrics.preferredImageCount) {
+                targetImageCount = Math.min(totalImages, layoutMetrics.preferredImageCount);
+                console.log(`Using cached preference: ${targetImageCount} images`);
+            } else {
+                // PRIORITY 2: Viewport maximum (prevents single-image scenarios)
+                targetImageCount = Math.min(totalImages, layoutMetrics.maxImagesForViewport);
+                
+                // PRIORITY 3: Spacing-based calculation
+                if (layoutMetrics.actualTextHeight > 0) {
+                    const spacingBasedCount = Math.floor(layoutMetrics.actualTextHeight / layoutMetrics.optimalImageSpacing);
+                    targetImageCount = Math.min(targetImageCount, Math.max(1, spacingBasedCount));
+                    console.log(`Spacing-based count: ${spacingBasedCount} (${layoutMetrics.actualTextHeight}px / ${layoutMetrics.optimalImageSpacing}px)`);
+                } else {
+                    console.log('No text height measured, using viewport maximum');
+                    // If no text height available, use a reasonable default
+                    targetImageCount = Math.min(totalImages, Math.floor(layoutMetrics.maxImagesForViewport * 0.7));
+                }
+                
+                // PRIORITY 4: Maintain minimum image thresholds
+                const absoluteMinimum = calculateAbsoluteMinimumImages(layoutMetrics);
+                targetImageCount = Math.max(targetImageCount, absoluteMinimum);
+            }
+            
+            const absoluteMinimum = calculateAbsoluteMinimumImages(layoutMetrics);
+            console.log(`Image selection: ${totalImages} available, ${targetImageCount} selected (max: ${layoutMetrics.maxImagesForViewport}, min: ${absoluteMinimum})`);
+            
+            // Select images and assign scale factors based on density
+            const selectedImages = sortedImages.slice(0, targetImageCount).map((image, index) => {
+                return {
+                    ...image,
+                    scaleHint: calculateImageScaleHint(layoutMetrics, index, targetImageCount, totalImages)
+                };
+            });
+            
+            return selectedImages;
+        }
+        
+        function calculateAbsoluteMinimumImages(layoutMetrics) {
+            // Prevent single-image scenarios with hard minimums
+            if (layoutMetrics.viewportWidth < 480) {
+                return Math.min(pendingImages.length, 3); // at least 3 on small mobile
+            } else if (layoutMetrics.viewportWidth < 768) {
+                return Math.min(pendingImages.length, 4); // at least 4 on mobile
+            } else if (layoutMetrics.viewportWidth < 1024) {
+                return Math.min(pendingImages.length, 5); // at least 5 on tablet
+            } else {
+                return Math.min(pendingImages.length, 6); // at least 6 on desktop
+            }
+        }
+        
+        function calculateImageScaleHint(layoutMetrics, imageIndex, selectedCount, totalCount) {
+            let scaleHint = 1.0;
+            
+            // If we're showing more images than "optimal", scale them down
+            const optimalCount = Math.floor(totalCount / layoutMetrics.textToImageRatio);
+            if (selectedCount > optimalCount) {
+                const overcrowdingRatio = selectedCount / optimalCount;
+                scaleHint = Math.max(0.6, 1.0 / Math.sqrt(overcrowdingRatio));
+            }
+            
+            // Mobile gets smaller images for better text flow
+            if (layoutMetrics.isMobile) {
+                scaleHint *= 0.8;
+            }
+            
+            // Ultra-wide gets smaller images to maintain text dominance
+            if (layoutMetrics.isUltraWide) {
+                scaleHint *= 0.7;
+            } else if (layoutMetrics.aspectRatio > 1.5) {
+                scaleHint *= 0.85;
+            }
+            
+            return Math.max(0.4, Math.min(1.2, scaleHint)); // Clamp between 40% and 120%
+        }
+        
+        function rebuildCuratedContent(selectedImages, layoutMetrics) {
+            // Calculate text chunks based on actual pixel measurements
+            const textChunks = calculateTextChunks(layoutMetrics);
+            const insertionPoints = calculateOptimalInsertionPoints(textChunks, selectedImages.length);
+            
+            // Clear pending images since we're processing them
+            pendingImages = [];
+            
+            // Place images at calculated insertion points
+            selectedImages.forEach((imageData, index) => {
+                if (index < insertionPoints.length) {
+                    const insertionPoint = insertionPoints[index];
+                    placeImageAtTextPosition(imageData, insertionPoint, layoutMetrics);
+                }
+            });
+            
+            // Cache this successful layout for viewport restoration
+            const currentWidth = Math.floor(window.innerWidth / 100) * 100; // round to nearest 100px
+            viewportDensityCache.set(currentWidth, selectedImages.length);
+            
+            console.log(`Placed ${selectedImages.length} images at ${insertionPoints.length} insertion points. Cached for width ${currentWidth}`);
+        }
+        
+        function calculateTextChunks(layoutMetrics) {
+            // PIXEL-BASED text chunking instead of character counting
+            const targetSpacing = layoutMetrics.optimalImageSpacing;
+            
+            const chunks = [];
+            let currentChunk = [];
+            let currentPixelHeight = 0;
+            
+            textContent.forEach(textItem => {
+                // Measure actual rendered height of this text element
+                let elementHeight = 20; // default fallback
+                if (textItem.element) {
+                    const rect = textItem.element.getBoundingClientRect();
+                    elementHeight = rect.height > 0 ? rect.height : 20;
+                } else {
+                    // Estimate based on character count if element not available
+                    elementHeight = Math.max(20, textItem.characterCount / 50 * 20);
+                }
+                
+                currentChunk.push(textItem);
+                currentPixelHeight += elementHeight;
+                
+                // If we've accumulated enough pixel height, create a chunk
+                if (currentPixelHeight >= targetSpacing) {
+                    chunks.push({
+                        textItems: [...currentChunk],
+                        pixelHeight: currentPixelHeight,
+                        characterCount: currentChunk.reduce((sum, item) => sum + item.characterCount, 0)
+                    });
+                    currentChunk = [];
+                    currentPixelHeight = 0;
+                }
+            });
+            
+            // Add remaining text as final chunk
+            if (currentChunk.length > 0) {
+                chunks.push({
+                    textItems: [...currentChunk],
+                    pixelHeight: currentPixelHeight,
+                    characterCount: currentChunk.reduce((sum, item) => sum + item.characterCount, 0)
+                });
+            }
+            
+            console.log(`Text chunks: ${chunks.length} chunks with target spacing ${targetSpacing}px`);
+            return chunks;
+        }
+        
+        function calculateOptimalInsertionPoints(textChunks, imageCount) {
+            if (textChunks.length === 0 || imageCount === 0) return [];
+            
+            const points = [];
+            const chunkInterval = Math.max(1, Math.floor(textChunks.length / (imageCount + 1)));
+            
+            for (let i = 0; i < imageCount && i * chunkInterval + 1 < textChunks.length; i++) {
+                points.push((i + 1) * chunkInterval);
+            }
+            
+            return points;
+        }
+        
+        function placeImageAtTextPosition(imageData, position, layoutMetrics) {
+            // Use the scale hint from image selection, fallback to old method
+            const scaleHint = imageData.scaleHint || calculateImageScale(layoutMetrics);
+            const placement = placedImages.length % 2 === 0 ? 'left' : 'right';
+            
+            // Create image container with appropriate scaling
+            const imageContainer = document.createElement('div');
+            
+            if (layoutMetrics.isMobile) {
+                imageContainer.className = 'stream-image-mobile new-output';
+                // Apply mobile scaling
+                imageContainer.style.maxWidth = `${scaleHint * 100}%`;
+            } else {
+                imageContainer.className = `stream-image-float stream-image-${placement} new-output`;
+                // Apply desktop scaling
+                imageContainer.style.maxWidth = `${scaleHint * 300}px`;
+            }
+            
+            const img = document.createElement('img');
+            img.src = imageData.src;
+            img.className = 'stream-image';
+            img.alt = imageData.caption || imageData.src;
+            imageContainer.appendChild(img);
+            
+            if (imageData.caption && imageData.caption.trim()) {
+                const captionDiv = document.createElement('div');
+                captionDiv.className = 'stream-caption';
+                captionDiv.textContent = imageData.caption;
+                // Scale caption font size with image
+                if (scaleHint < 0.8) {
+                    captionDiv.style.fontSize = `${scaleHint * 0.85}em`;
+                }
+                imageContainer.appendChild(captionDiv);
+            }
+            
+            // Insert at calculated position in text flow
+            contentStreamContainer.appendChild(imageContainer);
+            
+            placedImages.push({
+                element: imageContainer,
+                data: imageData,
+                placement: layoutMetrics.isMobile ? 'mobile' : placement,
+                scale: scaleHint
+            });
+        }
+        
+        function calculateImageScale(layoutMetrics) {
+            let scale = 1.0;
+            
+            // Scale down for ultra-wide screens to maintain text dominance
+            if (layoutMetrics.isUltraWide) {
+                scale = 0.7;
+            } else if (layoutMetrics.aspectRatio > 1.5) {
+                scale = 0.85;
+            }
+            
+            // Scale up slightly for mobile to maintain visibility
+            if (layoutMetrics.isMobile && !layoutMetrics.isTallMobile) {
+                scale = Math.min(1.2, scale * 1.15);
+            }
+            
+            return scale;
+        }
+        
+        // Simple viewport resize handler - re-evaluates all chunks
+        let resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(handleViewportResize, 250);
+        });
+        
+        function handleViewportResize() {
+            console.log(`Viewport resize to ${window.innerWidth}x${window.innerHeight}`);
+            
+            if (!contentStreamContainer) return;
+            
+            // Reset virtual template system for new viewport
+            const currentImages = contentStreamContainer.querySelectorAll('img');
+            const isMobile = window.innerWidth < 768;
+            
+            // Update existing images for new viewport
+            currentImages.forEach((img, index) => {
+                const templateIndex = index % 3;
+                let templateType;
+                
+                if (isMobile) {
+                    templateType = 'center';
+                } else {
+                    switch (templateIndex) {
+                        case 0: templateType = 'left'; break;
+                        case 1: templateType = 'right'; break;
+                        case 2: templateType = 'center'; break;
+                        default: templateType = 'left';
+                    }
+                }
+                
+                if (templateType === 'center') {
+                    img.style.float = 'none';
+                    img.style.display = 'block';
+                    img.style.margin = '20px auto';
+                    img.style.clear = 'both';
+                    img.style.maxWidth = isMobile ? '100%' : '400px';
+                } else {
+                    img.style.float = templateType;
+                    img.style.display = 'block';
+                    img.style.margin = templateType === 'left' ? '10px 20px 10px 0' : '10px 0 10px 20px';
+                    img.style.clear = 'none';
+                    img.style.maxWidth = '250px';
+                }
+            });
+            
+            // Recalculate virtual template positions
+            virtualTemplates = [];
+            lastImageBottom = 0;
+            currentTextHeight = contentStreamContainer.scrollHeight;
+            
+            console.log(`Resize complete: Updated ${currentImages.length} images, reset virtual templates`);
+        }
+        
         // Expose functions to Swift
+        window.addContent = addContent;
         window.checkAndPlaceImage = checkAndPlaceImage;
         window.checkImageClearance = checkImageClearance;
     </script>

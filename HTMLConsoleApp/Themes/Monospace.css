@@ -219,3 +219,154 @@ body {
     background: transparent;
     caret-color: #000000;
 }
+
+/* Content stream for continuous text flow */
+.content-stream {
+    line-height: 1.6;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Template-based layout system */
+.layout-template {
+    margin-bottom: 20px;
+    overflow: auto; /* Clear floats */
+    display: block;
+    min-height: 100px;
+}
+
+.template-image-left {
+    float: left;
+    margin-right: 20px;
+    margin-bottom: 10px;
+}
+
+.template-image-right {
+    float: right;
+    margin-left: 20px;
+    margin-bottom: 10px;
+}
+
+.template-image-center {
+    display: block;
+    text-align: center;
+    margin: 0 auto 15px auto;
+    clear: both;
+}
+
+.template-img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+    border: 1px solid #cccccc;
+}
+
+.template-caption {
+    text-align: center;
+    font-weight: bold;
+    font-size: 0.85em;
+    color: #333333;
+    margin-top: 8px;
+    padding: 4px 8px;
+    line-height: 1.2;
+}
+
+.template-text-area {
+    line-height: 1.6;
+    text-align: justify;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+    -moz-hyphens: auto;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    min-height: 50px;
+}
+
+.flowing-text {
+    display: inline;
+    margin: 0;
+    padding: 0;
+}
+
+.template-text-only {
+    margin-bottom: 10px;
+}
+
+.stream-text {
+    display: inline;
+    margin: 0;
+    padding: 0;
+}
+
+/* Mobile image layout - inline with text */
+.stream-image-mobile {
+    display: block;
+    text-align: center;
+    margin: 15px auto;
+    clear: both;
+    max-width: 100%;
+}
+
+.stream-image-mobile .stream-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+    border: 1px solid #cccccc;
+}
+
+.stream-image-mobile .stream-caption {
+    text-align: center;
+    font-weight: bold;
+    font-size: 0.85em;
+    color: #333333;
+    margin-top: 8px;
+    padding: 4px 8px;
+}
+
+/* Tablet and desktop floating images */
+@media (min-width: 768px) {
+    .stream-image-float {
+        max-width: 300px;
+        margin: 0 0 15px 0;
+        text-align: center;
+    }
+    
+    .stream-image-left {
+        float: left;
+        margin-right: 20px;
+        clear: left;
+    }
+    
+    .stream-image-right {
+        float: right;
+        margin-left: 20px;
+        clear: right;
+    }
+    
+    .stream-image-float .stream-image {
+        max-width: 100%;
+        height: auto;
+        border-radius: 4px;
+        border: 1px solid #cccccc;
+    }
+    
+    .stream-image-float .stream-caption {
+        text-align: center;
+        font-weight: bold;
+        font-size: 0.75em;
+        color: #333333;
+        margin-top: 8px;
+        padding: 4px 8px;
+        line-height: 1.2;
+    }
+}
+
+@media (min-width: 1024px) {
+    .stream-image-float {
+        max-width: 350px;
+    }
+    
+    .stream-image-float .stream-caption {
+        font-size: 0.8em;
+    }
+}

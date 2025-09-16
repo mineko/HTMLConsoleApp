@@ -44,6 +44,10 @@ class Engine {
         controller?.tryPlaceImage(imageName, alignment: alignment, size: size, completion: completion)
     }
     
+    internal func addContent(text: String = "", image: String = "", caption: String = "") {
+        controller?.addContent(text: text, image: image, caption: caption)
+    }
+    
     // MARK: - Methods for Subclasses to Override
     
     // Subclasses should override this to provide custom welcome messages
