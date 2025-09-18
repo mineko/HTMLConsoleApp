@@ -36,14 +36,6 @@ class Engine {
         controller?.addOutput(text)
     }
     
-    internal func addImage(_ imageName: String, alignment: String = "left", size: String = "medium") {
-        controller?.addImage(imageName, alignment: alignment, size: size)
-    }
-    
-    internal func tryPlaceImage(_ imageName: String, alignment: String, size: String, completion: @escaping (Bool) -> Void) {
-        controller?.tryPlaceImage(imageName, alignment: alignment, size: size, completion: completion)
-    }
-    
     internal func addContent(text: String = "", image: String = "", caption: String = "") {
         controller?.addContent(text: text, image: image, caption: caption)
     }

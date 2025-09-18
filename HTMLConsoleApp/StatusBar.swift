@@ -79,11 +79,6 @@ class StatusBar {
         }
     }
     
-    // Convenience method for single line
-    func setLine(_ line: StatusLine) {
-        setLines([line])
-    }
-    
     // Show the status bar
     func show() {
         isVisible = true
@@ -116,14 +111,6 @@ class StatusBar {
         
         lines[index] = line
         
-        if isVisible {
-            updateDisplay()
-        }
-    }
-    
-    // Add a line at the end
-    func addLine(_ line: StatusLine) {
-        lines.append(line)
         if isVisible {
             updateDisplay()
         }

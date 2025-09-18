@@ -61,14 +61,6 @@ class ConsoleController: NSObject, ObservableObject {
         return Bundle.main.url(forResource: "console", withExtension: "html")
     }
     
-    func getSelectedTheme() -> String {
-        return currentTheme
-    }
-    
-    func getCurrentTheme() -> String {
-        return currentTheme
-    }
-    
     func switchTheme(to themeName: String) {
         guard let webView = webView else { return }
         currentTheme = themeName
@@ -196,13 +188,6 @@ class ConsoleController: NSObject, ObservableObject {
         webView.evaluateJavaScript(script, completionHandler: nil)
     }
     
-    func addImage(_ imageName: String, alignment: String = "left", size: String = "medium") {
-        guard let webView = webView else { return }
-        
-        let script = "addImage('\(imageName)', '\(alignment)', '\(size)');"
-        webView.evaluateJavaScript(script, completionHandler: nil)
-    }
-    
     func addContent(text: String = "", image: String = "", caption: String = "") {
         guard let webView = webView else { return }
         
@@ -263,29 +248,5 @@ class ConsoleController: NSObject, ObservableObject {
     }
     
     // Image placement methods for Engine use
-    func checkImageClearance(completion: @escaping (Bool) -> Void) {
-        let script = "window.checkImageClearance()"
-        evaluateJavaScript(script) { result, error in
-            DispatchQueue.main.async {
-                if let canPlace = result as? Bool {
-                    completion(canPlace)
-                } else {
-                    completion(false) // Default to false if error
-                }
-            }
-        }
-    }
-    
-    func tryPlaceImage(_ imageName: String, alignment: String, size: String, completion: @escaping (Bool) -> Void) {
-        let script = "window.checkAndPlaceImage('\(imageName)', '\(alignment)', '\(size)')"
-        evaluateJavaScript(script) { result, error in
-            DispatchQueue.main.async {
-                if let wasPlaced = result as? Bool {
-                    completion(wasPlaced)
-                } else {
-                    completion(false) // Default to false if error
-                }
-            }
-        }
-    }
+
 }
