@@ -33,9 +33,15 @@ class ConsoleController: NSObject, ObservableObject {
         
         // Create status bar
         self.statusBar = StatusBar(controller: self)
-        
-        // Create engine (using TestEngine for demo functionality)
-        self.engine = TestEngine(controller: self)
+
+        // Load and create engine from module bundle
+        if let moduleBundle = Engine.loadFirstAvailableModule() {
+            print("Loaded module: \(moduleBundle.info.name) v\(moduleBundle.info.version)")
+            self.engine = Engine.createEngine(for: moduleBundle, controller: self)
+        } else {
+            print("No module found, falling back to TestEngine")
+            self.engine = TestEngine(controller: self)
+        }
     }
     
     private func discoverAvailableThemes() -> [String] {
