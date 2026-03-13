@@ -1,0 +1,1 @@
+- [project_modular_architecture.md](project_modular_architecture.md) - ConsoleKit package structure and module registry pattern
