@@ -1,0 +1,41 @@
+//
+//  Engine.swift
+//  ConsoleKit
+//
+
+import Foundation
+
+/// Base class for console engines. Modules subclass this to provide
+/// interactive behavior (text adventures, RPGs, etc.).
+open class Engine {
+    public private(set) weak var controller: ConsoleController?
+    public private(set) var statusBar: StatusBar?
+
+    public init(controller: ConsoleController) {
+        self.controller = controller
+        self.statusBar = controller.getStatusBar()
+        configureStatusBar()
+    }
+
+    // MARK: - Override Points
+
+    /// Called once the WebView has finished loading. Show your welcome message,
+    /// configure the status bar, and call controller?.showPrompt().
+    open func start() {}
+
+    /// Called when the user submits a line of text (that isn't a menu command).
+    open func processInput(_ input: String) {}
+
+    /// Called during init. Override to register status bar fields.
+    open func configureStatusBar() {}
+
+    // MARK: - Helpers for Subclasses
+
+    public func addOutput(_ text: String) {
+        controller?.addOutput(text)
+    }
+
+    public func addContent(text: String = "", image: String = "", caption: String = "") {
+        controller?.addContent(text: text, image: image, caption: caption)
+    }
+}

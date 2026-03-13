@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		7DC0165D2F640C8300C319C1 /* ConsoleKit in Frameworks */ = {isa = PBXBuildFile; productRef = 7DC0165C2F640C8300C319C1 /* ConsoleKit */; };
+		7DC0165F2F640C8300C319C1 /* TestModule in Frameworks */ = {isa = PBXBuildFile; productRef = 7DC0165E2F640C8300C319C1 /* TestModule */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		7D7DB7B22E66432D00BD8ABE /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +57,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7DC0165F2F640C8300C319C1 /* TestModule in Frameworks */,
+				7DC0165D2F640C8300C319C1 /* ConsoleKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +119,8 @@
 			);
 			name = HTMLConsoleApp;
 			packageProductDependencies = (
+				7DC0165C2F640C8300C319C1 /* ConsoleKit */,
+				7DC0165E2F640C8300C319C1 /* TestModule */,
 			);
 			productName = HTMLConsoleApp;
 			productReference = 7D7DB7A32E66432B00BD8ABE /* HTMLConsoleApp.app */;
@@ -195,6 +204,9 @@
 			);
 			mainGroup = 7D7DB79A2E66432B00BD8ABE;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				7DC0165B2F640C8300C319C1 /* XCLocalSwiftPackageReference "Packages/ConsoleKit" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 7D7DB7A42E66432B00BD8ABE /* Products */;
 			projectDirPath = "";
@@ -541,6 +553,24 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		7DC0165B2F640C8300C319C1 /* XCLocalSwiftPackageReference "Packages/ConsoleKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/ConsoleKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		7DC0165C2F640C8300C319C1 /* ConsoleKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ConsoleKit;
+		};
+		7DC0165E2F640C8300C319C1 /* TestModule */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TestModule;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 7D7DB79B2E66432B00BD8ABE /* Project object */;
 }

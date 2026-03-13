@@ -6,12 +6,18 @@
 //
 
 import SwiftUI
+import ConsoleKit
+import TestModule
 
 @main
-struct HTMLConsoleApp: App {
+struct HTMLConsoleAppApp: App {
+    init() {
+        ModuleRegistry.shared.register(TestModule.self)
+    }
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ConsoleView()
         }
     }
 }

@@ -1,0 +1,658 @@
+{
+  "builtTestProducts" : [
+
+  ],
+  "copyCommands" : {
+    "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit_ConsoleKit.bundle/Dark.css" : {
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/Resources/Dark.css"
+        }
+      ],
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit_ConsoleKit.bundle/Dark.css"
+        }
+      ]
+    },
+    "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit_ConsoleKit.bundle/Homebrew.css" : {
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/Resources/Homebrew.css"
+        }
+      ],
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit_ConsoleKit.bundle/Homebrew.css"
+        }
+      ]
+    },
+    "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit_ConsoleKit.bundle/Light.css" : {
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/Resources/Light.css"
+        }
+      ],
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit_ConsoleKit.bundle/Light.css"
+        }
+      ]
+    },
+    "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit_ConsoleKit.bundle/Monospace.css" : {
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/Resources/Monospace.css"
+        }
+      ],
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit_ConsoleKit.bundle/Monospace.css"
+        }
+      ]
+    },
+    "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit_ConsoleKit.bundle/Retro.css" : {
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/Resources/Retro.css"
+        }
+      ],
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit_ConsoleKit.bundle/Retro.css"
+        }
+      ]
+    },
+    "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit_ConsoleKit.bundle/Serif.css" : {
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/Resources/Serif.css"
+        }
+      ],
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit_ConsoleKit.bundle/Serif.css"
+        }
+      ]
+    },
+    "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit_ConsoleKit.bundle/console.html" : {
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/Resources/console.html"
+        }
+      ],
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit_ConsoleKit.bundle/console.html"
+        }
+      ]
+    },
+    "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit_TestModule.bundle/test.bundle" : {
+      "inputs" : [
+        {
+          "kind" : "directory",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/TestModule/Resources/test.bundle"
+        }
+      ],
+      "outputs" : [
+        {
+          "kind" : "directory",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit_TestModule.bundle/test.bundle"
+        }
+      ]
+    }
+  },
+  "explicitTargetDependencyImportCheckingMode" : {
+    "none" : {
+
+    }
+  },
+  "generatedSourceTargetSet" : [
+
+  ],
+  "pluginDescriptions" : [
+
+  ],
+  "swiftCommands" : {
+    "C.ConsoleKit-arm64-apple-macosx26.0-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit.build/sources",
+      "importPath" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/ConsoleController.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/ConsoleView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/Engine.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/MenuManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/ModuleProtocol.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/ModuleRegistry.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/StatusBar.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit.build/DerivedSources/resource_bundle_accessor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "virtual",
+          "name" : "<ConsoleKit-arm64-apple-macosx26.0-debug.module-resources>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "ConsoleKit",
+      "moduleOutputPath" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/Modules/ConsoleKit.swiftmodule",
+      "objects" : [
+        "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit.build/ConsoleController.swift.o",
+        "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit.build/ConsoleView.swift.o",
+        "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit.build/Engine.swift.o",
+        "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit.build/MenuManager.swift.o",
+        "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit.build/ModuleProtocol.swift.o",
+        "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit.build/ModuleRegistry.swift.o",
+        "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit.build/StatusBar.swift.o",
+        "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit.build/resource_bundle_accessor.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j10",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_AVAILABLE",
+        "-module-cache-path",
+        "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit.build/include/ConsoleKit-Swift.h",
+        "-swift-version",
+        "5",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "consolekit"
+      ],
+      "outputFileMapPath" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit.build/ConsoleController.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit.build/ConsoleView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit.build/Engine.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit.build/MenuManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit.build/ModuleProtocol.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit.build/ModuleRegistry.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit.build/StatusBar.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit.build/resource_bundle_accessor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/Modules/ConsoleKit.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/ConsoleController.swift",
+        "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/ConsoleView.swift",
+        "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/Engine.swift",
+        "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/MenuManager.swift",
+        "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/ModuleProtocol.swift",
+        "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/ModuleRegistry.swift",
+        "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/StatusBar.swift",
+        "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit.build/DerivedSources/resource_bundle_accessor.swift"
+      ],
+      "tempsPath" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.TestModule-arm64-apple-macosx26.0-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/TestModule.build/sources",
+      "importPath" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/TestModule/TestModule.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/TestModule.build/DerivedSources/resource_bundle_accessor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "virtual",
+          "name" : "<TestModule-arm64-apple-macosx26.0-debug.module-resources>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/Modules/ConsoleKit.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/TestModule.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "TestModule",
+      "moduleOutputPath" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/Modules/TestModule.swiftmodule",
+      "objects" : [
+        "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/TestModule.build/TestModule.swift.o",
+        "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/TestModule.build/resource_bundle_accessor.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j10",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_AVAILABLE",
+        "-module-cache-path",
+        "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/TestModule.build/include/TestModule-Swift.h",
+        "-swift-version",
+        "5",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "consolekit"
+      ],
+      "outputFileMapPath" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/TestModule.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/TestModule.build/TestModule.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/TestModule.build/resource_bundle_accessor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/Modules/TestModule.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/TestModule/TestModule.swift",
+        "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/TestModule.build/DerivedSources/resource_bundle_accessor.swift"
+      ],
+      "tempsPath" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/TestModule.build",
+      "wholeModuleOptimization" : false
+    }
+  },
+  "swiftFrontendCommands" : {
+
+  },
+  "swiftTargetScanArgs" : {
+    "ConsoleKit" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "ConsoleKit",
+      "-package-name",
+      "consolekit",
+      "-c",
+      "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/ConsoleController.swift",
+      "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/ConsoleView.swift",
+      "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/Engine.swift",
+      "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/MenuManager.swift",
+      "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/ModuleProtocol.swift",
+      "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/ModuleRegistry.swift",
+      "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/StatusBar.swift",
+      "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit.build/DerivedSources/resource_bundle_accessor.swift",
+      "-I",
+      "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j10",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_AVAILABLE",
+      "-module-cache-path",
+      "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit.build/include/ConsoleKit-Swift.h",
+      "-swift-version",
+      "5",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "consolekit",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "TestModule" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "TestModule",
+      "-package-name",
+      "consolekit",
+      "-c",
+      "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/TestModule/TestModule.swift",
+      "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/TestModule.build/DerivedSources/resource_bundle_accessor.swift",
+      "-I",
+      "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j10",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_AVAILABLE",
+      "-module-cache-path",
+      "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/TestModule.build/include/TestModule-Swift.h",
+      "-swift-version",
+      "5",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "consolekit",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ]
+  },
+  "targetDependencyMap" : {
+    "ConsoleKit" : [
+
+    ],
+    "TestModule" : [
+      "ConsoleKit"
+    ]
+  },
+  "testDiscoveryCommands" : {
+
+  },
+  "testEntryPointCommands" : {
+
+  },
+  "traitConfiguration" : {
+    "default" : {
+
+    }
+  },
+  "writeCommands" : {
+    "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/ConsoleController.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/ConsoleView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/Engine.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/MenuManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/ModuleProtocol.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/ModuleRegistry.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/ConsoleKit/StatusBar.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit.build/DerivedSources/resource_bundle_accessor.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/ConsoleKit.build/sources"
+    },
+    "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/TestModule.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/Sources/TestModule/TestModule.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/TestModule.build/DerivedSources/resource_bundle_accessor.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/TestModule.build/sources"
+    },
+    "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt" : {
+      "alwaysOutOfDate" : true,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<swift-get-version>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+        }
+      ],
+      "outputFilePath" : "/Users/cpieper/Developer/Sources/HTMLConsoleApp/Packages/ConsoleKit/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+    }
+  }
+}
