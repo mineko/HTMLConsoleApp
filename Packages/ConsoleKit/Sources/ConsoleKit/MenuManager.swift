@@ -242,35 +242,43 @@ public class MenuManager {
         }
     }
 
+    /// When true, layout knob submenus show the current value in their title
+    /// (e.g. "Density (0.4)"). Set to false for clean names only (Option A).
+    private static let showKnobValuesInMenuTitles = true
+
     private static func createLayoutMenu(menuManager: MenuManager) -> Menu {
-        let knobNames: [(display: String, key: String)] = [
-            ("Density (image frequency)", "density"),
-            ("Prominence (image size)", "prominence"),
-            ("Variety (alignment mix)", "variety"),
-            ("Priority Bias", "priority"),
+        let knobs = menuManager.controller?.getLayoutKnobs() ?? LayoutKnobs()
+
+        let knobDefs: [(display: String, key: String, current: CGFloat)] = [
+            ("Density", "density", knobs.density),
+            ("Prominence", "prominence", knobs.prominence),
+            ("Variety", "variety", knobs.variety),
+            ("Priority Bias", "priority", knobs.priorityBias),
         ]
 
-        let steps: [(label: String, value: CGFloat)] = [
-            ("0.0", 0.0), ("0.1", 0.1), ("0.2", 0.2), ("0.3", 0.3),
-            ("0.4", 0.4), ("0.5", 0.5), ("0.6", 0.6), ("0.7", 0.7),
-            ("0.8", 0.8), ("0.9", 0.9), ("1.0", 1.0),
-        ]
+        let steps: [CGFloat] = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 
         var knobSubmenus: [(title: String, menu: Menu)] = []
 
-        for knob in knobNames {
+        for knob in knobDefs {
+            let currentRounded = (knob.current * 10).rounded() / 10
             let actions = steps.map { step in
-                (title: step.label, action: { [weak menuManager] in
-                    menuManager?.controller?.setLayoutKnob(knob.key, value: step.value)
+                let isSelected = abs(step - currentRounded) < 0.05
+                let label = isSelected ? "\(String(format: "%.1f", step)) \u{25C0}" : String(format: "%.1f", step)
+                return (title: label, action: { [weak menuManager] in
+                    menuManager?.controller?.setLayoutKnob(knob.key, value: step)
                     menuManager?.exitMenu()
                 })
             }
+            let displayTitle = showKnobValuesInMenuTitles
+                ? "\(knob.display) (\(String(format: "%.1f", knob.current)))"
+                : knob.display
             let submenu = Menu.createActionMenu(
-                title: knob.display,
+                title: displayTitle,
                 actions: actions,
                 menuManager: menuManager
             )
-            knobSubmenus.append((title: knob.display, menu: submenu))
+            knobSubmenus.append((title: displayTitle, menu: submenu))
         }
 
         return Menu.createMenu(
@@ -286,6 +294,8 @@ public class MenuManager {
     }
 
     func showRootMenu() {
+        // Rebuild so menus reflect current state (knob values, etc.)
+        rebuildMenu()
         currentMenu = rootMenu
         menuStack = []
         sendMenuToController(menu: rootMenu)

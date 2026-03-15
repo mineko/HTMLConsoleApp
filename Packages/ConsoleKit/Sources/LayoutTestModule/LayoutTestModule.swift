@@ -213,70 +213,22 @@ class LayoutTestEngine: Engine {
         statusBar?.show()
         statusBar?.updateField(name: "module", text: "Layout Test")
         statusBar?.updateField(name: "status", text: "Ready")
-        addOutput("Layout Test Module - tune image placement parameters")
-        addOutput("Commands: go [N], stream, stop, reset, knobs, help")
-        addOutput("Knobs: density, prominence, variety, priority [0-1]")
+        addOutput("Layout Test Module")
+        addOutput("Press / for menu")
         controller?.showPrompt()
     }
 
     override func processInput(_ input: String) {
-        let parts = input.trimmingCharacters(in: .whitespaces).lowercased().split(separator: " ")
-        guard let command = parts.first else {
-            controller?.showPrompt()
-            return
-        }
-
-        switch command {
-        case "help":
-            showHelp()
-        case "go":
-            let count = parts.count > 1 ? Int(parts[1]) ?? 5 : 5
-            generateContent(count: count)
-        case "stream":
-            startStream()
-        case "stop":
-            stopStream()
-        case "reset":
-            resetContent()
-        case "knobs":
-            showKnobs()
-        case "density", "prominence", "variety", "priority":
-            if parts.count > 1, let value = Double(parts[1]) {
-                setLayoutKnob(String(command), value: CGFloat(value))
-                updateKnobsDisplay()
-                addOutput("\(command) set to \(String(format: "%.2f", value))")
-            } else {
-                addOutput("Usage: \(command) <0.0-1.0>")
-            }
-        default:
-            addOutput("Unknown command: \(input). Type 'help' for commands.")
-        }
-
+        addOutput(input)
         controller?.showPrompt()
     }
 
-    // MARK: - Commands
-
     private func showHelp() {
-        addOutput("--- Layout Test Commands ---")
-        addOutput("go [N]      - Generate N content blocks (default 5)")
-        addOutput("stream      - Auto-generate content every 1.5s")
-        addOutput("stop        - Stop auto-generation")
-        addOutput("reset       - Clear output and reset state")
-        addOutput("knobs       - Show current knob values")
-        addOutput("density N   - Set density (0=sparse, 1=dense)")
-        addOutput("prominence N - Set prominence (0=small, 1=large)")
-        addOutput("variety N   - Set variety (0=repetitive, 1=varied)")
-        addOutput("priority N  - Set priority bias (0=aesthetics, 1=priority)")
-    }
-
-    private func showKnobs() {
-        guard let knobs = getLayoutKnobs() else { return }
-        addOutput("--- Layout Knobs ---")
-        addOutput("density:    \(String(format: "%.2f", knobs.density))")
-        addOutput("prominence: \(String(format: "%.2f", knobs.prominence))")
-        addOutput("variety:    \(String(format: "%.2f", knobs.variety))")
-        addOutput("priority:   \(String(format: "%.2f", knobs.priorityBias))")
+        addOutput("--- Layout Test ---")
+        addOutput("Use / menu for all controls:")
+        addOutput("  Control > Stream / Stop / Reset")
+        addOutput("  Admin > Layout > tune knobs")
+        addOutput("  Admin > Theme > switch themes")
     }
 
     private func updateKnobsDisplay() {

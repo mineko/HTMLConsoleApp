@@ -209,6 +209,7 @@ public class ConsoleController: NSObject, ObservableObject {
     // MARK: - Layout Knobs
 
     public func setLayoutKnob(_ name: String, value: CGFloat) {
+        knobsCache.set(name, value: value)
         guard let webView = webView else { return }
         let escaped = name.replacingOccurrences(of: "'", with: "\\'")
         webView.evaluateJavaScript("setLayoutKnob('\(escaped)', \(value));", completionHandler: nil)
