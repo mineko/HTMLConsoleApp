@@ -238,6 +238,7 @@ public class ConsoleController: NSObject, ObservableObject {
             if let v = dict["prominence"] { self.knobsCache.prominence = CGFloat(v) }
             if let v = dict["variety"] { self.knobsCache.variety = CGFloat(v) }
             if let v = dict["priorityBias"] { self.knobsCache.priorityBias = CGFloat(v) }
+            if let v = dict["textBefore"] { self.knobsCache.textBefore = CGFloat(v) }
         }
     }
 

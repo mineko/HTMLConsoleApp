@@ -48,6 +48,8 @@ public struct LayoutKnobs {
     public var variety: CGFloat = 0.5
     /// How much image priority overrides layout aesthetics (0 = aesthetics, 1 = priority).
     public var priorityBias: CGFloat = 0.5
+    /// Minimum full-width text blocks before an image (0 = none, 1 = lots).
+    public var textBefore: CGFloat = 0.5
 
     public init() {}
 
@@ -58,6 +60,7 @@ public struct LayoutKnobs {
         case "prominence":                      prominence = clamped
         case "variety":                         variety = clamped
         case "priority", "prioritybias":        priorityBias = clamped
+        case "textbefore":                      textBefore = clamped
         default: break
         }
     }
@@ -68,6 +71,7 @@ public struct LayoutKnobs {
         case "prominence":                      return prominence
         case "variety":                         return variety
         case "priority", "prioritybias":        return priorityBias
+        case "textbefore":                      return textBefore
         default: return nil
         }
     }

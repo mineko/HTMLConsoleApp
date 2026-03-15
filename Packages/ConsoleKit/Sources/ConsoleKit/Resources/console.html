@@ -75,6 +75,7 @@
             prominence: 0.5,    // 0 = small images, 1 = large
             variety: 0.5,       // 0 = repetitive alignment, 1 = varied
             priorityBias: 0.5,  // 0 = aesthetics first, 1 = priority first
+            textBefore: 0.5,    // 0 = no minimum text, 1 = lots of text before images
         };
 
         // ─── Push content into the stream ───
@@ -229,10 +230,26 @@
 
             // ── Pass 1: build text map + collect image candidates ──
 
-            // textHeightAt[i] = cumulative estimated text height just before stream item i
             const textHeightAt = [];
             let cumulativeHeight = 0;
-            const imageCandidates = []; // { streamIndex, priority, src, caption }
+            const imageCandidates = [];
+
+            // Minimum lines of full-width text before an image, scaled by viewport.
+            // Small window (<600px): 2-4 lines, Medium (600-1200): 3-8 lines, Large (>1200): 5-12 lines
+            const statusBarH = statusBar.style.display === 'none' ? 0 : statusBar.offsetHeight;
+            const availableHeight = viewportHeight - statusBarH;
+            let baseMinLines;
+            if (availableHeight < 500) {
+                baseMinLines = 2;   // small: 2-4
+            } else if (availableHeight < 900) {
+                baseMinLines = 3;   // medium: 3-8
+            } else {
+                baseMinLines = 5;   // large: 5-12
+            }
+            // textBefore knob scales from baseMinLines to baseMinLines * 2.5
+            const minLinesBeforeImage = Math.round(baseMinLines + layoutKnobs.textBefore * baseMinLines * 1.5);
+            const lineHeight = 24;
+            const minTextHeightBeforeImage = minLinesBeforeImage * lineHeight;
 
             for (let i = 0; i < contentStream.length; i++) {
                 textHeightAt[i] = cumulativeHeight;
@@ -316,6 +333,43 @@
                     if (recentAlignments.length > 5) recentAlignments.pop();
                 } else {
                     committedSkips.add(candidate.streamIndex);
+                }
+            }
+
+            // ── Validation: ensure minimum full-width text lines between images ──
+            // Text wrapping beside a floated image is NOT full-width.
+            // After placing a float, subtract the float's estimated height
+            // so wrapped text doesn't count toward the minimum.
+            let fullWidthTextHeight = 10000; // start high so first image can place
+            let floatHeightRemaining = 0;    // estimated px of active float still to clear
+
+            for (let i = 0; i < contentStream.length; i++) {
+                const item = contentStream[i];
+                if (item.type === 'text' || item.type === 'system') {
+                    const h = estimateTextHeight(item.text, viewportWidth);
+                    if (floatHeightRemaining > 0) {
+                        // Text is wrapping beside a float — doesn't count as full-width
+                        floatHeightRemaining -= h;
+                    } else {
+                        fullWidthTextHeight += h;
+                    }
+                } else if (item.type === 'image' && placedAt[i]) {
+                    if (fullWidthTextHeight < minTextHeightBeforeImage) {
+                        delete placedAt[i];
+                        // Don't commit this skip — on resize it might fit
+                    } else {
+                        fullWidthTextHeight = 0;
+                        // If this is a floated image, estimate its rendered height
+                        // so subsequent wrapped text doesn't count as full-width
+                        const placement = placedAt[i];
+                        if (placement.alignment !== 'center') {
+                            const imgW = item.width || 400;
+                            const imgH = item.height || 300;
+                            const renderedWidth = viewportWidth * placement.widthPercent / 100;
+                            const renderedHeight = (imgH / imgW) * renderedWidth;
+                            floatHeightRemaining = renderedHeight;
+                        }
+                    }
                 }
             }
 
@@ -549,6 +603,7 @@
             else if (key === 'prominence') layoutKnobs.prominence = clamped;
             else if (key === 'variety') layoutKnobs.variety = clamped;
             else if (key === 'priority' || key === 'prioritybias') layoutKnobs.priorityBias = clamped;
+            else if (key === 'textbefore') layoutKnobs.textBefore = clamped;
 
             // Re-layout with new knobs — full rescore
             renderLayout(true);
