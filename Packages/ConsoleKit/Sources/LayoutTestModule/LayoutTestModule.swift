@@ -191,9 +191,7 @@ class LayoutTestEngine: Engine {
     override func configureStatusBar() {
         statusBar?.setLineCount(1)
         statusBar?.registerField(name: "module", line: 0, alignment: .center)
-        statusBar?.registerField(name: "knobs", line: 0, alignment: .left)
         statusBar?.registerField(name: "status", line: 0, alignment: .right)
-        updateKnobsDisplay()
     }
 
     override func menuItems() -> [MenuItem] {
@@ -231,11 +229,6 @@ class LayoutTestEngine: Engine {
         addOutput("  Admin > Theme > switch themes")
     }
 
-    private func updateKnobsDisplay() {
-        guard let knobs = getLayoutKnobs() else { return }
-        let display = "D:\(String(format: "%.1f", knobs.density)) P:\(String(format: "%.1f", knobs.prominence)) V:\(String(format: "%.1f", knobs.variety)) PB:\(String(format: "%.1f", knobs.priorityBias))"
-        statusBar?.updateField(name: "knobs", text: display)
-    }
 
     private func nextTextBlock() -> String {
         if sceneQueue.isEmpty {
