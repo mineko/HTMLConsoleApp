@@ -8,10 +8,12 @@
 import SwiftUI
 import ConsoleKit
 import TestModule
+import LayoutTestModule
 
 @main
 struct HTMLConsoleAppApp: App {
     init() {
+        ModuleRegistry.shared.register(LayoutTestModule.self)
         ModuleRegistry.shared.register(TestModule.self)
     }
 

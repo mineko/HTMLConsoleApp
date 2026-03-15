@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		7DC0165D2F640C8300C319C1 /* ConsoleKit in Frameworks */ = {isa = PBXBuildFile; productRef = 7DC0165C2F640C8300C319C1 /* ConsoleKit */; };
 		7DC0165F2F640C8300C319C1 /* TestModule in Frameworks */ = {isa = PBXBuildFile; productRef = 7DC0165E2F640C8300C319C1 /* TestModule */; };
+		7DC016602F640C8300C319C1 /* LayoutTestModule in Frameworks */ = {isa = PBXBuildFile; productRef = 7DC016612F640C8300C319C1 /* LayoutTestModule */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -57,6 +58,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7DC016602F640C8300C319C1 /* LayoutTestModule in Frameworks */,
 				7DC0165F2F640C8300C319C1 /* TestModule in Frameworks */,
 				7DC0165D2F640C8300C319C1 /* ConsoleKit in Frameworks */,
 			);
@@ -121,6 +123,7 @@
 			packageProductDependencies = (
 				7DC0165C2F640C8300C319C1 /* ConsoleKit */,
 				7DC0165E2F640C8300C319C1 /* TestModule */,
+				7DC016612F640C8300C319C1 /* LayoutTestModule */,
 			);
 			productName = HTMLConsoleApp;
 			productReference = 7D7DB7A32E66432B00BD8ABE /* HTMLConsoleApp.app */;
@@ -569,6 +572,10 @@
 		7DC0165E2F640C8300C319C1 /* TestModule */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = TestModule;
+		};
+		7DC016612F640C8300C319C1 /* LayoutTestModule */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = LayoutTestModule;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

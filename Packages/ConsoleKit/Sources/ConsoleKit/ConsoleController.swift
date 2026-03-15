@@ -14,6 +14,7 @@ public class ConsoleController: NSObject, ObservableObject {
     private var menuManager: MenuManager!
     private var statusBar: StatusBar?
     private var engine: Engine?
+    private let layoutScorer = LayoutScorer()
 
     override public init() {
         self.availableThemes = []
@@ -179,16 +180,60 @@ public class ConsoleController: NSObject, ObservableObject {
         webView.evaluateJavaScript("addOutput('\(escapedText)');", completionHandler: nil)
     }
 
-    public func addContent(text: String = "", image: String = "", caption: String = "") {
+    public func addContent(text: String = "", image: String = "", caption: String = "", priority: CGFloat = 0.5) {
         guard let webView = webView else { return }
-        let escapedText = text.replacingOccurrences(of: "\\", with: "\\\\")
-                             .replacingOccurrences(of: "'", with: "\\'")
-                             .replacingOccurrences(of: "\n", with: "\\n")
-        let escapedImage = image.replacingOccurrences(of: "\\", with: "\\\\")
-                               .replacingOccurrences(of: "'", with: "\\'")
-        let escapedCaption = caption.replacingOccurrences(of: "\\", with: "\\\\")
-                                   .replacingOccurrences(of: "'", with: "\\'")
-        webView.evaluateJavaScript("addContent('\(escapedText)', '\(escapedImage)', '\(escapedCaption)');", completionHandler: nil)
+
+        // Step 1: Add text and get layout state back
+        let escapedText = escapeForJS(text)
+        webView.evaluateJavaScript("addTextAndGetState('\(escapedText)');") { [weak self] result, _ in
+            guard let self = self else { return }
+
+            // Update layout state from JS measurements
+            if let stateJSON = result as? String {
+                self.layoutScorer.updateLayoutState(from: stateJSON)
+            }
+
+            // Step 2: If there's an image, run it through the scorer
+            guard !image.isEmpty else { return }
+            let decision = self.layoutScorer.scorePlacement(priority: priority)
+            guard decision.shouldPlace else { return }
+
+            let escapedImage = self.escapeForJS(image)
+            let escapedCaption = self.escapeForJS(caption)
+            let widthPercent = Int(decision.widthFraction * 100)
+            let script = "placeImageWithParams('\(escapedImage)', '\(decision.alignment.rawValue)', \(widthPercent), '\(escapedCaption)');"
+
+            webView.evaluateJavaScript(script) { result, _ in
+                if let stateJSON = result as? String {
+                    self.layoutScorer.updateLayoutState(from: stateJSON)
+                }
+            }
+        }
+    }
+
+    // MARK: - Layout Knobs
+
+    public func setLayoutKnob(_ name: String, value: CGFloat) {
+        layoutScorer.knobs.set(name, value: value)
+    }
+
+    public func getLayoutKnobs() -> LayoutKnobs {
+        return layoutScorer.knobs
+    }
+
+    public func clearOutput() {
+        guard let webView = webView else { return }
+        webView.evaluateJavaScript("clearOutput();", completionHandler: nil)
+    }
+
+    public func updateLayoutState(from json: String) {
+        layoutScorer.updateLayoutState(from: json)
+    }
+
+    private func escapeForJS(_ str: String) -> String {
+        return str.replacingOccurrences(of: "\\", with: "\\\\")
+                  .replacingOccurrences(of: "'", with: "\\'")
+                  .replacingOccurrences(of: "\n", with: "\\n")
     }
 
     // MARK: - Status Bar

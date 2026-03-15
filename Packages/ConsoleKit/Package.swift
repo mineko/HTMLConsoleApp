@@ -7,6 +7,7 @@ let package = Package(
     products: [
         .library(name: "ConsoleKit", targets: ["ConsoleKit"]),
         .library(name: "TestModule", targets: ["TestModule"]),
+        .library(name: "LayoutTestModule", targets: ["LayoutTestModule"]),
     ],
     targets: [
         .target(
@@ -21,6 +22,10 @@ let package = Package(
             resources: [
                 .copy("Resources/test.bundle")
             ]
+        ),
+        .target(
+            name: "LayoutTestModule",
+            dependencies: ["ConsoleKit"]
         ),
     ]
 )
