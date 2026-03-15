@@ -175,9 +175,16 @@
             const viewportHeight = window.innerHeight;
             const outputHeight = output ? output.scrollHeight : 0;
 
+            // Measure actual visual distance below the last placed image.
+            // scrollHeight-based measurement is unreliable when text wraps
+            // beside CSS floats — use DOM geometry instead.
             let pixelsSinceLastImage = 10000;
-            if (lastImageOutputHeight > 0) {
-                pixelsSinceLastImage = Math.max(0, outputHeight - lastImageOutputHeight);
+            if (lastPlacedImage && contentStreamContainer) {
+                const imgRect = lastPlacedImage.closest('figure')?.getBoundingClientRect()
+                             || lastPlacedImage.getBoundingClientRect();
+                const containerRect = contentStreamContainer.getBoundingClientRect();
+                // Distance from the bottom of the image to the bottom of all content
+                pixelsSinceLastImage = Math.max(0, containerRect.bottom - imgRect.bottom);
             }
 
             return {
@@ -199,7 +206,6 @@
 
         function scrollToShowImage(imageElement) {
             setTimeout(() => {
-                const imageRect = imageElement.getBoundingClientRect();
                 const viewportHeight = window.innerHeight;
                 const scrollContainer = document.getElementById('scroll-container');
 
@@ -211,11 +217,13 @@
                 const imageTopInViewport = imageTop - idealScrollTop;
                 const topPadding = 20;
 
+                let targetScroll;
                 if (imageTopInViewport >= topPadding) {
-                    scrollContainer.scrollTop = idealScrollTop;
+                    targetScroll = idealScrollTop;
                 } else {
-                    scrollContainer.scrollTop = imageTop - topPadding;
+                    targetScroll = imageTop - topPadding;
                 }
+                scrollContainer.scrollTo({ top: targetScroll, behavior: 'smooth' });
             }, 50);
         }
 
@@ -228,7 +236,10 @@
         }
 
         function scrollToBottom() {
-            window.scrollTo(0, document.body.scrollHeight);
+            const scrollContainer = document.getElementById('scroll-container');
+            if (scrollContainer) {
+                scrollContainer.scrollTo({ top: scrollContainer.scrollHeight, behavior: 'smooth' });
+            }
         }
 
         function autoResizeTextArea() {
