@@ -97,8 +97,10 @@
             initializeContentStream();
 
             if (text.trim()) {
-                const textNode = document.createTextNode(text + ' ');
-                contentStreamContainer.appendChild(textNode);
+                const p = document.createElement('p');
+                p.style.margin = '0 0 0.8em 0';
+                p.textContent = text;
+                contentStreamContainer.appendChild(p);
             }
 
             scrollToBottom();

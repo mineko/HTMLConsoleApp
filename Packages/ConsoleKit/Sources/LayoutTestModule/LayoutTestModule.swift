@@ -28,22 +28,70 @@ public struct LayoutTestModule: ConsoleModule {
 
 class LayoutTestEngine: Engine {
     private var streamTimer: Timer?
-    private var paragraphIndex = 0
+    private var sceneQueue: [String] = []
 
-    private let paragraphs = [
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-        "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-        "Curabitur pretium tincidunt lacus. Nulla gravida orci a odio. Nullam varius, turpis et commodo pharetra, est eros bibendum elit, nec luctus magna felis sollicitudin mauris. Integer in mauris eu nibh euismod gravida.",
-        "Praesent blandit laoreet nibh. Fusce convallis metus id felis luctus adipiscing. Pellentesque egestas, neque sit amet convallis pulvinar, justo nulla eleifend augue, ac auctor orci leo non est.",
-        "Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae. Morbi lacinia molestie dui. Praesent blandit dolor sed nunc rutrum venenatis.",
-        "Sed non velit cursus arcu aliquet laoreet. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nulla quam. Aenean ornare velit lacus.",
-        "Donec vitae sapien ut libero venenatis faucibus. Nullam quis ante. Etiam sit amet orci eget eros faucibus tincidunt. Duis leo. Sed fringilla mauris sit amet nibh.",
-        "Maecenas tempus, tellus eget condimentum rhoncus, sem quam semper libero, sit amet adipiscing sem neque sed ipsum. Nam quam nunc, blandit vel, luctus pulvinar, hendrerit id, lorem.",
-        "Phasellus viverra nulla ut metus varius laoreet. Quisque rutrum. Aenean imperdiet. Etiam ultricies nisi vel augue. Curabitur ullamcorper ultricies nisi. Nam eget dui. Etiam rhoncus.",
-        "Fusce risus nisl, viverra et, tempor et, pretium in, sapien. Donec venenatis vulputate lorem. Morbi nec metus. Phasellus blandit leo ut odio. Maecenas ullamcorper, dui et placerat feugiat.",
-        "Aliquam erat volutpat. Nunc fermentum tortor ac porta dapibus. In rutrum ac purus sit amet tempus. Suspendisse potenti. Etiam pharetra lacus sed interdum auctor.",
-        "Vivamus elementum semper nisi. Aenean vulputate eleifend tellus. Aenean leo ligula, porttitor eu, consequat vitae, eleifend ac, enim. Aliquam lorem ante, dapibus in, viverra quis, feugiat a, tellus."
+    private let headers = [
+        "Small Cottage", "Forest Clearing", "The Great Hall", "Dungeon Entrance",
+        "Market Square", "The Throne Room", "Winding Staircase", "Abandoned Chapel",
+        "River Crossing", "The Old Library",
     ]
+
+    private let shortLines = [
+        "You see a stick and a mushroom.",
+        "There is an exit south.",
+        "The door is locked.",
+        "You hear footsteps in the distance.",
+        "A cold wind blows through the passage.",
+        "Nothing happens.",
+        "It is pitch dark.",
+        "There are exits north and east.",
+        "A faint light glimmers ahead.",
+        "Something moves in the shadows.",
+    ]
+
+    private let mediumDescriptions = [
+        "A narrow stone corridor stretches before you, its walls slick with moisture. Torches flicker at irregular intervals, casting long shadows that seem to move on their own.",
+        "The tavern is warm and noisy. A bard strums a lute in the corner while patrons argue over cards. The barkeep eyes you with casual suspicion.",
+        "You find yourself at the edge of a vast underground lake. The water is impossibly still, reflecting the pale glow of phosphorescent fungi clinging to the cavern ceiling.",
+        "In the heart of the dimly-lit chamber, a grand, weathered chest stands resolute, its antiquated beauty radiating a silent, enigmatic allure.",
+        "The courtyard is overgrown with ivy and wild roses. A crumbling fountain stands at its center, long dry, with a moss-covered statue of a forgotten hero gazing skyward.",
+        "Shelves line every wall from floor to ceiling, stuffed with leather-bound volumes and loose scrolls. Dust motes drift through a single beam of light from a high window.",
+    ]
+
+    private let longDescriptions = [
+        "Wrapped in the tender embrace of a quaint, snug cottage, you find yourself ensconced in a warm, inviting sanctuary. The crackling fireplace hums softly, casting long, dancing shadows on the worn-out, rustic walls. The scent of freshly baked bread wafts through the air, a comforting reminder of the hearth and home.",
+        "The forest canopy breaks open here, allowing a shaft of golden sunlight to illuminate a small meadow carpeted with wildflowers. Butterflies drift lazily between blooms, and somewhere nearby a brook babbles over smooth stones. It feels impossibly peaceful given what you've just escaped.",
+        "The merchant's stall is a riot of color and scent. Silk scarves in every imaginable hue hang from wooden pegs, while baskets overflow with exotic spices that tingle in your nostrils. The merchant himself is a wiry old man with knowing eyes and ink-stained fingers.",
+        "You descend the spiral staircase, each step echoing in the hollow tower. The air grows colder and damper with every turn. By the time you reach the bottom, your breath comes in visible puffs and the stone walls glisten with frost.",
+        "Beyond the room's shadows, the flickering torchlight reveals a narrow, stone-hewn passage, leading ever upward and vanishing into the gloom of the ancient fortress, beckoning you northward. The stones underfoot are worn smooth by centuries of footsteps.",
+    ]
+
+    /// Generate a "scene" — a header followed by a structured sequence of descriptions.
+    private func generateScene() -> [String] {
+        var scene: [String] = []
+
+        // Header
+        scene.append(headers.randomElement()!)
+
+        // Primary description: usually medium, sometimes long, rarely short
+        switch Int.random(in: 0...9) {
+        case 0...5:  scene.append(mediumDescriptions.randomElement()!)
+        case 6...8:  scene.append(longDescriptions.randomElement()!)
+        default:     scene.append(shortLines.randomElement()!)
+        }
+
+        // 0-3 follow-up lines (short or medium, occasionally long)
+        let followUpCount = Int.random(in: 0...3)
+        for _ in 0..<followUpCount {
+            switch Int.random(in: 0...9) {
+            case 0...4:  scene.append(shortLines.randomElement()!)
+            case 5...7:  scene.append(mediumDescriptions.randomElement()!)
+            default:     scene.append(longDescriptions.randomElement()!)
+            }
+        }
+
+        return scene
+    }
 
     // SVG placeholder images as data URIs with different colors/aspect ratios
     private let placeholderImages: [(uri: String, caption: String)] = {
@@ -153,12 +201,17 @@ class LayoutTestEngine: Engine {
         statusBar?.updateField(name: "knobs", text: display)
     }
 
+    private func nextTextBlock() -> String {
+        if sceneQueue.isEmpty {
+            sceneQueue = generateScene()
+        }
+        return sceneQueue.removeFirst()
+    }
+
     private func generateContent(count: Int) {
         for i in 0..<count {
-            let text = paragraphs[paragraphIndex % paragraphs.count]
-            paragraphIndex += 1
+            let text = nextTextBlock()
 
-            // Every 2-3 blocks, attach an image with random priority
             if i > 0 && Int.random(in: 0...2) == 0 {
                 let img = placeholderImages.randomElement()!
                 let priority = CGFloat.random(in: 0.1...1.0)
@@ -188,8 +241,7 @@ class LayoutTestEngine: Engine {
     }
 
     private func streamTick() {
-        let text = paragraphs[paragraphIndex % paragraphs.count]
-        paragraphIndex += 1
+        let text = nextTextBlock()
 
         if Int.random(in: 0...2) == 0 {
             let img = placeholderImages.randomElement()!
@@ -202,7 +254,7 @@ class LayoutTestEngine: Engine {
 
     private func resetContent() {
         stopStream()
-        paragraphIndex = 0
+        sceneQueue = []
         clearOutput()
         addOutput("Output cleared. Type 'go' or 'stream' to generate content.")
         controller?.showPrompt()
