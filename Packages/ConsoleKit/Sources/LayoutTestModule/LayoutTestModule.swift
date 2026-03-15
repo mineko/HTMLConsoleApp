@@ -256,7 +256,7 @@ class LayoutTestEngine: Engine {
         statusBar?.updateField(name: "status", text: "Streaming")
         addOutput("Streaming started. Type 'stop' to end.")
 
-        streamTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in
+        streamTimer = Timer.scheduledTimer(withTimeInterval: 0.75, repeats: true) { [weak self] _ in
             self?.streamTick()
         }
     }
