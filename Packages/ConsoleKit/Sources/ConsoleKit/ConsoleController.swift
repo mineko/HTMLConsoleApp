@@ -79,7 +79,10 @@ public class ConsoleController: NSObject, ObservableObject {
         // Use absolute file URL so WebKit can find the CSS in the package bundle
         if let themeURL = Bundle.module.url(forResource: themeName, withExtension: "css") {
             let script = "document.querySelector('link[rel=\"stylesheet\"]').href = '\(themeURL.absoluteString)';"
-            webView.evaluateJavaScript(script, completionHandler: nil)
+            webView.evaluateJavaScript(script) { _, _ in
+                // Full re-layout after CSS applies — font/spacing may have changed
+                webView.evaluateJavaScript("renderLayout(true);", completionHandler: nil)
+            }
         }
     }
 
