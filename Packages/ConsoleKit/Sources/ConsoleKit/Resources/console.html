@@ -146,6 +146,9 @@
 
             if (shouldMarkOldOnNextOutput) {
                 shouldMarkOldOnNextOutput = false;
+                for (const item of contentStream) {
+                    item.old = true;
+                }
             }
 
             const scrollContainer = document.getElementById('scroll-container');
@@ -379,10 +382,11 @@
             for (let i = 0; i < contentStream.length; i++) {
                 const item = contentStream[i];
 
+                const isOld = !!item.old;
                 if (item.type === 'text') {
-                    renderList.push({ type: 'text', text: item.text, streamIndex: i });
+                    renderList.push({ type: 'text', text: item.text, old: isOld, streamIndex: i });
                 } else if (item.type === 'system') {
-                    renderList.push({ type: 'system', text: item.text, streamIndex: i });
+                    renderList.push({ type: 'system', text: item.text, old: isOld, streamIndex: i });
                 } else if (item.type === 'image' && placedAt[i]) {
                     const p = placedAt[i];
                     const iw = item.width || 400;
@@ -394,6 +398,7 @@
                         alignment: p.alignment,
                         widthPercent: p.widthPercent,
                         score: p.score,
+                        old: isOld,
                         streamIndex: i
                     });
                 }
@@ -528,8 +533,11 @@
         // ─── DOM creation for render items ───
 
         function createElementForItem(item) {
+            const outputClass = item.old ? 'old-output' : 'new-output';
+
             if (item.type === 'text') {
                 const p = document.createElement('p');
+                p.className = `output-line ${outputClass}`;
                 p.style.margin = '0 0 0.8em 0';
                 p.textContent = item.text;
                 p.dataset.streamIndex = item.streamIndex;
@@ -537,7 +545,7 @@
 
             } else if (item.type === 'system') {
                 const line = document.createElement('div');
-                line.className = 'output-line new-output';
+                line.className = `output-line ${outputClass}`;
                 line.textContent = item.text;
                 line.dataset.streamIndex = item.streamIndex;
                 return line;

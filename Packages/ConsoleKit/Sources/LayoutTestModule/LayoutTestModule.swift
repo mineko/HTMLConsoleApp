@@ -28,7 +28,6 @@ public struct LayoutTestModule: ConsoleModule {
 
 class LayoutTestEngine: Engine {
     private var streamTimer: Timer?
-    private var sceneQueue: [String] = []
 
     private let headers = [
         "Small Cottage", "Forest Clearing", "The Great Hall", "Dungeon Entrance",
@@ -136,33 +135,6 @@ class LayoutTestEngine: Engine {
         "The feast hall of the dwarven city is carved from living rock, its pillars shaped like ancient kings bearing the weight of the mountain on their shoulders. A fire pit runs the length of the central table, its flames fed by vents in the stone that channel heat from somewhere deep below. The smell of roasted meat and dark ale fills the air.",
     ]
 
-    /// Generate a "scene" — a header followed by a structured sequence of descriptions.
-    private func generateScene() -> [String] {
-        var scene: [String] = []
-
-        // Header
-        scene.append(headers.randomElement()!)
-
-        // Primary description: usually medium, sometimes long, rarely short
-        switch Int.random(in: 0...9) {
-        case 0...5:  scene.append(mediumDescriptions.randomElement()!)
-        case 6...8:  scene.append(longDescriptions.randomElement()!)
-        default:     scene.append(shortLines.randomElement()!)
-        }
-
-        // 0-3 follow-up lines (short or medium, occasionally long)
-        let followUpCount = Int.random(in: 0...3)
-        for _ in 0..<followUpCount {
-            switch Int.random(in: 0...9) {
-            case 0...4:  scene.append(shortLines.randomElement()!)
-            case 5...7:  scene.append(mediumDescriptions.randomElement()!)
-            default:     scene.append(longDescriptions.randomElement()!)
-            }
-        }
-
-        return scene
-    }
-
     // Image template configs
     private let imageConfigs: [(color: String, w: Int, h: Int, label: String)] = [
         ("#4A90D9", 400, 300, "Landscape"),
@@ -216,8 +188,17 @@ class LayoutTestEngine: Engine {
         controller?.showPrompt()
     }
 
+    private let fakeCommands = [
+        "look", "go north", "go south", "go east", "go west",
+        "open door", "take sword", "examine chest", "light torch",
+        "read scroll", "climb stairs", "enter cave", "cross bridge",
+        "talk to merchant", "drink potion", "use key", "continue",
+        "search room", "pick lock", "rest", "inventory",
+    ]
+
     override func processInput(_ input: String) {
-        addOutput(input)
+        // Respond like a game: generate a scene in response to input
+        generateScene()
         controller?.showPrompt()
     }
 
@@ -229,18 +210,10 @@ class LayoutTestEngine: Engine {
         addOutput("  Admin > Theme > switch themes")
     }
 
-
-    private func nextTextBlock() -> String {
-        if sceneQueue.isEmpty {
-            sceneQueue = generateScene()
-        }
-        return sceneQueue.removeFirst()
-    }
-
-    private func generateContent(count: Int) {
-        for i in 0..<count {
-            let text = nextTextBlock()
-
+    @discardableResult
+    private func generateScene() -> [String] {
+        let scene = buildScene()
+        for (i, text) in scene.enumerated() {
             if i > 0 && Int.random(in: 0...2) == 0 {
                 let priority = CGFloat.random(in: 0.1...1.0)
                 let img = makePlaceholder(priority: priority)
@@ -249,12 +222,34 @@ class LayoutTestEngine: Engine {
                 addContent(text: text)
             }
         }
+        return scene
+    }
+
+    private func buildScene() -> [String] {
+        var scene: [String] = []
+        scene.append(headers.randomElement()!)
+
+        switch Int.random(in: 0...9) {
+        case 0...5:  scene.append(mediumDescriptions.randomElement()!)
+        case 6...8:  scene.append(longDescriptions.randomElement()!)
+        default:     scene.append(shortLines.randomElement()!)
+        }
+
+        let followUpCount = Int.random(in: 0...3)
+        for _ in 0..<followUpCount {
+            switch Int.random(in: 0...9) {
+            case 0...4:  scene.append(shortLines.randomElement()!)
+            case 5...7:  scene.append(mediumDescriptions.randomElement()!)
+            default:     scene.append(longDescriptions.randomElement()!)
+            }
+        }
+
+        return scene
     }
 
     private func startStream() {
         stopStream()
         statusBar?.updateField(name: "status", text: "Streaming")
-        addOutput("Streaming started. Type 'stop' to end.")
 
         streamTimer = Timer.scheduledTimer(withTimeInterval: 0.75, repeats: true) { [weak self] _ in
             self?.streamTick()
@@ -268,20 +263,14 @@ class LayoutTestEngine: Engine {
     }
 
     private func streamTick() {
-        let text = nextTextBlock()
-
-        if Int.random(in: 0...2) == 0 {
-            let priority = CGFloat.random(in: 0.1...1.0)
-            let img = makePlaceholder(priority: priority)
-            addContent(text: text, image: img.uri, caption: img.caption, priority: priority, imageWidth: img.width, imageHeight: img.height)
-        } else {
-            addContent(text: text)
-        }
+        // Simulate a user turn: pick a random command, echo it,
+        // generate a scene response — same as processInput
+        let fakeInput = fakeCommands.randomElement()!
+        processInput(fakeInput)
     }
 
     private func resetContent() {
         stopStream()
-        sceneQueue = []
         clearOutput()
         addOutput("Output cleared. Type 'go' or 'stream' to generate content.")
     }
