@@ -82,11 +82,13 @@
 
         function pushText(text) {
             if (!text || !text.trim()) return;
+            consumeOldMarker();
             contentStream.push({ type: 'text', text: text });
             renderLayout();
         }
 
         function pushImage(src, caption, priority, width, height) {
+            consumeOldMarker();
             contentStream.push({
                 type: 'image', src: src, caption: caption || '',
                 priority: priority || 0.5, width: width || 0, height: height || 0
@@ -96,8 +98,19 @@
 
         function pushSystem(text) {
             if (!text) return;
+            consumeOldMarker();
             contentStream.push({ type: 'system', text: text });
             renderLayout();
+        }
+
+        // Mark all existing stream items as old when new content arrives after user input.
+        function consumeOldMarker() {
+            if (shouldMarkOldOnNextOutput) {
+                shouldMarkOldOnNextOutput = false;
+                for (const item of contentStream) {
+                    item.old = true;
+                }
+            }
         }
 
         function clearContentStream() {
@@ -142,13 +155,6 @@
             if (fullRescore) {
                 committedPlacements = {};
                 committedSkips = new Set();
-            }
-
-            if (shouldMarkOldOnNextOutput) {
-                shouldMarkOldOnNextOutput = false;
-                for (const item of contentStream) {
-                    item.old = true;
-                }
             }
 
             const scrollContainer = document.getElementById('scroll-container');
