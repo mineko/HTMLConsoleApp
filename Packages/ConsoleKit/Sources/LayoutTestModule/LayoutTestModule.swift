@@ -93,27 +93,30 @@ class LayoutTestEngine: Engine {
         return scene
     }
 
-    // SVG placeholder images as data URIs with different colors/aspect ratios
-    private let placeholderImages: [(uri: String, caption: String)] = {
-        let configs: [(color: String, w: Int, h: Int, label: String)] = [
-            ("#4A90D9", 400, 300, "Landscape"),
-            ("#D94A4A", 300, 400, "Portrait"),
-            ("#4AD97A", 400, 400, "Square"),
-            ("#D9A04A", 500, 250, "Wide"),
-            ("#9B59B6", 250, 500, "Tall"),
-            ("#1ABC9C", 600, 300, "Panoramic"),
-            ("#E67E22", 350, 350, "Medium"),
-            ("#3498DB", 450, 280, "Scene"),
-        ]
-        return configs.map { cfg in
-            let svg = "<svg xmlns='http://www.w3.org/2000/svg' width='\(cfg.w)' height='\(cfg.h)'>"
-                + "<rect width='100%' height='100%' fill='\(cfg.color)' rx='8'/>"
-                + "<text x='50%' y='50%' fill='white' font-family='sans-serif' font-size='20' text-anchor='middle' dy='.3em'>\(cfg.label) \(cfg.w)x\(cfg.h)</text>"
-                + "</svg>"
-            let encoded = Data(svg.utf8).base64EncodedString()
-            return (uri: "data:image/svg+xml;base64,\(encoded)", caption: cfg.label)
-        }
-    }()
+    // Image template configs
+    private let imageConfigs: [(color: String, w: Int, h: Int, label: String)] = [
+        ("#4A90D9", 400, 300, "Landscape"),
+        ("#D94A4A", 300, 400, "Portrait"),
+        ("#4AD97A", 400, 400, "Square"),
+        ("#D9A04A", 500, 250, "Wide"),
+        ("#9B59B6", 250, 500, "Tall"),
+        ("#1ABC9C", 600, 300, "Panoramic"),
+        ("#E67E22", 350, 350, "Medium"),
+        ("#3498DB", 450, 280, "Scene"),
+    ]
+
+    /// Generate an SVG placeholder with metadata baked into the image
+    private func makePlaceholder(priority: CGFloat) -> (uri: String, caption: String) {
+        let cfg = imageConfigs.randomElement()!
+        let pri = String(format: "%.2f", priority)
+        let svg = "<svg xmlns='http://www.w3.org/2000/svg' width='\(cfg.w)' height='\(cfg.h)'>"
+            + "<rect width='100%' height='100%' fill='\(cfg.color)' rx='8'/>"
+            + "<text x='50%' y='40%' fill='white' font-family='sans-serif' font-size='20' text-anchor='middle' dy='.3em'>\(cfg.label) \(cfg.w)x\(cfg.h)</text>"
+            + "<text x='50%' y='60%' fill='rgba(255,255,255,0.8)' font-family='sans-serif' font-size='20' text-anchor='middle' dy='.3em'>Priority: \(pri)</text>"
+            + "</svg>"
+        let encoded = Data(svg.utf8).base64EncodedString()
+        return (uri: "data:image/svg+xml;base64,\(encoded)", caption: cfg.label)
+    }
 
     override func configureStatusBar() {
         statusBar?.setLineCount(1)
@@ -213,8 +216,8 @@ class LayoutTestEngine: Engine {
             let text = nextTextBlock()
 
             if i > 0 && Int.random(in: 0...2) == 0 {
-                let img = placeholderImages.randomElement()!
                 let priority = CGFloat.random(in: 0.1...1.0)
+                let img = makePlaceholder(priority: priority)
                 addContent(text: text, image: img.uri, caption: img.caption, priority: priority)
             } else {
                 addContent(text: text)
@@ -244,8 +247,8 @@ class LayoutTestEngine: Engine {
         let text = nextTextBlock()
 
         if Int.random(in: 0...2) == 0 {
-            let img = placeholderImages.randomElement()!
             let priority = CGFloat.random(in: 0.1...1.0)
+            let img = makePlaceholder(priority: priority)
             addContent(text: text, image: img.uri, caption: img.caption, priority: priority)
         } else {
             addContent(text: text)

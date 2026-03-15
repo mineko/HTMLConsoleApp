@@ -394,7 +394,7 @@
                 figure.appendChild(img);
 
                 const cap = document.createElement('figcaption');
-                const captionText = item.caption ? item.caption + ' · ' : '';
+                const captionText = item.caption ? item.caption + ' | ' : '';
                 const pri = (item.priority || 0).toFixed(2);
                 const sc = (item.score || 0).toFixed(2);
                 cap.textContent = `${captionText}pri:${pri} score:${sc} ${item.alignment} ${item.widthPercent}%`;
