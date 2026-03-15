@@ -195,65 +195,115 @@
             }
         }
 
-        // ─── Scoring: walk the stream, decide which images to show ───
+        // ─── Scoring: two-pass layout over the full stream ───
+        //
+        // Pass 1: Walk the stream to build a text height map and collect
+        //         all image candidates with their positions.
+        // Pass 2: Identify placement slots (where spacing allows an image),
+        //         assign the best available image (by priority) to each slot,
+        //         then render the final list.
 
         function scoreFullStream() {
             const viewportWidth = window.innerWidth;
             const viewportHeight = window.innerHeight;
-            const renderList = [];
 
-            // Layout state that accumulates as we walk the stream
-            let textHeightSinceLastImage = 10000;
-            let recentAlignments = [];
-            let placedImageCount = 0;
-
-            // Viewport-aware spacing: wider viewports need more spacing
-            // because text wraps less and takes fewer vertical pixels
             const viewportFactor = Math.max(1.0, viewportWidth / 700);
             const baseMinSpacing = 150 + (1.0 - layoutKnobs.density) * 400;
             const minSpacing = baseMinSpacing * viewportFactor;
 
+            // ── Pass 1: build text map + collect image candidates ──
+
+            // textHeightAt[i] = cumulative estimated text height just before stream item i
+            const textHeightAt = [];
+            let cumulativeHeight = 0;
+            const imageCandidates = []; // { streamIndex, priority, src, caption }
+
+            for (let i = 0; i < contentStream.length; i++) {
+                textHeightAt[i] = cumulativeHeight;
+                const item = contentStream[i];
+                if (item.type === 'text' || item.type === 'system') {
+                    cumulativeHeight += estimateTextHeight(item.text, viewportWidth);
+                } else if (item.type === 'image') {
+                    imageCandidates.push({
+                        streamIndex: i,
+                        priority: item.priority || 0.5,
+                        src: item.src,
+                        caption: item.caption || '',
+                    });
+                }
+            }
+
+            // ── Pass 2: assign images to placement slots ──
+            // Sort candidates by priority (highest first) so best images
+            // get first pick of placement slots.
+            const ranked = imageCandidates.slice().sort((a, b) => b.priority - a.priority);
+
+            // placedAt[streamIndex] = placement decision for that image
+            const placedAt = {};
+            // Track which text-height regions are "taken" by placed images
+            const placedHeights = []; // heights where images were placed
+
+            let recentAlignments = [];
+
+            for (const candidate of ranked) {
+                const heightAtImage = textHeightAt[candidate.streamIndex];
+
+                // Check spacing: is there enough text distance from any already-placed image?
+                let tooClose = false;
+                for (const ph of placedHeights) {
+                    if (Math.abs(heightAtImage - ph) < minSpacing) {
+                        // Too close, but high priority can override
+                        const priorityOverride = candidate.priority * layoutKnobs.priorityBias;
+                        if (priorityOverride < 0.7) {
+                            tooClose = true;
+                            break;
+                        }
+                    }
+                }
+                if (tooClose) continue;
+
+                // Score the placement (alignment + size)
+                const pixelsSince = placedHeights.length === 0
+                    ? 10000
+                    : Math.max(0, heightAtImage - Math.max(...placedHeights.filter(h => h <= heightAtImage)));
+
+                const decision = scoreImageCandidate(
+                    candidate, viewportWidth, viewportHeight,
+                    pixelsSince, recentAlignments, minSpacing
+                );
+
+                if (decision.place) {
+                    placedAt[candidate.streamIndex] = {
+                        alignment: decision.alignment,
+                        widthPercent: decision.widthPercent,
+                        score: decision.score,
+                    };
+                    placedHeights.push(heightAtImage);
+                    recentAlignments.unshift(decision.alignment);
+                    if (recentAlignments.length > 5) recentAlignments.pop();
+                }
+            }
+
+            // ── Build final render list in stream order ──
+
+            const renderList = [];
             for (let i = 0; i < contentStream.length; i++) {
                 const item = contentStream[i];
 
                 if (item.type === 'text') {
-                    // Estimate rendered height for this text block
-                    const estHeight = estimateTextHeight(item.text, viewportWidth);
-                    textHeightSinceLastImage += estHeight;
-
-                    renderList.push({
-                        type: 'text', text: item.text, streamIndex: i
-                    });
-
+                    renderList.push({ type: 'text', text: item.text, streamIndex: i });
                 } else if (item.type === 'system') {
-                    const estHeight = estimateTextHeight(item.text, viewportWidth);
-                    textHeightSinceLastImage += estHeight;
-
+                    renderList.push({ type: 'system', text: item.text, streamIndex: i });
+                } else if (item.type === 'image' && placedAt[i]) {
+                    const p = placedAt[i];
                     renderList.push({
-                        type: 'system', text: item.text, streamIndex: i
+                        type: 'image', src: item.src, caption: item.caption,
+                        priority: item.priority,
+                        alignment: p.alignment,
+                        widthPercent: p.widthPercent,
+                        score: p.score,
+                        streamIndex: i
                     });
-
-                } else if (item.type === 'image') {
-                    const decision = scoreImageCandidate(
-                        item, viewportWidth, viewportHeight,
-                        textHeightSinceLastImage, recentAlignments, minSpacing
-                    );
-
-                    if (decision.place) {
-                        renderList.push({
-                            type: 'image', src: item.src, caption: item.caption,
-                            priority: item.priority,
-                            alignment: decision.alignment,
-                            widthPercent: decision.widthPercent,
-                            score: decision.score,
-                            streamIndex: i
-                        });
-                        textHeightSinceLastImage = 0;
-                        recentAlignments.unshift(decision.alignment);
-                        if (recentAlignments.length > 5) recentAlignments.pop();
-                        placedImageCount++;
-                    }
-                    // If not placed, the image is simply omitted from renderList
                 }
             }
 

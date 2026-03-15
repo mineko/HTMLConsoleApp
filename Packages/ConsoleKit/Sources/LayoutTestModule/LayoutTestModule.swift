@@ -235,11 +235,11 @@ class LayoutTestEngine: Engine {
             } else {
                 addOutput("Usage: \(command) <0.0-1.0>")
             }
-            controller?.showPrompt()
         default:
             addOutput("Unknown command: \(input). Type 'help' for commands.")
-            controller?.showPrompt()
         }
+
+        controller?.showPrompt()
     }
 
     // MARK: - Commands
@@ -255,7 +255,6 @@ class LayoutTestEngine: Engine {
         addOutput("prominence N - Set prominence (0=small, 1=large)")
         addOutput("variety N   - Set variety (0=repetitive, 1=varied)")
         addOutput("priority N  - Set priority bias (0=aesthetics, 1=priority)")
-        controller?.showPrompt()
     }
 
     private func showKnobs() {
@@ -265,7 +264,6 @@ class LayoutTestEngine: Engine {
         addOutput("prominence: \(String(format: "%.2f", knobs.prominence))")
         addOutput("variety:    \(String(format: "%.2f", knobs.variety))")
         addOutput("priority:   \(String(format: "%.2f", knobs.priorityBias))")
-        controller?.showPrompt()
     }
 
     private func updateKnobsDisplay() {
@@ -293,14 +291,12 @@ class LayoutTestEngine: Engine {
                 addContent(text: text)
             }
         }
-        controller?.showPrompt()
     }
 
     private func startStream() {
         stopStream()
         statusBar?.updateField(name: "status", text: "Streaming")
         addOutput("Streaming started. Type 'stop' to end.")
-        controller?.showPrompt()
 
         streamTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in
             self?.streamTick()
@@ -330,6 +326,5 @@ class LayoutTestEngine: Engine {
         sceneQueue = []
         clearOutput()
         addOutput("Output cleared. Type 'go' or 'stream' to generate content.")
-        controller?.showPrompt()
     }
 }
