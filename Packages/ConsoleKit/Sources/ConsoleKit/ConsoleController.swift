@@ -30,6 +30,9 @@ public class ConsoleController: NSObject, ObservableObject {
         if engine == nil {
             print("ConsoleController: No modules registered in ModuleRegistry")
         }
+
+        // Rebuild menu now that engine exists (so engine menu actions are included)
+        self.menuManager.rebuildMenu()
     }
 
     // MARK: - Theme Discovery
@@ -127,6 +130,10 @@ public class ConsoleController: NSObject, ObservableObject {
 
     internal func getAvailableThemes() -> [String] {
         return availableThemes
+    }
+
+    internal func getEngineMenuItems() -> [MenuItem] {
+        return engine?.menuItems() ?? []
     }
 
     internal func showSubmenu(_ submenu: Menu?) {

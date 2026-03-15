@@ -29,6 +29,12 @@ open class Engine {
     /// Called during init. Override to register status bar fields.
     open func configureStatusBar() {}
 
+    /// Override to provide menu items for the / menu.
+    /// Return MenuItem instances with actions or submenus.
+    open func menuItems() -> [MenuItem] {
+        return []
+    }
+
     // MARK: - Helpers for Subclasses
 
     public func addOutput(_ text: String) {

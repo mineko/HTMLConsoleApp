@@ -196,6 +196,19 @@ class LayoutTestEngine: Engine {
         updateKnobsDisplay()
     }
 
+    override func menuItems() -> [MenuItem] {
+        let controlMenu = Menu(items: [
+            MenuItem(id: "stream", title: "Stream", action: { [weak self] in self?.startStream() }),
+            MenuItem(id: "stop", title: "Stop", action: { [weak self] in self?.stopStream() }),
+            MenuItem(id: "reset", title: "Reset", action: { [weak self] in self?.resetContent() }),
+        ], title: "Control")
+
+        return [
+            MenuItem(id: "control", title: "Control", submenu: controlMenu),
+            MenuItem(id: "help", title: "Help", action: { [weak self] in self?.showHelp() }),
+        ]
+    }
+
     override func start() {
         statusBar?.show()
         statusBar?.updateField(name: "module", text: "Layout Test")
