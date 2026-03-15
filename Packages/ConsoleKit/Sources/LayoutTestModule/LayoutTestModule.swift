@@ -176,7 +176,7 @@ class LayoutTestEngine: Engine {
     ]
 
     /// Generate an SVG placeholder with metadata baked into the image
-    private func makePlaceholder(priority: CGFloat) -> (uri: String, caption: String) {
+    private func makePlaceholder(priority: CGFloat) -> (uri: String, caption: String, width: Int, height: Int) {
         let cfg = imageConfigs.randomElement()!
         let pri = String(format: "%.2f", priority)
         let svg = "<svg xmlns='http://www.w3.org/2000/svg' width='\(cfg.w)' height='\(cfg.h)'>"
@@ -185,7 +185,7 @@ class LayoutTestEngine: Engine {
             + "<text x='50%' y='60%' fill='rgba(255,255,255,0.8)' font-family='sans-serif' font-size='20' text-anchor='middle' dy='.3em'>Priority: \(pri)</text>"
             + "</svg>"
         let encoded = Data(svg.utf8).base64EncodedString()
-        return (uri: "data:image/svg+xml;base64,\(encoded)", caption: cfg.label)
+        return (uri: "data:image/svg+xml;base64,\(encoded)", caption: cfg.label, width: cfg.w, height: cfg.h)
     }
 
     override func configureStatusBar() {
@@ -286,7 +286,7 @@ class LayoutTestEngine: Engine {
             if i > 0 && Int.random(in: 0...2) == 0 {
                 let priority = CGFloat.random(in: 0.1...1.0)
                 let img = makePlaceholder(priority: priority)
-                addContent(text: text, image: img.uri, caption: img.caption, priority: priority)
+                addContent(text: text, image: img.uri, caption: img.caption, priority: priority, imageWidth: img.width, imageHeight: img.height)
             } else {
                 addContent(text: text)
             }
@@ -315,7 +315,7 @@ class LayoutTestEngine: Engine {
         if Int.random(in: 0...2) == 0 {
             let priority = CGFloat.random(in: 0.1...1.0)
             let img = makePlaceholder(priority: priority)
-            addContent(text: text, image: img.uri, caption: img.caption, priority: priority)
+            addContent(text: text, image: img.uri, caption: img.caption, priority: priority, imageWidth: img.width, imageHeight: img.height)
         } else {
             addContent(text: text)
         }

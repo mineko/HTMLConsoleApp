@@ -35,8 +35,8 @@ open class Engine {
         controller?.addOutput(text)
     }
 
-    public func addContent(text: String = "", image: String = "", caption: String = "", priority: CGFloat = 0.5) {
-        controller?.addContent(text: text, image: image, caption: caption, priority: priority)
+    public func addContent(text: String = "", image: String = "", caption: String = "", priority: CGFloat = 0.5, imageWidth: Int = 0, imageHeight: Int = 0) {
+        controller?.addContent(text: text, image: image, caption: caption, priority: priority, imageWidth: imageWidth, imageHeight: imageHeight)
     }
 
     public func setLayoutKnob(_ name: String, value: CGFloat) {

@@ -61,6 +61,13 @@
         let contentStream = [];
         let contentStreamContainer = null;
 
+        // Committed placement decisions survive append-triggered re-renders.
+        // Only a resize (or clear) resets these, forcing a full re-score.
+        // Key: streamIndex, Value: { alignment, widthPercent, score }
+        let committedPlacements = {};
+        // Set of streamIndex values that were evaluated and skipped (not placed).
+        let committedSkips = new Set();
+
         // ─── Layout knobs (tunable from Swift) ───
 
         const layoutKnobs = {
@@ -94,6 +101,8 @@
 
         function clearContentStream() {
             contentStream = [];
+            committedPlacements = {};
+            committedSkips = new Set();
             renderLayout();
         }
 
@@ -116,6 +125,8 @@
 
         function clearOutput() {
             contentStream = [];
+            committedPlacements = {};
+            committedSkips = new Set();
             output.innerHTML = '';
             contentStreamContainer = null;
         }
@@ -126,7 +137,12 @@
 
         let resizeDebounceTimer = null;
 
-        function renderLayout() {
+        function renderLayout(fullRescore = false) {
+            if (fullRescore) {
+                committedPlacements = {};
+                committedSkips = new Set();
+            }
+
             if (shouldMarkOldOnNextOutput) {
                 shouldMarkOldOnNextOutput = false;
             }
@@ -234,16 +250,29 @@
             }
 
             // ── Pass 2: assign images to placement slots ──
-            // Sort candidates by priority (highest first) so best images
-            // get first pick of placement slots.
-            const ranked = imageCandidates.slice().sort((a, b) => b.priority - a.priority);
 
             // placedAt[streamIndex] = placement decision for that image
             const placedAt = {};
             // Track which text-height regions are "taken" by placed images
             const placedHeights = []; // heights where images were placed
-
             let recentAlignments = [];
+
+            // First, lock in committed placements (from previous renders)
+            for (const candidate of imageCandidates) {
+                const idx = candidate.streamIndex;
+                if (committedPlacements[idx]) {
+                    placedAt[idx] = committedPlacements[idx];
+                    placedHeights.push(textHeightAt[idx]);
+                    recentAlignments.unshift(committedPlacements[idx].alignment);
+                    if (recentAlignments.length > 5) recentAlignments.pop();
+                }
+            }
+
+            // Then score uncommitted images (new ones, or all if full rescore)
+            // Sort by priority (highest first) so best images get first pick
+            const uncommitted = imageCandidates
+                .filter(c => !committedPlacements[c.streamIndex] && !committedSkips.has(c.streamIndex));
+            const ranked = uncommitted.slice().sort((a, b) => b.priority - a.priority);
 
             for (const candidate of ranked) {
                 const heightAtImage = textHeightAt[candidate.streamIndex];
@@ -252,7 +281,6 @@
                 let tooClose = false;
                 for (const ph of placedHeights) {
                     if (Math.abs(heightAtImage - ph) < minSpacing) {
-                        // Too close, but high priority can override
                         const priorityOverride = candidate.priority * layoutKnobs.priorityBias;
                         if (priorityOverride < 0.7) {
                             tooClose = true;
@@ -260,7 +288,10 @@
                         }
                     }
                 }
-                if (tooClose) continue;
+                if (tooClose) {
+                    committedSkips.add(candidate.streamIndex);
+                    continue;
+                }
 
                 // Score the placement (alignment + size)
                 const pixelsSince = placedHeights.length === 0
@@ -273,14 +304,18 @@
                 );
 
                 if (decision.place) {
-                    placedAt[candidate.streamIndex] = {
+                    const placement = {
                         alignment: decision.alignment,
                         widthPercent: decision.widthPercent,
                         score: decision.score,
                     };
+                    placedAt[candidate.streamIndex] = placement;
+                    committedPlacements[candidate.streamIndex] = placement;
                     placedHeights.push(heightAtImage);
                     recentAlignments.unshift(decision.alignment);
                     if (recentAlignments.length > 5) recentAlignments.pop();
+                } else {
+                    committedSkips.add(candidate.streamIndex);
                 }
             }
 
@@ -296,9 +331,12 @@
                     renderList.push({ type: 'system', text: item.text, streamIndex: i });
                 } else if (item.type === 'image' && placedAt[i]) {
                     const p = placedAt[i];
+                    const iw = item.width || 400;
+                    const ih = item.height || 300;
                     renderList.push({
                         type: 'image', src: item.src, caption: item.caption,
                         priority: item.priority,
+                        aspectRatio: iw / ih,
                         alignment: p.alignment,
                         widthPercent: p.widthPercent,
                         score: p.score,
@@ -320,6 +358,11 @@
                     return { place: false };
                 }
             }
+
+            // Image aspect ratio (width/height). >1 = landscape, <1 = portrait, ~1 = square
+            const imgW = image.width || 400;
+            const imgH = image.height || 300;
+            const aspectRatio = imgW / imgH;
 
             // Candidate alignments
             const alignments = vpWidth < 500 ? ['center'] : ['left', 'right', 'center'];
@@ -368,6 +411,18 @@
                         if (size.name === 'large') score -= 0.15;
                     } else if (vpWidth > 1200) {
                         if (alignment !== 'center') score += 0.05;
+                    }
+
+                    // 6. Aspect ratio / template fit
+                    //    Wide/landscape (>1.3): prefer center (text break), penalize side floats
+                    //    Tall/portrait (<0.8): prefer side floats, penalize center
+                    //    Square (~1): flexible, slight center preference
+                    if (alignment === 'center') {
+                        if (aspectRatio > 1.3) score += 0.15;       // wide images look great centered
+                        else if (aspectRatio < 0.8) score -= 0.1;   // tall images waste space centered
+                    } else {
+                        if (aspectRatio < 0.8) score += 0.15;       // tall images suit side floats
+                        else if (aspectRatio > 1.5) score -= 0.1;   // very wide images awkward as floats
                     }
 
                     if (score > bestScore) {
@@ -441,13 +496,20 @@
                 img.style.width = '100%';
                 img.style.height = 'auto';
                 img.style.display = 'block';
+                // Don't let images exceed the visible area
+                const statusBarH = statusBar.style.display === 'none' ? 0 : statusBar.offsetHeight;
+                const maxImgHeight = window.innerHeight - statusBarH - 40;
+                img.style.maxHeight = Math.max(100, maxImgHeight) + 'px';
+                img.style.objectFit = 'contain';
                 figure.appendChild(img);
 
                 const cap = document.createElement('figcaption');
                 const captionText = item.caption ? item.caption + ' | ' : '';
                 const pri = (item.priority || 0).toFixed(2);
                 const sc = (item.score || 0).toFixed(2);
-                cap.textContent = `${captionText}pri:${pri} score:${sc} ${item.alignment} ${item.widthPercent}%`;
+                const ar = (item.aspectRatio || 1).toFixed(2);
+                const shape = ar > 1.3 ? 'wide' : ar < 0.8 ? 'tall' : 'sq';
+                cap.textContent = `${captionText}pri:${pri} score:${sc} ${item.alignment} ${item.widthPercent}% ${shape}(${ar})`;
                 cap.style.textAlign = 'center';
                 cap.style.fontSize = '0.75em';
                 cap.style.opacity = '0.6';
@@ -488,8 +550,8 @@
             else if (key === 'variety') layoutKnobs.variety = clamped;
             else if (key === 'priority' || key === 'prioritybias') layoutKnobs.priorityBias = clamped;
 
-            // Re-layout with new knobs
-            renderLayout();
+            // Re-layout with new knobs — full rescore
+            renderLayout(true);
         }
 
         function getLayoutKnobs() {
@@ -503,7 +565,7 @@
         window.addEventListener('resize', function() {
             if (resizeDebounceTimer) clearTimeout(resizeDebounceTimer);
             resizeDebounceTimer = setTimeout(() => {
-                renderLayout();
+                renderLayout(true); // full rescore on resize
             }, 150);
         });
 
