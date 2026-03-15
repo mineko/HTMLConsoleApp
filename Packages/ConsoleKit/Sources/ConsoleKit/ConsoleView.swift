@@ -39,19 +39,6 @@ class ConsoleLogHandler: NSObject, WKScriptMessageHandler {
     }
 }
 
-class LayoutStateHandler: NSObject, WKScriptMessageHandler {
-    let controller: ConsoleController
-
-    init(controller: ConsoleController) {
-        self.controller = controller
-    }
-
-    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        guard message.name == "layoutState", let json = message.body as? String else { return }
-        controller.updateLayoutState(from: json)
-    }
-}
-
 class MenuActionHandler: NSObject, WKScriptMessageHandler {
     let controller: ConsoleController
 
@@ -94,11 +81,9 @@ struct WebViewRepresentable: NSViewRepresentable {
         let inputHandler = ConsoleInputHandler(controller: consoleController)
         let menuHandler = MenuActionHandler(controller: consoleController)
         let consoleLogHandler = ConsoleLogHandler()
-        let layoutStateHandler = LayoutStateHandler(controller: consoleController)
         configuration.userContentController.add(inputHandler, name: "consoleInput")
         configuration.userContentController.add(menuHandler, name: "menuAction")
         configuration.userContentController.add(consoleLogHandler, name: "consoleLog")
-        configuration.userContentController.add(layoutStateHandler, name: "layoutState")
 
         let webView = WKWebView(frame: .zero, configuration: configuration)
         consoleController.setWebView(webView)

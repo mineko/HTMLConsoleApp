@@ -14,7 +14,6 @@ public class ConsoleController: NSObject, ObservableObject {
     private var menuManager: MenuManager!
     private var statusBar: StatusBar?
     private var engine: Engine?
-    private let layoutScorer = LayoutScorer()
 
     override public init() {
         self.availableThemes = []
@@ -183,42 +182,32 @@ public class ConsoleController: NSObject, ObservableObject {
     public func addContent(text: String = "", image: String = "", caption: String = "", priority: CGFloat = 0.5) {
         guard let webView = webView else { return }
 
-        // Step 1: Add text and get layout state back
-        let escapedText = escapeForJS(text)
-        webView.evaluateJavaScript("addTextAndGetState('\(escapedText)');") { [weak self] result, _ in
-            guard let self = self else { return }
+        // Push text into JS content stream
+        if !text.isEmpty {
+            let escaped = escapeForJS(text)
+            webView.evaluateJavaScript("pushText('\(escaped)');", completionHandler: nil)
+        }
 
-            // Update layout state from JS measurements
-            if let stateJSON = result as? String {
-                self.layoutScorer.updateLayoutState(from: stateJSON)
-            }
-
-            // Step 2: If there's an image, run it through the scorer
-            guard !image.isEmpty else { return }
-            let decision = self.layoutScorer.scorePlacement(priority: priority)
-            guard decision.shouldPlace else { return }
-
-            let escapedImage = self.escapeForJS(image)
-            let escapedCaption = self.escapeForJS(caption)
-            let widthPercent = Int(decision.widthFraction * 100)
-            let script = "placeImageWithParams('\(escapedImage)', '\(decision.alignment.rawValue)', \(widthPercent), '\(escapedCaption)');"
-
-            webView.evaluateJavaScript(script) { result, _ in
-                if let stateJSON = result as? String {
-                    self.layoutScorer.updateLayoutState(from: stateJSON)
-                }
-            }
+        // Push image candidate into JS content stream (JS decides if/how to display it)
+        if !image.isEmpty {
+            let escapedSrc = escapeForJS(image)
+            let escapedCaption = escapeForJS(caption)
+            webView.evaluateJavaScript("pushImage('\(escapedSrc)', '\(escapedCaption)', \(priority), 0, 0);", completionHandler: nil)
         }
     }
 
     // MARK: - Layout Knobs
 
     public func setLayoutKnob(_ name: String, value: CGFloat) {
-        layoutScorer.knobs.set(name, value: value)
+        guard let webView = webView else { return }
+        let escaped = name.replacingOccurrences(of: "'", with: "\\'")
+        webView.evaluateJavaScript("setLayoutKnob('\(escaped)', \(value));", completionHandler: nil)
     }
 
     public func getLayoutKnobs() -> LayoutKnobs {
-        return layoutScorer.knobs
+        // Knobs now live in JS; return a snapshot
+        // For synchronous access, maintain a Swift-side copy
+        return knobsCache
     }
 
     public func clearOutput() {
@@ -226,8 +215,19 @@ public class ConsoleController: NSObject, ObservableObject {
         webView.evaluateJavaScript("clearOutput();", completionHandler: nil)
     }
 
-    public func updateLayoutState(from json: String) {
-        layoutScorer.updateLayoutState(from: json)
+    private var knobsCache = LayoutKnobs()
+
+    public func syncKnobs() {
+        guard let webView = webView else { return }
+        webView.evaluateJavaScript("getLayoutKnobs();") { [weak self] result, _ in
+            guard let self = self, let json = result as? String,
+                  let data = json.data(using: .utf8),
+                  let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Double] else { return }
+            if let v = dict["density"] { self.knobsCache.density = CGFloat(v) }
+            if let v = dict["prominence"] { self.knobsCache.prominence = CGFloat(v) }
+            if let v = dict["variety"] { self.knobsCache.variety = CGFloat(v) }
+            if let v = dict["priorityBias"] { self.knobsCache.priorityBias = CGFloat(v) }
+        }
     }
 
     private func escapeForJS(_ str: String) -> String {

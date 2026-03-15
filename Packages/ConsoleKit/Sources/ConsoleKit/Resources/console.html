@@ -51,191 +51,415 @@
         let selectedIndex = 0;
         let shouldMarkOldOnNextOutput = false;
 
-        // Layout state tracking
+        // ═══════════════════════════════════════════════════
+        // Content Stream — the source of truth for layout
+        // ═══════════════════════════════════════════════════
+
+        // Each item: { type: 'text', text: '...' }
+        //        or: { type: 'image', src: '...', caption: '...', priority: 0.0-1.0, width: N, height: N }
+        //        or: { type: 'system', text: '...' }
+        let contentStream = [];
         let contentStreamContainer = null;
-        let lastPlacedImage = null;
-        let lastImageOutputHeight = 0;
 
-        // ─── Line-based output (used by addOutput) ───
+        // ─── Layout knobs (tunable from Swift) ───
 
-        function addOutput(text, className = '') {
-            if (shouldMarkOldOnNextOutput) {
-                markAllOutputAsOld();
-                shouldMarkOldOnNextOutput = false;
-            }
+        const layoutKnobs = {
+            density: 0.5,       // 0 = sparse, 1 = dense
+            prominence: 0.5,    // 0 = small images, 1 = large
+            variety: 0.5,       // 0 = repetitive alignment, 1 = varied
+            priorityBias: 0.5,  // 0 = aesthetics first, 1 = priority first
+        };
 
-            const line = document.createElement('div');
-            line.className = 'output-line new-output ' + className;
-            line.textContent = text;
-            output.appendChild(line);
-            scrollToBottom();
+        // ─── Push content into the stream ───
+
+        function pushText(text) {
+            if (!text || !text.trim()) return;
+            contentStream.push({ type: 'text', text: text });
+            renderLayout();
         }
 
-        // ─── Content stream (text + images via Swift scorer) ───
+        function pushImage(src, caption, priority, width, height) {
+            contentStream.push({
+                type: 'image', src: src, caption: caption || '',
+                priority: priority || 0.5, width: width || 0, height: height || 0
+            });
+            renderLayout();
+        }
 
-        function initializeContentStream() {
-            if (!contentStreamContainer) {
-                contentStreamContainer = document.createElement('div');
-                contentStreamContainer.className = 'content-stream';
-                contentStreamContainer.id = 'content-stream';
-                contentStreamContainer.style.color = 'inherit';
-                contentStreamContainer.style.fontFamily = 'inherit';
-                contentStreamContainer.style.fontSize = 'inherit';
-                contentStreamContainer.style.lineHeight = '1.6';
-                contentStreamContainer.style.wordWrap = 'break-word';
-                contentStreamContainer.style.overflow = 'hidden';
-                output.appendChild(contentStreamContainer);
-            }
+        function pushSystem(text) {
+            if (!text) return;
+            contentStream.push({ type: 'system', text: text });
+            renderLayout();
+        }
+
+        function clearContentStream() {
+            contentStream = [];
+            renderLayout();
+        }
+
+        // Backward-compatible wrappers
+        function addContent(text, image, caption) {
+            if (text && text.trim()) pushText(text);
         }
 
         function addText(text) {
-            if (shouldMarkOldOnNextOutput) {
-                markAllOutputAsOld();
-                shouldMarkOldOnNextOutput = false;
-            }
-
-            initializeContentStream();
-
-            if (text.trim()) {
-                const p = document.createElement('p');
-                p.style.margin = '0 0 0.8em 0';
-                p.textContent = text;
-                contentStreamContainer.appendChild(p);
-            }
-
-            scrollToBottom();
+            pushText(text);
         }
 
-        function addTextAndGetState(text) {
-            addText(text);
-            return JSON.stringify(getLayoutState());
-        }
+        // ─── Line-based output (legacy, appends outside content stream) ───
 
-        // Backward-compatible wrapper — text only, images routed through Swift scorer
-        function addContent(text, image, caption) {
-            addText(text || '');
-        }
-
-        function placeImageWithParams(src, alignment, widthPercent, caption) {
-            initializeContentStream();
-
-            const figure = document.createElement('figure');
-            figure.style.margin = '0';
-            figure.style.padding = '0';
-            figure.style.width = widthPercent + '%';
-            figure.style.maxWidth = '100%';
-            figure.style.lineHeight = '0';
-
-            const img = document.createElement('img');
-            img.src = src;
-            img.className = 'console-image';
-            img.style.width = '100%';
-            img.style.height = 'auto';
-            img.style.display = 'block';
-
-            figure.appendChild(img);
-
-            if (caption && caption.trim()) {
-                const cap = document.createElement('figcaption');
-                cap.textContent = caption;
-                cap.style.textAlign = 'center';
-                cap.style.fontSize = '0.85em';
-                cap.style.opacity = '0.7';
-                cap.style.padding = '4px 0';
-                cap.style.lineHeight = '1.4';
-                figure.appendChild(cap);
-            }
-
-            if (alignment === 'center') {
-                figure.style.display = 'block';
-                figure.style.marginLeft = 'auto';
-                figure.style.marginRight = 'auto';
-                figure.style.marginTop = '20px';
-                figure.style.marginBottom = '20px';
-                figure.style.clear = 'both';
-            } else {
-                figure.style.float = alignment;
-                if (alignment === 'left') {
-                    figure.style.margin = '10px 20px 15px 0';
-                } else {
-                    figure.style.margin = '10px 0 15px 20px';
-                }
-            }
-
-            contentStreamContainer.appendChild(figure);
-
-            lastPlacedImage = img;
-            lastImageOutputHeight = output.scrollHeight;
-
-            scrollToShowImage(img);
-
-            return JSON.stringify(getLayoutState());
-        }
-
-        function getLayoutState() {
-            const viewportWidth = window.innerWidth;
-            const viewportHeight = window.innerHeight;
-            const outputHeight = output ? output.scrollHeight : 0;
-
-            // Measure actual visual distance below the last placed image.
-            // scrollHeight-based measurement is unreliable when text wraps
-            // beside CSS floats — use DOM geometry instead.
-            let pixelsSinceLastImage = 10000;
-            if (lastPlacedImage && contentStreamContainer) {
-                const imgRect = lastPlacedImage.closest('figure')?.getBoundingClientRect()
-                             || lastPlacedImage.getBoundingClientRect();
-                const containerRect = contentStreamContainer.getBoundingClientRect();
-                // Distance from the bottom of the image to the bottom of all content
-                pixelsSinceLastImage = Math.max(0, containerRect.bottom - imgRect.bottom);
-            }
-
-            return {
-                viewportWidth: viewportWidth,
-                viewportHeight: viewportHeight,
-                pixelsSinceLastImage: pixelsSinceLastImage,
-                outputHeight: outputHeight
-            };
+        function addOutput(text, className) {
+            // System output goes into the content stream so it
+            // interleaves correctly and survives re-layout
+            pushSystem(text);
         }
 
         function clearOutput() {
+            contentStream = [];
             output.innerHTML = '';
             contentStreamContainer = null;
-            lastPlacedImage = null;
-            lastImageOutputHeight = 0;
         }
 
-        // ─── Scrolling helpers ───
+        // ═══════════════════════════════════════════════════
+        // Layout Engine — scores and renders the full stream
+        // ═══════════════════════════════════════════════════
 
-        function scrollToShowImage(imageElement) {
-            setTimeout(() => {
-                const viewportHeight = window.innerHeight;
-                const scrollContainer = document.getElementById('scroll-container');
+        let resizeDebounceTimer = null;
 
-                const imageTop = imageElement.offsetTop;
-                const imageBottom = imageTop + imageElement.offsetHeight;
-                const bottomMargin = 20;
+        function renderLayout() {
+            if (shouldMarkOldOnNextOutput) {
+                shouldMarkOldOnNextOutput = false;
+            }
 
-                const idealScrollTop = imageBottom + bottomMargin - viewportHeight;
-                const imageTopInViewport = imageTop - idealScrollTop;
-                const topPadding = 20;
+            const scrollContainer = document.getElementById('scroll-container');
+            const wasAtBottom = scrollContainer
+                ? (scrollContainer.scrollTop + scrollContainer.clientHeight >= scrollContainer.scrollHeight - 30)
+                : true;
 
-                let targetScroll;
-                if (imageTopInViewport >= topPadding) {
-                    targetScroll = idealScrollTop;
-                } else {
-                    targetScroll = imageTop - topPadding;
+            // Preserve scroll anchor: find element nearest viewport top
+            let anchorIndex = -1;
+            let anchorOffset = 0;
+            if (contentStreamContainer) {
+                const children = contentStreamContainer.children;
+                const scrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
+                for (let i = 0; i < children.length; i++) {
+                    const child = children[i];
+                    const top = child.offsetTop;
+                    if (top >= scrollTop) {
+                        anchorIndex = parseInt(child.dataset.streamIndex || '-1');
+                        anchorOffset = top - scrollTop;
+                        break;
+                    }
                 }
-                scrollContainer.scrollTo({ top: targetScroll, behavior: 'smooth' });
-            }, 50);
+            }
+
+            // Score the full stream and build render list
+            const renderList = scoreFullStream();
+
+            // Build the DOM
+            const newContainer = document.createElement('div');
+            newContainer.className = 'content-stream';
+            newContainer.id = 'content-stream';
+            newContainer.style.color = 'inherit';
+            newContainer.style.fontFamily = 'inherit';
+            newContainer.style.fontSize = 'inherit';
+            newContainer.style.lineHeight = '1.6';
+            newContainer.style.wordWrap = 'break-word';
+            newContainer.style.overflow = 'hidden';
+
+            for (const item of renderList) {
+                const el = createElementForItem(item);
+                if (el) newContainer.appendChild(el);
+            }
+
+            // Swap the container
+            if (contentStreamContainer) {
+                contentStreamContainer.replaceWith(newContainer);
+            } else {
+                output.appendChild(newContainer);
+            }
+            contentStreamContainer = newContainer;
+
+            // Restore scroll position after DOM settles
+            if (wasAtBottom && scrollContainer) {
+                // Immediate jump to bottom, then smooth-scroll once images load
+                scrollContainer.scrollTop = scrollContainer.scrollHeight;
+                setTimeout(() => {
+                    scrollContainer.scrollTo({ top: scrollContainer.scrollHeight, behavior: 'smooth' });
+                }, 50);
+            } else if (anchorIndex >= 0 && scrollContainer) {
+                const anchored = newContainer.querySelector(`[data-stream-index="${anchorIndex}"]`);
+                if (anchored) {
+                    scrollContainer.scrollTop = anchored.offsetTop - anchorOffset;
+                }
+            }
         }
 
-        function markAllOutputAsOld() {
-            const allOutputLines = output.querySelectorAll('.output-line');
-            allOutputLines.forEach(line => {
-                line.classList.remove('new-output');
-                line.classList.add('old-output');
-            });
+        // ─── Scoring: walk the stream, decide which images to show ───
+
+        function scoreFullStream() {
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            const renderList = [];
+
+            // Layout state that accumulates as we walk the stream
+            let textHeightSinceLastImage = 10000;
+            let recentAlignments = [];
+            let placedImageCount = 0;
+
+            // Viewport-aware spacing: wider viewports need more spacing
+            // because text wraps less and takes fewer vertical pixels
+            const viewportFactor = Math.max(1.0, viewportWidth / 700);
+            const baseMinSpacing = 150 + (1.0 - layoutKnobs.density) * 400;
+            const minSpacing = baseMinSpacing * viewportFactor;
+
+            for (let i = 0; i < contentStream.length; i++) {
+                const item = contentStream[i];
+
+                if (item.type === 'text') {
+                    // Estimate rendered height for this text block
+                    const estHeight = estimateTextHeight(item.text, viewportWidth);
+                    textHeightSinceLastImage += estHeight;
+
+                    renderList.push({
+                        type: 'text', text: item.text, streamIndex: i
+                    });
+
+                } else if (item.type === 'system') {
+                    const estHeight = estimateTextHeight(item.text, viewportWidth);
+                    textHeightSinceLastImage += estHeight;
+
+                    renderList.push({
+                        type: 'system', text: item.text, streamIndex: i
+                    });
+
+                } else if (item.type === 'image') {
+                    const decision = scoreImageCandidate(
+                        item, viewportWidth, viewportHeight,
+                        textHeightSinceLastImage, recentAlignments, minSpacing
+                    );
+
+                    if (decision.place) {
+                        renderList.push({
+                            type: 'image', src: item.src, caption: item.caption,
+                            priority: item.priority,
+                            alignment: decision.alignment,
+                            widthPercent: decision.widthPercent,
+                            score: decision.score,
+                            streamIndex: i
+                        });
+                        textHeightSinceLastImage = 0;
+                        recentAlignments.unshift(decision.alignment);
+                        if (recentAlignments.length > 5) recentAlignments.pop();
+                        placedImageCount++;
+                    }
+                    // If not placed, the image is simply omitted from renderList
+                }
+            }
+
+            return renderList;
         }
+
+        function scoreImageCandidate(image, vpWidth, vpHeight, pixelsSince, recentAligns, minSpacing) {
+            const priority = image.priority || 0.5;
+
+            // Spacing gate
+            if (pixelsSince < minSpacing) {
+                const priorityOverride = priority * layoutKnobs.priorityBias;
+                if (priorityOverride < 0.7) {
+                    return { place: false };
+                }
+            }
+
+            // Candidate alignments
+            const alignments = vpWidth < 500 ? ['center'] : ['left', 'right', 'center'];
+
+            // Size categories with width fractions
+            const sizes = [
+                { name: 'small',  center: 0.35, side: 0.22 },
+                { name: 'medium', center: 0.50, side: 0.33 },
+                { name: 'large',  center: 0.70, side: 0.42 },
+            ];
+
+            let bestScore = -1;
+            let bestAlignment = 'center';
+            let bestWidthPercent = 50;
+
+            for (const alignment of alignments) {
+                for (const size of sizes) {
+                    const wf = alignment === 'center' ? size.center : size.side;
+                    const imageWidth = wf * vpWidth;
+
+                    // Hard constraint: floated images must leave >= 150px for text
+                    if (alignment !== 'center') {
+                        const remaining = vpWidth - imageWidth - 40;
+                        if (remaining < 150) continue;
+                    }
+
+                    let score = 0.5;
+
+                    // 1. Spacing — more text since last image → higher score
+                    const spacingNorm = Math.min(pixelsSince / 600, 1.0);
+                    score += spacingNorm * 0.3;
+
+                    // 2. Size appropriateness
+                    const sizeValues = { small: 0.0, medium: 0.5, large: 1.0 };
+                    score -= Math.abs(sizeValues[size.name] - layoutKnobs.prominence) * 0.2;
+
+                    // 3. Variety — penalise repeating alignment
+                    score -= computeVarietyPenalty(alignment, recentAligns) * layoutKnobs.variety * 0.3;
+
+                    // 4. Priority bonus
+                    score += priority * layoutKnobs.priorityBias * 0.2;
+
+                    // 5. Viewport-aware adjustments
+                    if (vpWidth < 600) {
+                        if (alignment === 'center') score += 0.1;
+                        if (size.name === 'large') score -= 0.15;
+                    } else if (vpWidth > 1200) {
+                        if (alignment !== 'center') score += 0.05;
+                    }
+
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestAlignment = alignment;
+                        bestWidthPercent = Math.round(wf * 100);
+                    }
+                }
+            }
+
+            const skipThreshold = 0.3 - (priority * layoutKnobs.priorityBias * 0.2);
+            if (bestScore < skipThreshold) {
+                return { place: false };
+            }
+
+            return { place: true, alignment: bestAlignment, widthPercent: bestWidthPercent, score: bestScore };
+        }
+
+        function computeVarietyPenalty(alignment, recentAligns) {
+            if (recentAligns.length === 0) return 0;
+
+            let penalty = 0;
+            if (recentAligns[0] === alignment) penalty += 0.6;
+            if (recentAligns.length > 1 && recentAligns[1] === alignment) penalty += 0.3;
+            const sameCount = recentAligns.filter(a => a === alignment).length;
+            penalty += sameCount * 0.1;
+
+            return Math.min(penalty, 1.0);
+        }
+
+        function estimateTextHeight(text, viewportWidth) {
+            // Rough estimate: ~8px avg char width, line-height ~24px
+            const avgCharWidth = 8.5;
+            const lineHeight = 24;
+            const paragraphMargin = 19; // 0.8em at ~24px
+            const contentWidth = Math.max(viewportWidth - 40, 200); // account for padding
+            const charsPerLine = Math.max(1, Math.floor(contentWidth / avgCharWidth));
+            const lineCount = Math.max(1, Math.ceil(text.length / charsPerLine));
+            return lineCount * lineHeight + paragraphMargin;
+        }
+
+        // ─── DOM creation for render items ───
+
+        function createElementForItem(item) {
+            if (item.type === 'text') {
+                const p = document.createElement('p');
+                p.style.margin = '0 0 0.8em 0';
+                p.textContent = item.text;
+                p.dataset.streamIndex = item.streamIndex;
+                return p;
+
+            } else if (item.type === 'system') {
+                const line = document.createElement('div');
+                line.className = 'output-line new-output';
+                line.textContent = item.text;
+                line.dataset.streamIndex = item.streamIndex;
+                return line;
+
+            } else if (item.type === 'image') {
+                const figure = document.createElement('figure');
+                figure.style.margin = '0';
+                figure.style.padding = '0';
+                figure.style.width = item.widthPercent + '%';
+                figure.style.maxWidth = '100%';
+                figure.style.lineHeight = '0';
+                figure.dataset.streamIndex = item.streamIndex;
+
+                const img = document.createElement('img');
+                img.src = item.src;
+                img.className = 'console-image';
+                img.style.width = '100%';
+                img.style.height = 'auto';
+                img.style.display = 'block';
+                figure.appendChild(img);
+
+                const cap = document.createElement('figcaption');
+                const captionText = item.caption ? item.caption + ' · ' : '';
+                const pri = (item.priority || 0).toFixed(2);
+                const sc = (item.score || 0).toFixed(2);
+                cap.textContent = `${captionText}pri:${pri} score:${sc} ${item.alignment} ${item.widthPercent}%`;
+                cap.style.textAlign = 'center';
+                cap.style.fontSize = '0.75em';
+                cap.style.opacity = '0.6';
+                cap.style.padding = '4px 0';
+                cap.style.lineHeight = '1.4';
+                cap.style.fontFamily = 'monospace';
+                figure.appendChild(cap);
+
+                if (item.alignment === 'center') {
+                    figure.style.display = 'block';
+                    figure.style.marginLeft = 'auto';
+                    figure.style.marginRight = 'auto';
+                    figure.style.marginTop = '20px';
+                    figure.style.marginBottom = '20px';
+                    figure.style.clear = 'both';
+                } else {
+                    figure.style.float = item.alignment;
+                    if (item.alignment === 'left') {
+                        figure.style.margin = '10px 20px 15px 0';
+                    } else {
+                        figure.style.margin = '10px 0 15px 20px';
+                    }
+                }
+
+                return figure;
+            }
+
+            return null;
+        }
+
+        // ─── Knob control from Swift ───
+
+        function setLayoutKnob(name, value) {
+            const clamped = Math.max(0, Math.min(1, value));
+            const key = name.toLowerCase();
+            if (key === 'density') layoutKnobs.density = clamped;
+            else if (key === 'prominence') layoutKnobs.prominence = clamped;
+            else if (key === 'variety') layoutKnobs.variety = clamped;
+            else if (key === 'priority' || key === 'prioritybias') layoutKnobs.priorityBias = clamped;
+
+            // Re-layout with new knobs
+            renderLayout();
+        }
+
+        function getLayoutKnobs() {
+            return JSON.stringify(layoutKnobs);
+        }
+
+        // ═══════════════════════════════════════════════════
+        // Resize → debounced re-layout
+        // ═══════════════════════════════════════════════════
+
+        window.addEventListener('resize', function() {
+            if (resizeDebounceTimer) clearTimeout(resizeDebounceTimer);
+            resizeDebounceTimer = setTimeout(() => {
+                renderLayout();
+            }, 150);
+        });
+
+        // ═══════════════════════════════════════════════════
+        // Scrolling helpers
+        // ═══════════════════════════════════════════════════
 
         function scrollToBottom() {
             const scrollContainer = document.getElementById('scroll-container');
@@ -250,7 +474,9 @@
             scrollToBottom();
         }
 
-        // ─── Prompt ───
+        // ═══════════════════════════════════════════════════
+        // Prompt
+        // ═══════════════════════════════════════════════════
 
         function showPrompt() {
             shouldMarkOldOnNextOutput = true;
@@ -337,7 +563,9 @@
             }
         }
 
-        // ─── Errors ───
+        // ═══════════════════════════════════════════════════
+        // Errors
+        // ═══════════════════════════════════════════════════
 
         function showError(message) {
             setTimeout(() => {
@@ -435,7 +663,9 @@
             }
         }
 
-        // ─── Status Bar ───
+        // ═══════════════════════════════════════════════════
+        // Status Bar
+        // ═══════════════════════════════════════════════════
 
         function showStatusBar(lines) {
             statusBar.innerHTML = '';
@@ -473,7 +703,9 @@
             }
         }
 
-        // ─── Input event listeners ───
+        // ═══════════════════════════════════════════════════
+        // Input event listeners
+        // ═══════════════════════════════════════════════════
 
         input.addEventListener('input', function() {
             autoResizeTextArea();
@@ -504,7 +736,9 @@
             }
         });
 
-        // ─── Menu system ───
+        // ═══════════════════════════════════════════════════
+        // Menu system
+        // ═══════════════════════════════════════════════════
 
         function handleMenuKeydown(e) {
             if (e.metaKey || e.ctrlKey) {
@@ -709,7 +943,9 @@
             }
         }
 
-        // ─── Focus management ───
+        // ═══════════════════════════════════════════════════
+        // Focus management
+        // ═══════════════════════════════════════════════════
 
         window.addEventListener('load', function() {
             const flowingInput = document.getElementById('flowing-input');
@@ -729,22 +965,21 @@
             }
         });
 
-        // ─── Resize: report layout state to Swift ───
+        // ═══════════════════════════════════════════════════
+        // Expose functions to Swift
+        // ═══════════════════════════════════════════════════
 
-        window.addEventListener('resize', function() {
-            if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.layoutState) {
-                window.webkit.messageHandlers.layoutState.postMessage(JSON.stringify(getLayoutState()));
-            }
-        });
-
-        // ─── Expose functions to Swift ───
-
+        window.pushText = pushText;
+        window.pushImage = pushImage;
+        window.pushSystem = pushSystem;
         window.addContent = addContent;
         window.addText = addText;
-        window.addTextAndGetState = addTextAndGetState;
-        window.placeImageWithParams = placeImageWithParams;
-        window.getLayoutState = getLayoutState;
+        window.addOutput = addOutput;
         window.clearOutput = clearOutput;
+        window.clearContentStream = clearContentStream;
+        window.setLayoutKnob = setLayoutKnob;
+        window.getLayoutKnobs = getLayoutKnobs;
+        window.renderLayout = renderLayout;
     </script>
 </body>
 </html>
