@@ -80,10 +80,10 @@
 
         // ─── Push content into the stream ───
 
-        function pushText(text) {
+        function pushText(text, style) {
             if (!text || !text.trim()) return;
             consumeOldMarker();
-            contentStream.push({ type: 'text', text: text });
+            contentStream.push({ type: 'text', text: text, style: style || '' });
             renderLayout();
         }
 
@@ -390,7 +390,7 @@
 
                 const isOld = !!item.old;
                 if (item.type === 'text') {
-                    renderList.push({ type: 'text', text: item.text, old: isOld, streamIndex: i });
+                    renderList.push({ type: 'text', text: item.text, style: item.style, old: isOld, streamIndex: i });
                 } else if (item.type === 'system') {
                     renderList.push({ type: 'system', text: item.text, old: isOld, streamIndex: i });
                 } else if (item.type === 'image' && placedAt[i]) {
@@ -543,7 +543,8 @@
 
             if (item.type === 'text') {
                 const p = document.createElement('p');
-                p.className = `output-line ${outputClass}`;
+                const styleClass = item.style ? `text-${item.style}` : '';
+                p.className = `output-line ${outputClass} ${styleClass}`.trim();
                 p.style.margin = '0 0 0.8em 0';
                 p.textContent = item.text;
                 p.dataset.streamIndex = item.streamIndex;

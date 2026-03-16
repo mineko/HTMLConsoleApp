@@ -189,13 +189,14 @@ public class ConsoleController: NSObject, ObservableObject {
         webView.evaluateJavaScript("addOutput('\(escapedText)');", completionHandler: nil)
     }
 
-    public func addContent(text: String = "", image: String = "", caption: String = "", priority: CGFloat = 0.5, imageWidth: Int = 0, imageHeight: Int = 0) {
+    public func addContent(text: String = "", style: String = "", image: String = "", caption: String = "", priority: CGFloat = 0.5, imageWidth: Int = 0, imageHeight: Int = 0) {
         guard let webView = webView else { return }
 
         // Push text into JS content stream
         if !text.isEmpty {
             let escaped = escapeForJS(text)
-            webView.evaluateJavaScript("pushText('\(escaped)');", completionHandler: nil)
+            let escapedStyle = escapeForJS(style)
+            webView.evaluateJavaScript("pushText('\(escaped)', '\(escapedStyle)');", completionHandler: nil)
         }
 
         // Push image candidate into JS content stream (JS decides if/how to display it)
