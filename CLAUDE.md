@@ -10,7 +10,7 @@ HTMLConsoleApp is a modular SwiftUI-based macOS application that provides a Term
 
 ### Building
 ```bash
-# Build the Swift Package (ConsoleKit + TestModule)
+# Build the Swift Package (ConsoleKit + modules)
 cd Packages/ConsoleKit && swift build
 
 # Build the Xcode project
@@ -39,6 +39,10 @@ xcodebuild analyze -project HTMLConsoleApp.xcodeproj -scheme HTMLConsoleApp
 
 ## Architecture
 
+### Swift 6 Concurrency Model
+
+The package uses Swift 6.2 with `defaultIsolation(MainActor.self)` on all targets. All types are MainActor-isolated by default — no explicit `@MainActor` annotations needed. Platform minimum is macOS 26.
+
 ### Package Structure
 
 The core framework lives in a local Swift Package at `Packages/ConsoleKit/`:
@@ -50,12 +54,16 @@ The core framework lives in a local Swift Package at `Packages/ConsoleKit/`:
   - `ModuleProtocol.swift` — `ConsoleModule` protocol and `ModuleInfo` struct
   - `ModuleRegistry.swift` — Compile-time module registration (iOS-safe, no dynamic loading)
   - `MenuManager.swift` — In-console menu system (activated with `/`)
-  - `StatusBar.swift` — Multi-line status bar with named fields
-  - `Resources/` — `console.html`, theme CSS files (Dark, Light, Homebrew, Monospace, Retro, Serif)
+  - `StatusBar.swift` — Multi-line status bar with named fields and alignment regions
+  - `LayoutScorer.swift` — Image placement scoring algorithm (density, prominence, variety, priority, viewport-awareness)
+  - `Resources/` — `console.html` (full HTML/JS frontend), theme CSS files (Dark, Light, Homebrew, Monospace, Retro, Serif)
 
 - **TestModule** library target — demo module:
   - `TestModule.swift` — Implements `ConsoleModule`, contains `TestEngine` (echoes input, shows random images)
   - `Resources/test.bundle/` — Module data (info.json, images/)
+
+- **LayoutTestModule** library target — layout tuning module:
+  - `LayoutTestModule.swift` — Generates procedural fantasy scenes with placeholder images for testing layout knobs
 
 ### App Target
 
@@ -66,16 +74,25 @@ The core framework lives in a local Swift Package at `Packages/ConsoleKit/`:
 ### Adding a New Module
 
 1. Create a new target in `Packages/ConsoleKit/Package.swift` depending on `ConsoleKit`
-2. Implement `ConsoleModule` protocol (provides `moduleInfo` and `createEngine()`)
-3. Subclass `Engine` — override `start()`, `processInput()`, `configureStatusBar()`
+2. Implement `ConsoleModule` protocol (provides `moduleInfo` and `createEngine(controller:configuration:)`)
+3. Subclass `Engine` — override `start()`, `processInput()`, `configureStatusBar()`, `menuItems()`
 4. Register in the app: `ModuleRegistry.shared.register(YourModule.self)`
+5. Add the module library as a dependency of the app target in the Xcode project
 
 ### Console Communication Flow
 
 1. User types in HTML input → JS sends to Swift via `window.webkit.messageHandlers.consoleInput.postMessage()`
-2. `ConsoleController.processInput()` routes to menu system or delegates to engine
+2. `ConsoleController.processInput()` routes to menu system (if `/` prefix) or delegates to engine
 3. Engine calls `addOutput()`/`addContent()` → `evaluateJavaScript()` → DOM update
 4. Resources use `Bundle.module` (SPM-generated) not `Bundle.main`
+
+### Dual Layout Algorithm
+
+Image placement logic exists in two synchronized implementations:
+- **Swift:** `LayoutScorer.swift` — scores placement candidates on the native side
+- **JavaScript:** embedded in `console.html` — mirrors the Swift algorithm for live DOM layout
+
+Both use five tunable knobs (0.0–1.0): `density`, `prominence`, `variety`, `priorityBias`, `textBefore`. These are adjustable at runtime via the `/` menu under Admin → Layout.
 
 ## Testing Framework
 
