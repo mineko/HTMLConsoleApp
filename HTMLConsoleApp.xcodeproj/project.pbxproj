@@ -209,6 +209,8 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				7DC0165B2F640C8300C319C1 /* XCLocalSwiftPackageReference "Packages/ConsoleKit" */,
+				7DC016622F640C8300C319C1 /* XCLocalSwiftPackageReference "Packages/TestModule" */,
+				7DC016632F640C8300C319C1 /* XCLocalSwiftPackageReference "Packages/LayoutTestModule" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 7D7DB7A42E66432B00BD8ABE /* Products */;
@@ -566,6 +568,14 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/ConsoleKit;
 		};
+		7DC016622F640C8300C319C1 /* XCLocalSwiftPackageReference "Packages/TestModule" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/TestModule;
+		};
+		7DC016632F640C8300C319C1 /* XCLocalSwiftPackageReference "Packages/LayoutTestModule" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/LayoutTestModule;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -575,10 +585,12 @@
 		};
 		7DC0165E2F640C8300C319C1 /* TestModule */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 7DC016622F640C8300C319C1 /* XCLocalSwiftPackageReference "Packages/TestModule" */;
 			productName = TestModule;
 		};
 		7DC016612F640C8300C319C1 /* LayoutTestModule */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 7DC016632F640C8300C319C1 /* XCLocalSwiftPackageReference "Packages/LayoutTestModule" */;
 			productName = LayoutTestModule;
 		};
 /* End XCSwiftPackageProductDependency section */

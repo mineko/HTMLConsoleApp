@@ -58,11 +58,13 @@ The core framework lives in a local Swift Package at `Packages/ConsoleKit/`:
   - `LayoutScorer.swift` — Image placement scoring algorithm (density, prominence, variety, priority, viewport-awareness)
   - `Resources/` — `console.html` (full HTML/JS frontend), theme CSS files (Dark, Light, Homebrew, Monospace, Retro, Serif)
 
-- **TestModule** library target — demo module:
+Modules live in their own local Swift Packages under `Packages/`, each depending on `ConsoleKit`:
+
+- **`Packages/TestModule/`** — demo module:
   - `TestModule.swift` — Implements `ConsoleModule`, contains `TestEngine` (echoes input, shows random images)
   - `Resources/test.bundle/` — Module data (info.json, images/)
 
-- **LayoutTestModule** library target — layout tuning module:
+- **`Packages/LayoutTestModule/`** — layout tuning module:
   - `LayoutTestModule.swift` — Generates procedural fantasy scenes with placeholder images for testing layout knobs
 
 ### App Target
@@ -73,11 +75,11 @@ The core framework lives in a local Swift Package at `Packages/ConsoleKit/`:
 
 ### Adding a New Module
 
-1. Create a new target in `Packages/ConsoleKit/Package.swift` depending on `ConsoleKit`
+1. Create a new Swift Package under `Packages/YourModule/` with a dependency on `ConsoleKit` (via `path: "../ConsoleKit"`)
 2. Implement `ConsoleModule` protocol (provides `moduleInfo` and `createEngine(controller:configuration:)`)
 3. Subclass `Engine` — override `start()`, `processInput()`, `configureStatusBar()`, `menuItems()`
 4. Register in the app: `ModuleRegistry.shared.register(YourModule.self)`
-5. Add the module library as a dependency of the app target in the Xcode project
+5. Add the module package as a local package reference and framework dependency in the Xcode project
 
 ### Console Communication Flow
 

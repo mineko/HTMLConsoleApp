@@ -2,16 +2,19 @@
 import PackageDescription
 
 let package = Package(
-    name: "ConsoleKit",
+    name: "LayoutTestModule",
     platforms: [.macOS(.v26)],
     products: [
-        .library(name: "ConsoleKit", targets: ["ConsoleKit"]),
+        .library(name: "LayoutTestModule", targets: ["LayoutTestModule"]),
+    ],
+    dependencies: [
+        .package(path: "../ConsoleKit"),
     ],
     targets: [
         .target(
-            name: "ConsoleKit",
-            resources: [
-                .process("Resources")
+            name: "LayoutTestModule",
+            dependencies: [
+                .product(name: "ConsoleKit", package: "ConsoleKit"),
             ],
             swiftSettings: [
                 .swiftLanguageMode(.v6),
