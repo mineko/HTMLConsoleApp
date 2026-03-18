@@ -15,7 +15,7 @@ public class ConsoleController: NSObject, ObservableObject {
     private var statusBar: StatusBar?
     private var engine: Engine?
 
-    override public init() {
+    public init(module: String, configuration: Any? = nil) {
         self.availableThemes = []
         self.currentTheme = "default"
         super.init()
@@ -26,9 +26,9 @@ public class ConsoleController: NSObject, ObservableObject {
         self.statusBar = StatusBar(controller: self)
 
         // Create engine from the module registry
-        self.engine = ModuleRegistry.shared.createDefaultEngine(controller: self)
+        self.engine = ModuleRegistry.shared.createEngine(named: module, controller: self, configuration: configuration)
         if engine == nil {
-            print("ConsoleController: No modules registered in ModuleRegistry")
+            print("ConsoleController: No module registered with name '\(module)'")
         }
 
         // Rebuild menu now that engine exists (so engine menu actions are included)

@@ -31,5 +31,5 @@ public struct ModuleInfo {
 /// Protocol that console modules implement to register themselves.
 public protocol ConsoleModule {
     static var moduleInfo: ModuleInfo { get }
-    static func createEngine(controller: ConsoleController) -> Engine
+    static func createEngine(controller: ConsoleController, configuration: Any?) -> Engine
 }

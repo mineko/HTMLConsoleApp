@@ -8,10 +8,16 @@ import WebKit
 
 /// A SwiftUI view that hosts the HTML console. Drop this into any window or pane.
 public struct ConsoleView: View {
-    public init() {}
+    private let module: String
+    private let configuration: Any?
+
+    public init(module: String, configuration: Any? = nil) {
+        self.module = module
+        self.configuration = configuration
+    }
 
     public var body: some View {
-        WebViewRepresentable()
+        WebViewRepresentable(module: module, configuration: configuration)
             .ignoresSafeArea()
     }
 }
@@ -55,7 +61,16 @@ class MenuActionHandler: NSObject, WKScriptMessageHandler {
 // MARK: - WebView Wrapper
 
 struct WebViewRepresentable: NSViewRepresentable {
-    @StateObject private var consoleController = ConsoleController()
+    let module: String
+    let configuration: Any?
+
+    @StateObject private var consoleController: ConsoleController
+
+    init(module: String, configuration: Any? = nil) {
+        self.module = module
+        self.configuration = configuration
+        _consoleController = StateObject(wrappedValue: ConsoleController(module: module, configuration: configuration))
+    }
 
     class Coordinator: NSObject, WKNavigationDelegate {
         let consoleController: ConsoleController

@@ -10,15 +10,15 @@ import Foundation
 public class ModuleRegistry {
     public static let shared = ModuleRegistry()
 
-    private var entries: [(info: ModuleInfo, factory: (ConsoleController) -> Engine)] = []
+    private var entries: [(info: ModuleInfo, factory: (ConsoleController, Any?) -> Engine)] = []
 
     private init() {}
 
     /// Register a module type.
     public func register(_ moduleType: any ConsoleModule.Type) {
         let info = moduleType.moduleInfo
-        entries.append((info: info, factory: { controller in
-            moduleType.createEngine(controller: controller)
+        entries.append((info: info, factory: { controller, configuration in
+            moduleType.createEngine(controller: controller, configuration: configuration)
         }))
     }
 
@@ -27,15 +27,9 @@ public class ModuleRegistry {
         entries.map { $0.info }
     }
 
-    /// Create an engine for the first registered module (single-module apps).
-    public func createDefaultEngine(controller: ConsoleController) -> Engine? {
-        guard let entry = entries.first else { return nil }
-        return entry.factory(controller)
-    }
-
     /// Create an engine for a specific module by name.
-    public func createEngine(named name: String, controller: ConsoleController) -> Engine? {
+    public func createEngine(named name: String, controller: ConsoleController, configuration: Any? = nil) -> Engine? {
         guard let entry = entries.first(where: { $0.info.name == name }) else { return nil }
-        return entry.factory(controller)
+        return entry.factory(controller, configuration)
     }
 }

@@ -18,7 +18,7 @@ public struct TestModule: ConsoleModule {
         )
     }
 
-    public static func createEngine(controller: ConsoleController) -> Engine {
+    public static func createEngine(controller: ConsoleController, configuration: Any?) -> Engine {
         return TestEngine(controller: controller)
     }
 }

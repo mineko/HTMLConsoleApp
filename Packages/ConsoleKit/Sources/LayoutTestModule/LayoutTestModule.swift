@@ -19,7 +19,7 @@ public struct LayoutTestModule: ConsoleModule {
         )
     }
 
-    public static func createEngine(controller: ConsoleController) -> Engine {
+    public static func createEngine(controller: ConsoleController, configuration: Any?) -> Engine {
         return LayoutTestEngine(controller: controller)
     }
 }

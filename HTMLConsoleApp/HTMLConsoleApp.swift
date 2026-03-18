@@ -19,7 +19,7 @@ struct HTMLConsoleAppApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ConsoleView()
+            ConsoleView(module: "Layout Test")
         }
     }
 }
