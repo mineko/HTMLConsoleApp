@@ -1,9 +1,9 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 6.2
 import PackageDescription
 
 let package = Package(
     name: "ConsoleKit",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS(.v26)],
     products: [
         .library(name: "ConsoleKit", targets: ["ConsoleKit"]),
         .library(name: "TestModule", targets: ["TestModule"]),
@@ -14,6 +14,10 @@ let package = Package(
             name: "ConsoleKit",
             resources: [
                 .process("Resources")
+            ],
+            swiftSettings: [
+                .swiftLanguageMode(.v6),
+                .defaultIsolation(MainActor.self),
             ]
         ),
         .target(
@@ -21,11 +25,19 @@ let package = Package(
             dependencies: ["ConsoleKit"],
             resources: [
                 .copy("Resources/test.bundle")
+            ],
+            swiftSettings: [
+                .swiftLanguageMode(.v6),
+                .defaultIsolation(MainActor.self),
             ]
         ),
         .target(
             name: "LayoutTestModule",
-            dependencies: ["ConsoleKit"]
+            dependencies: ["ConsoleKit"],
+            swiftSettings: [
+                .swiftLanguageMode(.v6),
+                .defaultIsolation(MainActor.self),
+            ]
         ),
     ]
 )

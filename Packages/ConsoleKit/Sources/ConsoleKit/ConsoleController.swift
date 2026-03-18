@@ -279,7 +279,7 @@ public class ConsoleController: NSObject, ObservableObject {
         return statusBar
     }
 
-    public func evaluateJavaScript(_ script: String, completionHandler: ((Any?, Error?) -> Void)? = nil) {
+    public func evaluateJavaScript(_ script: String, completionHandler: (@Sendable (Any?, Error?) -> Void)? = nil) {
         guard let webView = webView else {
             completionHandler?(nil, NSError(domain: "WebViewError", code: 1,
                 userInfo: [NSLocalizedDescriptionKey: "WebView not available"]))
