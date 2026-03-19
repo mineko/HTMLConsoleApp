@@ -4,7 +4,7 @@
 //
 
 import Foundation
-import ConsoleKit
+import PressKit
 
 /// Demo module that echoes input and displays random images.
 public struct TestModule: ConsoleModule {
@@ -13,7 +13,7 @@ public struct TestModule: ConsoleModule {
             name: "Test Module",
             version: "1.0.0",
             description: "Demo engine with image placement and echo functionality",
-            author: "HTMLConsoleApp",
+            author: "Press",
             minAppVersion: "1.0.0"
         )
     }

@@ -8,13 +8,13 @@ let package = Package(
         .library(name: "TestModule", targets: ["TestModule"]),
     ],
     dependencies: [
-        .package(path: "../ConsoleKit"),
+        .package(path: "../PressKit"),
     ],
     targets: [
         .target(
             name: "TestModule",
             dependencies: [
-                .product(name: "ConsoleKit", package: "ConsoleKit"),
+                .product(name: "PressKit", package: "PressKit"),
             ],
             resources: [
                 .copy("Resources/test.bundle")

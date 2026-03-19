@@ -4,7 +4,7 @@
 //
 
 import Foundation
-import ConsoleKit
+import PressKit
 
 /// Test module for tuning layout scorer parameters.
 /// Streams lorem ipsum text with placeholder images to evaluate placement.
@@ -14,7 +14,7 @@ public struct LayoutTestModule: ConsoleModule {
             name: "Layout Test",
             version: "1.0.0",
             description: "Lorem ipsum generator for tuning image layout parameters",
-            author: "HTMLConsoleApp",
+            author: "Press",
             minAppVersion: "1.0.0"
         )
     }

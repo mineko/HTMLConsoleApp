@@ -2,19 +2,16 @@
 import PackageDescription
 
 let package = Package(
-    name: "LayoutTestModule",
+    name: "PressKit",
     platforms: [.macOS(.v26)],
     products: [
-        .library(name: "LayoutTestModule", targets: ["LayoutTestModule"]),
-    ],
-    dependencies: [
-        .package(path: "../PressKit"),
+        .library(name: "PressKit", targets: ["PressKit"]),
     ],
     targets: [
         .target(
-            name: "LayoutTestModule",
-            dependencies: [
-                .product(name: "PressKit", package: "PressKit"),
+            name: "PressKit",
+            resources: [
+                .process("Resources")
             ],
             swiftSettings: [
                 .swiftLanguageMode(.v6),

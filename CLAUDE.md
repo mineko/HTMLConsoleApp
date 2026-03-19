@@ -4,37 +4,37 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-HTMLConsoleApp is a modular SwiftUI-based macOS application that provides a Terminal.app-like HTML console interface. Modules (text adventures, RPGs, etc.) plug into the console framework to provide interactive experiences.
+Press is a modular SwiftUI-based macOS application that provides a Terminal.app-like HTML console interface. Modules (text adventures, RPGs, etc.) plug into the console framework to provide interactive experiences.
 
 ## Common Development Commands
 
 ### Building
 ```bash
-# Build the Swift Package (ConsoleKit + modules)
-cd Packages/ConsoleKit && swift build
+# Build the Swift Package (PressKit + modules)
+cd Packages/PressKit && swift build
 
 # Build the Xcode project
-xcodebuild -project HTMLConsoleApp.xcodeproj -scheme HTMLConsoleApp -configuration Debug build
+xcodebuild -project Press.xcodeproj -scheme Press -configuration Debug build
 
 # Build for release
-xcodebuild -project HTMLConsoleApp.xcodeproj -scheme HTMLConsoleApp -configuration Release build
+xcodebuild -project Press.xcodeproj -scheme Press -configuration Release build
 ```
 
 ### Testing
 ```bash
 # Run unit tests
-xcodebuild test -project HTMLConsoleApp.xcodeproj -scheme HTMLConsoleApp -destination 'platform=macOS'
+xcodebuild test -project Press.xcodeproj -scheme Press -destination 'platform=macOS'
 
 # Run specific test target
-xcodebuild test -project HTMLConsoleApp.xcodeproj -target HTMLConsoleAppTests
+xcodebuild test -project Press.xcodeproj -target PressTests
 
 # Run UI tests
-xcodebuild test -project HTMLConsoleApp.xcodeproj -target HTMLConsoleAppUITests -destination 'platform=macOS'
+xcodebuild test -project Press.xcodeproj -target PressUITests -destination 'platform=macOS'
 ```
 
 ### Code Analysis
 ```bash
-xcodebuild analyze -project HTMLConsoleApp.xcodeproj -scheme HTMLConsoleApp
+xcodebuild analyze -project Press.xcodeproj -scheme Press
 ```
 
 ## Architecture
@@ -45,9 +45,9 @@ The package uses Swift 6.2 with `defaultIsolation(MainActor.self)` on all target
 
 ### Package Structure
 
-The core framework lives in a local Swift Package at `Packages/ConsoleKit/`:
+The core framework lives in a local Swift Package at `Packages/PressKit/`:
 
-- **ConsoleKit** library target — reusable console infrastructure:
+- **PressKit** library target — reusable console infrastructure:
   - `ConsoleView.swift` — SwiftUI view hosting the WKWebView console (drop into any window/pane)
   - `ConsoleController.swift` — Bridges WebView JS ↔ Swift, manages themes/menu/status bar
   - `Engine.swift` — `open class` base for module engines (subclass to add behavior)
@@ -58,7 +58,7 @@ The core framework lives in a local Swift Package at `Packages/ConsoleKit/`:
   - `LayoutScorer.swift` — Image placement scoring algorithm (density, prominence, variety, priority, viewport-awareness)
   - `Resources/` — `console.html` (full HTML/JS frontend), theme CSS files (Dark, Light, Homebrew, Monospace, Retro, Serif)
 
-Modules live in their own local Swift Packages under `Packages/`, each depending on `ConsoleKit`:
+Modules live in their own local Swift Packages under `Packages/`, each depending on `PressKit`:
 
 - **`Packages/TestModule/`** — demo module:
   - `TestModule.swift` — Implements `ConsoleModule`, contains `TestEngine` (echoes input, shows random images)
@@ -69,13 +69,13 @@ Modules live in their own local Swift Packages under `Packages/`, each depending
 
 ### App Target
 
-`HTMLConsoleApp/` is a thin shell:
-- `HTMLConsoleApp.swift` — Registers modules in `init()`, shows `ConsoleView`
+`Press/` is a thin shell:
+- `PressApp.swift` — Registers modules in `init()`, shows `ConsoleView`
 - `Assets.xcassets/` — App icons and color assets
 
 ### Adding a New Module
 
-1. Create a new Swift Package under `Packages/YourModule/` with a dependency on `ConsoleKit` (via `path: "../ConsoleKit"`)
+1. Create a new Swift Package under `Packages/YourModule/` with a dependency on `PressKit` (via `path: "../PressKit"`)
 2. Implement `ConsoleModule` protocol (provides `moduleInfo` and `createEngine(controller:configuration:)`)
 3. Subclass `Engine` — override `start()`, `processInput()`, `configureStatusBar()`, `menuItems()`
 4. Register in the app: `ModuleRegistry.shared.register(YourModule.self)`
@@ -104,7 +104,7 @@ Both use five tunable knobs (0.0–1.0): `density`, `prominence`, `variety`, `pr
 
 ## Project Configuration
 
-- **Targets**: HTMLConsoleApp (main), HTMLConsoleAppTests, HTMLConsoleAppUITests
+- **Targets**: Press (main), PressTests, PressUITests
 - **Build Configurations**: Debug, Release (defaults to Release)
-- **Default Scheme**: HTMLConsoleApp
+- **Default Scheme**: Press
 - **Platform**: macOS (iOS planned)
