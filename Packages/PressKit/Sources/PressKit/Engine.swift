@@ -20,7 +20,8 @@ open class Engine {
     // MARK: - Override Points
 
     /// Called once the WebView has finished loading. Show your welcome message,
-    /// configure the status bar, and call controller?.showPrompt().
+    /// configure the status bar, and call controller?.showPrompt() (optionally
+    /// passing a prompt string; defaults to ">").
     open func start() {}
 
     /// Called when the user submits a line of text (that isn't a menu command).

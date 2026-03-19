@@ -667,7 +667,7 @@
         // Prompt
         // ═══════════════════════════════════════════════════
 
-        function showPrompt() {
+        function showPrompt(promptText) {
             shouldMarkOldOnNextOutput = true;
             hidePrompt();
 
@@ -680,7 +680,7 @@
 
             const promptSpan = document.createElement('span');
             promptSpan.className = 'flowing-prompt';
-            promptSpan.textContent = '>';
+            promptSpan.textContent = (promptText !== undefined && promptText !== null) ? promptText : '>';
             promptSpan.style.marginRight = '5px';
 
             const inputSpan = document.createElement('span');

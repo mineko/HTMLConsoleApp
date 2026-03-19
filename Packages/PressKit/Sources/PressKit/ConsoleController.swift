@@ -88,9 +88,14 @@ public class ConsoleController: NSObject, ObservableObject {
 
     // MARK: - Prompt
 
-    public func showPrompt() {
+    public func showPrompt(_ prompt: String? = nil) {
         guard let webView = webView else { return }
-        webView.evaluateJavaScript("showPrompt();", completionHandler: nil)
+        if let prompt = prompt {
+            let escaped = escapeForJS(prompt)
+            webView.evaluateJavaScript("showPrompt('\(escaped)');", completionHandler: nil)
+        } else {
+            webView.evaluateJavaScript("showPrompt();", completionHandler: nil)
+        }
     }
 
     func hidePrompt() {
