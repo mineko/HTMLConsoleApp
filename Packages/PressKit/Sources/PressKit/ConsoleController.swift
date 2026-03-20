@@ -21,7 +21,8 @@ public class ConsoleController: NSObject, ObservableObject {
         super.init()
 
         self.availableThemes = Self.discoverAvailableThemes()
-        self.currentTheme = availableThemes.randomElement() ?? "default"
+        //self.currentTheme = availableThemes.randomElement() ?? "default"
+        self.currentTheme = "Homebrew"
         self.menuManager = MenuManager(controller: self)
         self.statusBar = StatusBar(controller: self)
 

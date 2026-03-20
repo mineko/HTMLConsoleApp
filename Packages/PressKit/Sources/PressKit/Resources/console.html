@@ -863,10 +863,17 @@
                 const lineDiv = document.createElement('div');
                 lineDiv.className = 'status-line';
 
+                // Build a map of alignment → text from the provided regions
+                const regionMap = { left: '', center: '', right: '' };
                 line.regions.forEach(region => {
+                    regionMap[region.alignment] = region.text;
+                });
+
+                // Always emit all three columns so flex layout stays balanced
+                ['left', 'center', 'right'].forEach(alignment => {
                     const regionSpan = document.createElement('span');
-                    regionSpan.className = `status-region status-${region.alignment}`;
-                    regionSpan.textContent = region.text;
+                    regionSpan.className = `status-region status-${alignment}`;
+                    regionSpan.textContent = regionMap[alignment];
                     lineDiv.appendChild(regionSpan);
                 });
 
