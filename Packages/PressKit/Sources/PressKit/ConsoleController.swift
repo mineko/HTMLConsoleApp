@@ -15,14 +15,13 @@ public class ConsoleController: NSObject, ObservableObject {
     private var statusBar: StatusBar?
     private var engine: Engine?
 
-    public init(module: String, configuration: Any? = nil) {
+    public init(module: String, configuration: Any? = nil, theme: String? = nil) {
         self.availableThemes = []
         self.currentTheme = "default"
         super.init()
 
         self.availableThemes = Self.discoverAvailableThemes()
-        //self.currentTheme = availableThemes.randomElement() ?? "default"
-        self.currentTheme = "Homebrew"
+        self.currentTheme = theme ?? availableThemes.randomElement() ?? "default"
         self.menuManager = MenuManager(controller: self)
         self.statusBar = StatusBar(controller: self)
 

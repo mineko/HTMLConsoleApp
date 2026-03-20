@@ -10,14 +10,16 @@ import WebKit
 public struct ConsoleView: View {
     private let module: String
     private let configuration: Any?
+    private let theme: String?
 
-    public init(module: String, configuration: Any? = nil) {
+    public init(module: String, configuration: Any? = nil, theme: String? = nil) {
         self.module = module
         self.configuration = configuration
+        self.theme = theme
     }
 
     public var body: some View {
-        WebViewRepresentable(module: module, configuration: configuration)
+        WebViewRepresentable(module: module, configuration: configuration, theme: theme)
             .ignoresSafeArea()
     }
 }
@@ -66,10 +68,10 @@ struct WebViewRepresentable: NSViewRepresentable {
 
     @StateObject private var consoleController: ConsoleController
 
-    init(module: String, configuration: Any? = nil) {
+    init(module: String, configuration: Any? = nil, theme: String? = nil) {
         self.module = module
         self.configuration = configuration
-        _consoleController = StateObject(wrappedValue: ConsoleController(module: module, configuration: configuration))
+        _consoleController = StateObject(wrappedValue: ConsoleController(module: module, configuration: configuration, theme: theme))
     }
 
     class Coordinator: NSObject, WKNavigationDelegate {
