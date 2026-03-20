@@ -188,10 +188,14 @@ public class ConsoleController: NSObject, ObservableObject {
 
     public func addOutput(_ text: String) {
         guard let webView = webView else { return }
-        let escapedText = text.replacingOccurrences(of: "\\", with: "\\\\")
-                             .replacingOccurrences(of: "'", with: "\\'")
-                             .replacingOccurrences(of: "\n", with: "\\n")
+        let escapedText = escapeForJS(text)
         webView.evaluateJavaScript("addOutput('\(escapedText)');", completionHandler: nil)
+    }
+
+    public func appendOutput(_ text: String) {
+        guard let webView = webView else { return }
+        let escapedText = escapeForJS(text)
+        webView.evaluateJavaScript("appendOutput('\(escapedText)');", completionHandler: nil)
     }
 
     public func addContent(text: String = "", style: String = "", image: String = "", caption: String = "", priority: CGFloat = 0.5, imageWidth: Int = 0, imageHeight: Int = 0) {

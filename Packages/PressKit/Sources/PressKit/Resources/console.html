@@ -137,6 +137,25 @@
             pushSystem(text);
         }
 
+        function appendOutput(text) {
+            // Append to the last system item in the stream (for token streaming)
+            if (contentStream.length > 0) {
+                const last = contentStream[contentStream.length - 1];
+                if (last.type === 'system') {
+                    last.text += text;
+                    // Update the existing DOM element directly instead of re-rendering
+                    const el = document.querySelector(`[data-stream-index="${contentStream.length - 1}"]`);
+                    if (el) {
+                        el.textContent = last.text;
+                        scrollToBottom();
+                        return;
+                    }
+                }
+            }
+            // Fallback: create a new entry
+            pushSystem(text);
+        }
+
         function clearOutput() {
             contentStream = [];
             committedPlacements = {};

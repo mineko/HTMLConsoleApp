@@ -42,6 +42,10 @@ open class Engine {
         controller?.addOutput(text)
     }
 
+    public func appendOutput(_ text: String) {
+        controller?.appendOutput(text)
+    }
+
     public func addContent(text: String = "", image: String = "", caption: String = "", priority: CGFloat = 0.5, imageWidth: Int = 0, imageHeight: Int = 0) {
         controller?.addContent(text: text, image: image, caption: caption, priority: priority, imageWidth: imageWidth, imageHeight: imageHeight)
     }
