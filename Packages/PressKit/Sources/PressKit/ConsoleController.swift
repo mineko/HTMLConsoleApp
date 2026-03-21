@@ -46,12 +46,16 @@ public class ConsoleController: NSObject, ObservableObject {
     private static func discoverAvailableThemes(resourcePaths: [String] = []) -> [String] {
         var themes: Set<String> = []
 
-        // Discover themes from engine resource paths (external bundle, module bundle)
+        // Discover .theme bundles from engine resource paths (external bundle, module bundle)
         for path in resourcePaths {
             let themesDir = (path as NSString).appendingPathComponent("themes")
             if let contents = try? FileManager.default.contentsOfDirectory(atPath: themesDir) {
-                for file in contents where file.hasSuffix(".css") {
-                    themes.insert(String(file.dropLast(4)))
+                for entry in contents where entry.hasSuffix(".theme") {
+                    let themePath = (themesDir as NSString).appendingPathComponent(entry)
+                    let cssPath = (themePath as NSString).appendingPathComponent("theme.css")
+                    if FileManager.default.fileExists(atPath: cssPath) {
+                        themes.insert(String(entry.dropLast(6))) // drop ".theme"
+                    }
                 }
             }
         }
@@ -109,9 +113,9 @@ public class ConsoleController: NSObject, ObservableObject {
     }
 
     private func resolveThemeURL(_ themeName: String) -> URL? {
-        // Check engine resource paths first (external bundle, then module bundle)
+        // Check engine resource paths for .theme bundles first
         for path in resourcePaths {
-            let themeFile = (path as NSString).appendingPathComponent("themes/\(themeName).css")
+            let themeFile = (path as NSString).appendingPathComponent("themes/\(themeName).theme/theme.css")
             if FileManager.default.fileExists(atPath: themeFile) {
                 return URL(fileURLWithPath: themeFile)
             }
