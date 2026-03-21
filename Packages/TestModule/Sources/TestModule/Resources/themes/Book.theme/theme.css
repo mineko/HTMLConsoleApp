@@ -8,7 +8,7 @@ html, body {
 body {
     font-family: "Palatino", "Palatino Linotype", "Book Antiqua", "Georgia", serif;
     font-size: 17px;
-    background-color: #f4ead5;
+    background-color: rgb(244, 244, 244);
     color: #2c1810;
     overflow-wrap: break-word;
     line-height: 1.6;
@@ -36,7 +36,7 @@ body {
     overscroll-behavior-y: auto;
 }
 
-/* Book frame: border images around the viewport */
+/* Book frame — gilded border strips and repeating edges */
 body::before {
     content: '';
     position: fixed;
@@ -44,31 +44,51 @@ body::before {
     left: 0;
     right: 0;
     bottom: 0;
-    border-image-source: url('border_top_left.png');
     pointer-events: none;
-    z-index: 999;
+    z-index: 998;
+    background:
+        /* Top edge */
+        url('border_top_left.png') top left no-repeat,
+        /* Bottom edge */
+        url('border_bottom_left.png') bottom left no-repeat,
+        /* Left edge — repeating tile */
+        url('border_left.png') left 29px repeat-y,
+        /* Right edge — repeating tile */
+        url('border_right.png') right 29px repeat-y,
+        /* Bottom edge — repeating tile behind everything else */
+        url('border_bottom_right.png') bottom left repeat-x,
+        /* Top edge — repeating tile behind everything else */
+        url('border_top_right.png') top left repeat-x;
+    background-size:
+        414px 29px,
+        414px 29px,
+        50px 48px,
+        48px 48px,
+        256px 29px,
+        256px 29px;
 }
 
-/* Corner and edge decorations */
-.book-border-top-left,
-.book-border-top-right,
-.book-border-bottom-left,
-.book-border-bottom-right,
-.book-border-left,
-.book-border-right {
+/* Book frame — page corner pieces on top of border tiles */
+body::after {
+    content: '';
     position: fixed;
-    z-index: 999;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     pointer-events: none;
+    z-index: 1001;
+    background:
+        url('upper_left.png') top left no-repeat,
+        url('upper_right.png') top right no-repeat,
+        url('lower_left.png') bottom left no-repeat,
+        url('lower_right.png') bottom right no-repeat;
 }
 
 #content {
-    padding: 30px 60px;
+    padding: 40px 70px;
     min-height: calc(100% + 1px);
     box-sizing: border-box;
-    /* Gilded border frame using border-image */
-    border-left: 12px solid transparent;
-    border-right: 12px solid transparent;
-    border-image: url('border_left.png') 0 12 0 12 repeat;
 }
 
 #output {
