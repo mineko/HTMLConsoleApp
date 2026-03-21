@@ -38,9 +38,9 @@ class TestEngine: Engine {
     // MARK: - Image Discovery
 
     private static func discoverImages() -> [String] {
-        guard let imagesURL = Bundle.module.url(forResource: "test", withExtension: "bundle")?
+        guard let imagesURL = Bundle.module.resourceURL?
                 .appendingPathComponent("images") else {
-            print("TestEngine: Could not find test.bundle/images in module resources")
+            print("TestEngine: Could not find images in module resources")
             return []
         }
 
@@ -60,7 +60,7 @@ class TestEngine: Engine {
     }
 
     private func getImagePath(for imageName: String) -> String? {
-        guard let imagesURL = Bundle.module.url(forResource: "test", withExtension: "bundle")?
+        guard let imagesURL = Bundle.module.resourceURL?
                 .appendingPathComponent("images") else {
             return nil
         }
@@ -73,6 +73,10 @@ class TestEngine: Engine {
     }
 
     // MARK: - Engine Overrides
+
+    override func moduleBundlePath() -> String? {
+        return Bundle.module.resourcePath
+    }
 
     override func configureStatusBar() {
         statusBar?.setLineCount(1)

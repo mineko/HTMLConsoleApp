@@ -14,14 +14,13 @@ public class ConsoleController: NSObject, ObservableObject {
     private var menuManager: MenuManager!
     private var statusBar: StatusBar?
     private var engine: Engine?
+    private var resourcePaths: [String] = []
 
     public init(module: String, configuration: Any? = nil, theme: String? = nil) {
         self.availableThemes = []
         self.currentTheme = "default"
         super.init()
 
-        self.availableThemes = Self.discoverAvailableThemes()
-        self.currentTheme = theme ?? availableThemes.randomElement() ?? "default"
         self.menuManager = MenuManager(controller: self)
         self.statusBar = StatusBar(controller: self)
 
@@ -31,33 +30,53 @@ public class ConsoleController: NSObject, ObservableObject {
             print("ConsoleController: No module registered with name '\(module)'")
         }
 
+        // Collect resource paths from the engine (external first, then module)
+        if let path = engine?.externalBundlePath() { resourcePaths.append(path) }
+        if let path = engine?.moduleBundlePath() { resourcePaths.append(path) }
+
+        self.availableThemes = Self.discoverAvailableThemes(resourcePaths: resourcePaths)
+        self.currentTheme = theme ?? availableThemes.randomElement() ?? "default"
+
         // Rebuild menu now that engine exists (so engine menu actions are included)
         self.menuManager.rebuildMenu()
     }
 
     // MARK: - Theme Discovery
 
-    private static func discoverAvailableThemes() -> [String] {
-        guard let bundlePath = Bundle.module.resourcePath else {
-            return ["default"]
+    private static func discoverAvailableThemes(resourcePaths: [String] = []) -> [String] {
+        var themes: Set<String> = []
+
+        // Discover themes from engine resource paths (external bundle, module bundle)
+        for path in resourcePaths {
+            let themesDir = (path as NSString).appendingPathComponent("themes")
+            if let contents = try? FileManager.default.contentsOfDirectory(atPath: themesDir) {
+                for file in contents where file.hasSuffix(".css") {
+                    themes.insert(String(file.dropLast(4)))
+                }
+            }
         }
 
-        do {
-            let contents = try FileManager.default.contentsOfDirectory(atPath: bundlePath)
-            let cssFiles = contents
-                .filter { $0.hasSuffix(".css") }
-                .map { String($0.dropLast(4)) }
-                .sorted()
-            return cssFiles.isEmpty ? ["default"] : cssFiles
-        } catch {
-            return ["default"]
+        // Discover built-in themes from PressKit resources
+        if let resourcePath = Bundle.module.resourcePath {
+            if let contents = try? FileManager.default.contentsOfDirectory(atPath: resourcePath) {
+                for file in contents where file.hasSuffix(".css") {
+                    themes.insert(String(file.dropLast(4)))
+                }
+            }
         }
+
+        let sorted = themes.sorted()
+        return sorted.isEmpty ? ["default"] : sorted
     }
 
     // MARK: - WebView Setup
 
     func getHTMLFileURL() -> URL? {
         return Bundle.module.url(forResource: "console", withExtension: "html")
+    }
+
+    func getResourcePaths() -> [String] {
+        return resourcePaths
     }
 
     public func setWebView(_ webView: WKWebView) {
@@ -76,14 +95,29 @@ public class ConsoleController: NSObject, ObservableObject {
     func switchTheme(to themeName: String) {
         guard let webView = webView else { return }
         currentTheme = themeName
-        // Use absolute file URL so WebKit can find the CSS in the package bundle
-        if let themeURL = Bundle.module.url(forResource: themeName, withExtension: "css") {
+
+        // Resolve theme URL: check external bundle first, then built-in
+        let themeURL: URL? = resolveThemeURL(themeName)
+
+        if let themeURL = themeURL {
             let script = "document.querySelector('link[rel=\"stylesheet\"]').href = '\(themeURL.absoluteString)';"
             webView.evaluateJavaScript(script) { _, _ in
                 // Full re-layout after CSS applies — font/spacing may have changed
                 webView.evaluateJavaScript("renderLayout(true);", completionHandler: nil)
             }
         }
+    }
+
+    private func resolveThemeURL(_ themeName: String) -> URL? {
+        // Check engine resource paths first (external bundle, then module bundle)
+        for path in resourcePaths {
+            let themeFile = (path as NSString).appendingPathComponent("themes/\(themeName).css")
+            if FileManager.default.fileExists(atPath: themeFile) {
+                return URL(fileURLWithPath: themeFile)
+            }
+        }
+        // Fall back to built-in PressKit themes
+        return Bundle.module.url(forResource: themeName, withExtension: "css")
     }
 
     // MARK: - Prompt

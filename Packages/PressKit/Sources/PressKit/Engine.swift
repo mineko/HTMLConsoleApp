@@ -36,6 +36,18 @@ open class Engine {
         return []
     }
 
+    /// Override to return the path to the engine's module bundle embedded
+    /// in the app's resources (e.g. a .bundle inside Bundle.module).
+    open func moduleBundlePath() -> String? {
+        return nil
+    }
+
+    /// Override to return the path to an external data bundle opened by the
+    /// user at runtime (e.g. a .pulpb file on disk).
+    open func externalBundlePath() -> String? {
+        return nil
+    }
+
     // MARK: - Helpers for Subclasses
 
     public func addOutput(_ text: String) {

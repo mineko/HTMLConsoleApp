@@ -36,12 +36,41 @@ body {
     overscroll-behavior-y: auto;
 }
 
+/* Book frame: border images around the viewport */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-image-source: url('border_top_left.png');
+    pointer-events: none;
+    z-index: 999;
+}
+
+/* Corner and edge decorations */
+.book-border-top-left,
+.book-border-top-right,
+.book-border-bottom-left,
+.book-border-bottom-right,
+.book-border-left,
+.book-border-right {
+    position: fixed;
+    z-index: 999;
+    pointer-events: none;
+}
+
 #content {
     padding: 30px 40px;
     min-height: calc(100% + 1px);
     box-sizing: border-box;
     max-width: 720px;
     margin: 0 auto;
+    /* Gilded border frame using border-image */
+    border-left: 12px solid transparent;
+    border-right: 12px solid transparent;
+    border-image: url('border_left.png') 0 12 0 12 repeat;
 }
 
 #output {

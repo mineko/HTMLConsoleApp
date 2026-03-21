@@ -17,7 +17,9 @@ let package = Package(
                 .product(name: "PressKit", package: "PressKit"),
             ],
             resources: [
-                .copy("Resources/test.bundle")
+                .copy("Resources/images"),
+                .copy("Resources/themes"),
+                .copy("Resources/info.json"),
             ],
             swiftSettings: [
                 .swiftLanguageMode(.v6),

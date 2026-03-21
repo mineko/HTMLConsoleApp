@@ -111,12 +111,24 @@ struct WebViewRepresentable: NSViewRepresentable {
             return webView
         }
 
-        // Grant read access to the entire app bundle so WebKit can reach
-        // both PressKit resources (HTML, CSS) and module resources (images).
-        let bundleURL = Bundle.main.bundleURL
-        webView.loadFileURL(htmlURL, allowingReadAccessTo: bundleURL)
+        // Grant read access so WebKit can reach PressKit resources, module
+        // resources, and any external bundle (themes, images).
+        let allPaths = [Bundle.main.bundleURL.path] + consoleController.getResourcePaths()
+        let accessPath = allPaths.reduce(allPaths[0]) { Self.commonAncestor($0, $1) }
+        webView.loadFileURL(htmlURL, allowingReadAccessTo: URL(fileURLWithPath: accessPath))
         return webView
     }
 
     func updateNSView(_ nsView: WKWebView, context: Context) {}
+
+    private static func commonAncestor(_ a: String, _ b: String) -> String {
+        let aComponents = a.split(separator: "/", omittingEmptySubsequences: false)
+        let bComponents = b.split(separator: "/", omittingEmptySubsequences: false)
+        var common: [Substring] = []
+        for (ac, bc) in zip(aComponents, bComponents) {
+            if ac == bc { common.append(ac) } else { break }
+        }
+        let result = common.joined(separator: "/")
+        return result.isEmpty ? "/" : String(result)
+    }
 }
