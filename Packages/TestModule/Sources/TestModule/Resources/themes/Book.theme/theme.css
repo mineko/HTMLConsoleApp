@@ -86,7 +86,7 @@ body {
 }
 
 #content {
-    padding: 40px 70px;
+    padding: 40px 85px 40px 70px;
     min-height: 100%;
     box-sizing: border-box;
     position: relative;
