@@ -62,11 +62,9 @@ body::before {
 }
 
 #content {
-    padding: 30px 40px;
+    padding: 30px 60px;
     min-height: calc(100% + 1px);
     box-sizing: border-box;
-    max-width: 720px;
-    margin: 0 auto;
     /* Gilded border frame using border-image */
     border-left: 12px solid transparent;
     border-right: 12px solid transparent;
