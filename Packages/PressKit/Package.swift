@@ -11,7 +11,8 @@ let package = Package(
         .target(
             name: "PressKit",
             resources: [
-                .process("Resources")
+                .copy("Resources/themes"),
+                .process("Resources/console.html"),
             ],
             swiftSettings: [
                 .swiftLanguageMode(.v6),

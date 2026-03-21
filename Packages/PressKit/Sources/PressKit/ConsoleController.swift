@@ -30,9 +30,10 @@ public class ConsoleController: NSObject, ObservableObject {
             print("ConsoleController: No module registered with name '\(module)'")
         }
 
-        // Collect resource paths from the engine (external first, then module)
+        // Collect resource paths: external → module → built-in (highest to lowest priority)
         if let path = engine?.externalBundlePath() { resourcePaths.append(path) }
         if let path = engine?.moduleBundlePath() { resourcePaths.append(path) }
+        if let path = Bundle.module.resourcePath { resourcePaths.append(path) }
 
         self.availableThemes = Self.discoverAvailableThemes(resourcePaths: resourcePaths)
         self.currentTheme = theme ?? availableThemes.randomElement() ?? "default"
@@ -43,28 +44,18 @@ public class ConsoleController: NSObject, ObservableObject {
 
     // MARK: - Theme Discovery
 
-    private static func discoverAvailableThemes(resourcePaths: [String] = []) -> [String] {
+    private static func discoverAvailableThemes(resourcePaths: [String]) -> [String] {
         var themes: Set<String> = []
-
-        // Discover .theme bundles from engine resource paths (external bundle, module bundle)
         for path in resourcePaths {
             let themesDir = (path as NSString).appendingPathComponent("themes")
             if let contents = try? FileManager.default.contentsOfDirectory(atPath: themesDir) {
                 for entry in contents where entry.hasSuffix(".theme") {
-                    let themePath = (themesDir as NSString).appendingPathComponent(entry)
-                    let cssPath = (themePath as NSString).appendingPathComponent("theme.css")
+                    let cssPath = (themesDir as NSString)
+                        .appendingPathComponent(entry)
+                        .appending("/theme.css")
                     if FileManager.default.fileExists(atPath: cssPath) {
                         themes.insert(String(entry.dropLast(6))) // drop ".theme"
                     }
-                }
-            }
-        }
-
-        // Discover built-in themes from PressKit resources
-        if let resourcePath = Bundle.module.resourcePath {
-            if let contents = try? FileManager.default.contentsOfDirectory(atPath: resourcePath) {
-                for file in contents where file.hasSuffix(".css") {
-                    themes.insert(String(file.dropLast(4)))
                 }
             }
         }
@@ -113,15 +104,13 @@ public class ConsoleController: NSObject, ObservableObject {
     }
 
     private func resolveThemeURL(_ themeName: String) -> URL? {
-        // Check engine resource paths for .theme bundles first
         for path in resourcePaths {
             let themeFile = (path as NSString).appendingPathComponent("themes/\(themeName).theme/theme.css")
             if FileManager.default.fileExists(atPath: themeFile) {
                 return URL(fileURLWithPath: themeFile)
             }
         }
-        // Fall back to built-in PressKit themes
-        return Bundle.module.url(forResource: themeName, withExtension: "css")
+        return nil
     }
 
     // MARK: - Prompt
