@@ -36,10 +36,10 @@ body {
     overscroll-behavior-y: auto;
 }
 
-/* Book frame — gilded border strips and repeating edges */
-body::before {
+/* Book frame — gilded border strips and repeating edges (scrolls with content) */
+#content::before {
     content: '';
-    position: fixed;
+    position: absolute;
     top: 0;
     left: 0;
     right: 0;
@@ -68,10 +68,10 @@ body::before {
         256px 29px;
 }
 
-/* Book frame — page corner pieces on top of border tiles */
-body::after {
+/* Book frame — page corner pieces on top of border tiles (scrolls with content) */
+#content::after {
     content: '';
-    position: fixed;
+    position: absolute;
     top: 0;
     left: 0;
     right: 0;
@@ -87,8 +87,9 @@ body::after {
 
 #content {
     padding: 40px 70px;
-    min-height: calc(100% + 1px);
+    min-height: 100%;
     box-sizing: border-box;
+    position: relative;
 }
 
 #output {

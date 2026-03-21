@@ -909,12 +909,11 @@
         }
 
         function updateContentPadding() {
-            const content = document.getElementById('content');
+            const scrollContainer = document.getElementById('scroll-container');
             if (statusBar.style.display === 'none') {
-                content.style.paddingTop = '20px';
+                scrollContainer.style.top = '0px';
             } else {
-                const statusBarHeight = statusBar.offsetHeight;
-                content.style.paddingTop = (statusBarHeight + 20) + 'px';
+                scrollContainer.style.top = statusBar.offsetHeight + 'px';
             }
         }
 
