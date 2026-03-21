@@ -1181,12 +1181,17 @@
             }
         });
 
-        document.addEventListener('click', function() {
+        // Focus the input when the user starts typing rather than on click,
+        // so that click-and-drag text selection works for copy operations.
+        document.addEventListener('keydown', function(e) {
+            // Ignore modifier-only keys and copy/select-all shortcuts
+            if (e.metaKey || e.ctrlKey || e.altKey) return;
+            if (e.key === 'Shift' || e.key === 'Control' || e.key === 'Alt' || e.key === 'Meta') return;
+
             const flowingInput = document.getElementById('flowing-input');
-            if (flowingInput) {
-                flowingInput.focus();
-            } else {
-                input.focus();
+            const target = flowingInput || input;
+            if (document.activeElement !== target) {
+                target.focus();
             }
         });
 
