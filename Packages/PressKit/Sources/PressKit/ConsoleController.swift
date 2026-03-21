@@ -98,7 +98,7 @@ public class ConsoleController: NSObject, ObservableObject {
             let script = "document.querySelector('link[rel=\"stylesheet\"]').href = '\(themeURL.absoluteString)';"
             webView.evaluateJavaScript(script) { _, _ in
                 // Full re-layout after CSS applies — font/spacing may have changed
-                webView.evaluateJavaScript("renderLayout(true);", completionHandler: nil)
+                webView.evaluateJavaScript("renderLayout(true); requestAnimationFrame(updateContentPadding);", completionHandler: nil)
             }
         }
     }

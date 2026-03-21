@@ -51,6 +51,16 @@
         let selectedIndex = 0;
         let shouldMarkOldOnNextOutput = false;
 
+        // Re-adjust scroll container top whenever a new theme stylesheet loads
+        const themeLink = document.querySelector('link[rel="stylesheet"]');
+        if (themeLink) {
+            new MutationObserver(function() {
+                themeLink.onload = function() {
+                    requestAnimationFrame(updateContentPadding);
+                };
+            }).observe(themeLink, { attributes: true, attributeFilter: ['href'] });
+        }
+
         // ═══════════════════════════════════════════════════
         // Content Stream — the source of truth for layout
         // ═══════════════════════════════════════════════════
@@ -900,12 +910,12 @@
             });
 
             statusBar.style.display = 'block';
-            updateContentPadding();
+            requestAnimationFrame(updateContentPadding);
         }
 
         function hideStatusBar() {
             statusBar.style.display = 'none';
-            updateContentPadding();
+            requestAnimationFrame(updateContentPadding);
         }
 
         function updateContentPadding() {
@@ -1162,6 +1172,7 @@
         // ═══════════════════════════════════════════════════
 
         window.addEventListener('load', function() {
+            updateContentPadding();
             const flowingInput = document.getElementById('flowing-input');
             if (flowingInput) {
                 flowingInput.focus();
