@@ -48,17 +48,17 @@ body {
     z-index: 998;
     background:
         /* Top edge */
-        url('border_top_left.png') top left no-repeat,
+        url('images/border_top_left.png') top left no-repeat,
         /* Bottom edge */
-        url('border_bottom_left.png') bottom left no-repeat,
+        url('images/border_bottom_left.png') bottom left no-repeat,
         /* Left edge — repeating tile */
-        url('border_left.png') left 29px repeat-y,
+        url('images/border_left.png') left 29px repeat-y,
         /* Right edge — repeating tile */
-        url('border_right.png') right 29px repeat-y,
+        url('images/border_right.png') right 29px repeat-y,
         /* Bottom edge — repeating tile behind everything else */
-        url('border_bottom_right.png') bottom left repeat-x,
+        url('images/border_bottom_right.png') bottom left repeat-x,
         /* Top edge — repeating tile behind everything else */
-        url('border_top_right.png') top left repeat-x;
+        url('images/border_top_right.png') top left repeat-x;
     background-size:
         414px 29px,
         414px 29px,
@@ -79,14 +79,14 @@ body {
     pointer-events: none;
     z-index: 1001;
     background:
-        url('upper_left.png') top left no-repeat,
-        url('upper_right.png') top right no-repeat,
-        url('lower_left.png') bottom left no-repeat,
-        url('lower_right.png') bottom right no-repeat;
+        url('images/upper_left.png') top left no-repeat,
+        url('images/upper_right.png') top right no-repeat,
+        url('images/lower_left.png') bottom left no-repeat,
+        url('images/lower_right.png') bottom right no-repeat;
 }
 
 #content {
-    padding: 40px 70px;
+    padding: 60px 90px 60px 85px;
     min-height: 100%;
     box-sizing: border-box;
     position: relative;
@@ -97,6 +97,7 @@ body {
     user-select: text;
     -webkit-user-select: text;
     overflow: hidden;
+    padding-right: 20px;
 }
 
 #input-line {
