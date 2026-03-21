@@ -8,7 +8,7 @@ html, body {
 body {
     font-family: "Palatino", "Palatino Linotype", "Book Antiqua", "Georgia", serif;
     font-size: 17px;
-    background-color: rgb(244, 244, 244);
+    background-color: #f4ead5;
     color: #2c1810;
     overflow-wrap: break-word;
     line-height: 1.6;
@@ -36,60 +36,10 @@ body {
     overscroll-behavior-y: auto;
 }
 
-/* Book frame — gilded border strips and repeating edges (scrolls with content) */
-#content::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    pointer-events: none;
-    z-index: 998;
-    background:
-        /* Top edge */
-        url('images/border_top_left.png') top left no-repeat,
-        /* Bottom edge */
-        url('images/border_bottom_left.png') bottom left no-repeat,
-        /* Left edge — repeating tile */
-        url('images/border_left.png') left 29px repeat-y,
-        /* Right edge — repeating tile */
-        url('images/border_right.png') right 29px repeat-y,
-        /* Bottom edge — repeating tile behind everything else */
-        url('images/border_bottom_right.png') bottom left repeat-x,
-        /* Top edge — repeating tile behind everything else */
-        url('images/border_top_right.png') top left repeat-x;
-    background-size:
-        414px 29px,
-        414px 29px,
-        50px 48px,
-        48px 48px,
-        256px 29px,
-        256px 29px;
-}
-
-/* Book frame — page corner pieces on top of border tiles (scrolls with content) */
-#content::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    pointer-events: none;
-    z-index: 1001;
-    background:
-        url('images/upper_left.png') top left no-repeat,
-        url('images/upper_right.png') top right no-repeat,
-        url('images/lower_left.png') bottom left no-repeat,
-        url('images/lower_right.png') bottom right no-repeat;
-}
-
 #content {
-    padding: 40px 85px 40px 70px;
-    min-height: 100%;
+    padding: 30px 60px;
+    min-height: calc(100% + 1px);
     box-sizing: border-box;
-    position: relative;
 }
 
 #output {
