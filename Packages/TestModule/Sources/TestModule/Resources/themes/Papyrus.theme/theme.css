@@ -224,6 +224,24 @@ body {
     caret-color: #8b4513;
 }
 
+#activity-indicator {
+    padding: 4px 0;
+}
+
+.activity-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: currentColor;
+    animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.2; }
+    50% { opacity: 1; }
+}
+
 /* Content stream for continuous text flow */
 .content-stream {
     line-height: 1.7;

@@ -19,6 +19,7 @@
         <span id="prompt">></span>
         <textarea id="input" rows="1"></textarea>
     </div>
+    <div id="activity-indicator" style="display: none;"><span class="activity-dot"></span></div>
     <div id="error-message" style="display: none;"></div>
         </div>
     </div>
@@ -50,6 +51,29 @@
         let currentMenuData = null;
         let selectedIndex = 0;
         let shouldMarkOldOnNextOutput = false;
+
+        // ─── Activity indicator ───
+        let activityTimer = null;
+
+        function scheduleActivityIndicator() {
+            cancelActivityIndicator();
+            activityTimer = setTimeout(() => {
+                const indicator = document.getElementById('activity-indicator');
+                indicator.style.display = 'block';
+                scrollToBottom();
+            }, 400);
+        }
+
+        function cancelActivityIndicator() {
+            if (activityTimer) {
+                clearTimeout(activityTimer);
+                activityTimer = null;
+            }
+            const indicator = document.getElementById('activity-indicator');
+            if (indicator) {
+                indicator.style.display = 'none';
+            }
+        }
 
         // Re-adjust scroll container top whenever a new theme stylesheet loads
         const themeLink = document.querySelector('link[rel="stylesheet"]');
@@ -117,6 +141,7 @@
         function consumeOldMarker() {
             if (shouldMarkOldOnNextOutput) {
                 shouldMarkOldOnNextOutput = false;
+                cancelActivityIndicator();
                 for (const item of contentStream) {
                     item.old = true;
                 }
@@ -698,6 +723,7 @@
 
         function showPrompt(promptText) {
             shouldMarkOldOnNextOutput = true;
+            cancelActivityIndicator();
             hidePrompt();
 
             const outputContainer = document.getElementById('output');
@@ -751,6 +777,7 @@
                         if (inputContainer) {
                             inputContainer.remove();
                         }
+                        scheduleActivityIndicator();
                         window.webkit.messageHandlers.consoleInput.postMessage(userText);
                     } else {
                         inputSpan.textContent = '';
