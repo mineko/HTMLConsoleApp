@@ -1137,8 +1137,11 @@
             const availableHeight = viewportHeight - statusBarHeight;
             const buffer = 20;
 
+            const content = document.getElementById('content');
+            const contentPaddingBottom = content ? parseFloat(getComputedStyle(content).paddingBottom) || 0 : 0;
+
             const menuTop = menuRect.top - statusBarHeight;
-            const menuBottom = menuRect.bottom - statusBarHeight;
+            const menuBottom = menuRect.bottom + contentPaddingBottom - statusBarHeight;
             const menuHeight = menuBottom - menuTop;
 
             if (menuHeight <= availableHeight - (2 * buffer)) {
