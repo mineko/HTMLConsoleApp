@@ -283,7 +283,7 @@ public class MenuManager {
         }
 
         let debugEnabled = menuManager.controller?.layoutDebugEnabled ?? false
-        let debugToggleTitle = debugEnabled ? "Debug Info (ON)" : "Debug Info (OFF)"
+        let debugToggleTitle = debugEnabled ? "Layout Debug (On)" : "Layout Debug (Off)"
         let debugAction = (title: debugToggleTitle, action: { [weak menuManager] in
             if let controller = menuManager?.controller {
                 controller.setLayoutDebug(!controller.layoutDebugEnabled)
