@@ -282,9 +282,19 @@ public class MenuManager {
             knobSubmenus.append((title: displayTitle, menu: submenu))
         }
 
+        let debugEnabled = menuManager.controller?.layoutDebugEnabled ?? false
+        let debugToggleTitle = debugEnabled ? "Debug Info (ON)" : "Debug Info (OFF)"
+        let debugAction = (title: debugToggleTitle, action: { [weak menuManager] in
+            if let controller = menuManager?.controller {
+                controller.setLayoutDebug(!controller.layoutDebugEnabled)
+            }
+            menuManager?.exitMenu()
+        })
+
         return Menu.createMenu(
             title: "Layout",
             submenus: knobSubmenus,
+            actions: [debugAction],
             includeBack: true,
             menuManager: menuManager
         )

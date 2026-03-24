@@ -258,6 +258,14 @@ public class ConsoleController: NSObject, ObservableObject {
         return knobsCache
     }
 
+    public private(set) var layoutDebugEnabled = false
+
+    public func setLayoutDebug(_ enabled: Bool) {
+        layoutDebugEnabled = enabled
+        guard let webView = webView else { return }
+        webView.evaluateJavaScript("setLayoutDebug(\(enabled ? "true" : "false"));", completionHandler: nil)
+    }
+
     public func clearOutput() {
         guard let webView = webView else { return }
         webView.evaluateJavaScript("clearOutput();", completionHandler: nil)

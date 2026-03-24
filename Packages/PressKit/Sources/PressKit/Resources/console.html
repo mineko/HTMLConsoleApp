@@ -112,6 +112,8 @@
             textBefore: 0.5,    // 0 = no minimum text, 1 = lots of text before images
         };
 
+        let layoutDebugMode = false;
+
         // ─── Push content into the stream ───
 
         function pushText(text, style) {
@@ -273,6 +275,7 @@
                     scrollContainer.scrollTop = anchored.offsetTop - anchorOffset;
                 }
             }
+
         }
 
         // ─── Scoring: two-pass layout over the full stream ───
@@ -447,20 +450,37 @@
                     renderList.push({ type: 'text', text: item.text, style: item.style, old: isOld, streamIndex: i });
                 } else if (item.type === 'system') {
                     renderList.push({ type: 'system', text: item.text, old: isOld, streamIndex: i });
-                } else if (item.type === 'image' && placedAt[i]) {
-                    const p = placedAt[i];
-                    const iw = item.width || 400;
-                    const ih = item.height || 300;
-                    renderList.push({
-                        type: 'image', src: item.src, caption: item.caption,
-                        priority: item.priority,
-                        aspectRatio: iw / ih,
-                        alignment: p.alignment,
-                        widthPercent: p.widthPercent,
-                        score: p.score,
-                        old: isOld,
-                        streamIndex: i
-                    });
+                } else if (item.type === 'image') {
+                    if (placedAt[i]) {
+                        const p = placedAt[i];
+                        const iw = item.width || 400;
+                        const ih = item.height || 300;
+                        renderList.push({
+                            type: 'image', src: item.src, caption: item.caption,
+                            priority: item.priority,
+                            aspectRatio: iw / ih,
+                            alignment: p.alignment,
+                            widthPercent: p.widthPercent,
+                            score: p.score,
+                            old: isOld,
+                            streamIndex: i
+                        });
+                    }
+                    if (layoutDebugMode) {
+                        const p = placedAt[i];
+                        renderList.push({
+                            type: 'image-info',
+                            src: item.src,
+                            caption: item.caption,
+                            priority: item.priority,
+                            placed: !!p,
+                            alignment: p ? p.alignment : null,
+                            widthPercent: p ? p.widthPercent : null,
+                            score: p ? p.score : null,
+                            skipped: committedSkips.has(i),
+                            streamIndex: i
+                        });
+                    }
                 }
             }
 
@@ -634,19 +654,30 @@
                 figure.appendChild(img);
 
                 const cap = document.createElement('figcaption');
-                const captionText = item.caption ? item.caption + ' | ' : '';
-                const pri = (item.priority || 0).toFixed(2);
-                const sc = (item.score || 0).toFixed(2);
-                const ar = (item.aspectRatio || 1).toFixed(2);
-                const shape = ar > 1.3 ? 'wide' : ar < 0.8 ? 'tall' : 'sq';
-                cap.textContent = `${captionText}pri:${pri} score:${sc} ${item.alignment} ${item.widthPercent}% ${shape}(${ar})`;
                 cap.style.textAlign = 'center';
                 cap.style.fontSize = '0.75em';
                 cap.style.opacity = '0.6';
                 cap.style.padding = '4px 0';
                 cap.style.lineHeight = '1.4';
                 cap.style.fontFamily = 'monospace';
-                figure.appendChild(cap);
+
+                if (layoutDebugMode) {
+                    const pri = (item.priority || 0).toFixed(2);
+                    const sc = (item.score || 0).toFixed(2);
+                    const ar = (item.aspectRatio || 1).toFixed(2);
+                    const shape = ar > 1.3 ? 'wide' : ar < 0.8 ? 'tall' : 'sq';
+                    if (item.caption) {
+                        cap.innerHTML = `${item.caption}<br><span style="opacity:0.7">pri:${pri} score:${sc} ${item.alignment} ${item.widthPercent}% ${shape}(${ar})</span>`;
+                    } else {
+                        cap.textContent = `pri:${pri} score:${sc} ${item.alignment} ${item.widthPercent}% ${shape}(${ar})`;
+                    }
+                } else {
+                    cap.textContent = item.caption || '';
+                }
+
+                if (cap.textContent || cap.innerHTML) {
+                    figure.appendChild(cap);
+                }
 
                 if (item.alignment === 'center') {
                     figure.style.display = 'block';
@@ -665,6 +696,31 @@
                 }
 
                 return figure;
+
+            } else if (item.type === 'image-info') {
+                const div = document.createElement('div');
+                div.style.cssText = 'font:11px/1.4 monospace;padding:3px 8px;margin:2px 0;'
+                    + 'border-left:3px solid #666;color:#999;opacity:0.8;';
+                div.dataset.streamIndex = item.streamIndex;
+
+                const src = item.src.split('/').pop();
+                const pri = (item.priority || 0).toFixed(2);
+                let status;
+                if (item.placed) {
+                    const sc = (item.score || 0).toFixed(2);
+                    status = `<span style="color:#8c8">placed ${item.alignment} ${item.widthPercent}% score:${sc}</span>`;
+                } else if (item.skipped) {
+                    status = '<span style="color:#c66">hidden (too close)</span>';
+                } else {
+                    status = '<span style="color:#cc8">pending</span>';
+                }
+
+                let info = `\u{1F5BC} <b>${src}</b> pri:${pri} ${status}`;
+                if (item.caption) {
+                    info += ` <span style="color:#888">"${item.caption}"</span>`;
+                }
+                div.innerHTML = info;
+                return div;
             }
 
             return null;
@@ -682,6 +738,11 @@
             else if (key === 'textbefore') layoutKnobs.textBefore = clamped;
 
             // Re-layout with new knobs — full rescore
+            renderLayout(true);
+        }
+
+        function setLayoutDebug(enabled) {
+            layoutDebugMode = !!enabled;
             renderLayout(true);
         }
 
@@ -1246,6 +1307,7 @@
         window.clearContentStream = clearContentStream;
         window.setLayoutKnob = setLayoutKnob;
         window.getLayoutKnobs = getLayoutKnobs;
+        window.setLayoutDebug = setLayoutDebug;
         window.renderLayout = renderLayout;
     </script>
 </body>
