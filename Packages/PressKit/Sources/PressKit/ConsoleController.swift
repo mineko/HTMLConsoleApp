@@ -138,11 +138,9 @@ public class ConsoleController: NSObject, ObservableObject {
         } else if input.hasPrefix("/") {
             if menuManager.navigateToPath(input) {
                 return
-            } else {
-                showError("Menu path not found: \(input)")
-                showPrompt()
-                return
             }
+            // Not a known menu path — pass to engine (game handles its own slash commands)
+            engine?.processInput(input)
         } else {
             engine?.processInput(input)
         }
@@ -193,8 +191,8 @@ public class ConsoleController: NSObject, ObservableObject {
 
         let itemDicts: [[String: String]] = items.map { item in
             var dict = ["title": item.title]
-            if let detail = item.detail {
-                dict["detail"] = detail
+            if let subtitle = item.subtitle {
+                dict["subtitle"] = subtitle
             }
             return dict
         }

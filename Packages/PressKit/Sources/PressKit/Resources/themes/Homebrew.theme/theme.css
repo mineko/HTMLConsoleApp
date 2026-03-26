@@ -135,7 +135,17 @@ body {
     padding: 2px 8px;
 }
 
+.menu-item-detail {
+    display: flex;
+}
+
 .menu-detail {
+    min-width: 20ch;
+    flex-shrink: 0;
+}
+
+.menu-description {
+    flex: 1;
     opacity: 0.6;
 }
 

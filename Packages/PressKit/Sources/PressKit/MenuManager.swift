@@ -21,27 +21,27 @@ public enum MenuItemType {
 public struct MenuItem {
     let id: String
     public let title: String
-    public let detail: String?
+    public let subtitle: String?
     public let type: MenuItemType
 
-    public init(id: String, title: String, detail: String? = nil, submenu: Menu) {
+    public init(id: String, title: String, subtitle: String? = nil, submenu: Menu) {
         self.id = id
         self.title = title
-        self.detail = detail
+        self.subtitle = subtitle
         self.type = .submenu(submenu)
     }
 
-    public init(id: String, title: String, detail: String? = nil, action: @escaping () -> Void) {
+    public init(id: String, title: String, subtitle: String? = nil, action: @escaping () -> Void) {
         self.id = id
         self.title = title
-        self.detail = detail
+        self.subtitle = subtitle
         self.type = .action(action)
     }
 
     public init(id: String, title: String) {
         self.id = id
         self.title = title
-        self.detail = nil
+        self.subtitle = nil
         self.type = .separator
     }
 
@@ -191,42 +191,44 @@ public class MenuManager {
 
         let layoutMenu = createLayoutMenu(menuManager: menuManager)
 
-        let adminActions = [
-            ("Toggle Status Bar", { [weak menuManager] in
+        let adminItems: [MenuItem] = [
+            MenuItem(id: "submenu_theme", title: "Theme", subtitle: "Change color theme", submenu: themeMenu),
+            MenuItem(id: "submenu_layout", title: "Layout", subtitle: "Adjust layout settings", submenu: layoutMenu),
+            MenuItem(id: "action_toggle_status_bar", title: "Toggle Status Bar", subtitle: "Show or hide the status bar", action: { [weak menuManager] in
                 if let statusBar = menuManager?.controller?.getStatusBar() {
                     statusBar.toggle()
                 }
                 menuManager?.exitMenu()
+            }),
+            MenuItem(id: "separator", title: ""),
+            MenuItem(id: "back", title: "Back", action: { [weak menuManager] in
+                menuManager?.goBack()
             })
         ]
 
-        let adminMenu = Menu.createMenu(
-            title: "Admin",
-            submenus: [("Theme", themeMenu), ("Layout", layoutMenu)],
-            actions: adminActions,
-            includeBack: true,
-            menuManager: menuManager
-        )
+        let adminMenu = Menu(items: adminItems, title: "Admin")
 
         // Get engine-provided menu items and wrap actions to auto-exit menu
         let engineItems = (menuManager.controller?.getEngineMenuItems() ?? []).map { item -> MenuItem in
             wrapMenuItem(item, menuManager: menuManager)
         }
 
-        return Menu.createMenu(
-            title: "/",
-            submenus: [("Admin", adminMenu)],
-            extraItems: engineItems,
-            includeCancel: true,
-            menuManager: menuManager
-        )
+        var rootItems: [MenuItem] = engineItems
+        rootItems.append(MenuItem(id: "submenu_admin", title: "Admin", subtitle: "Adjust admin options", submenu: adminMenu))
+        if !rootItems.isEmpty {
+            rootItems.append(MenuItem(id: "separator", title: ""))
+            rootItems.append(MenuItem(id: "cancel", title: "Cancel", action: { [weak menuManager] in
+                menuManager?.exitMenu()
+            }))
+        }
+        return Menu(items: rootItems, title: "/")
     }
 
     /// Wrap a MenuItem so actions auto-exit the menu, and submenus get Back buttons.
     private static func wrapMenuItem(_ item: MenuItem, menuManager: MenuManager) -> MenuItem {
         switch item.type {
         case .action(let action):
-            return MenuItem(id: item.id, title: item.title, detail: item.detail, action: { [weak menuManager] in
+            return MenuItem(id: item.id, title: item.title, subtitle: item.subtitle, action: { [weak menuManager] in
                 action()
                 menuManager?.exitMenu()
             })
@@ -240,7 +242,7 @@ public class MenuManager {
                 }))
             }
             let wrappedMenu = Menu(items: items, title: submenu.title)
-            return MenuItem(id: item.id, title: item.title, detail: item.detail, submenu: wrappedMenu)
+            return MenuItem(id: item.id, title: item.title, subtitle: item.subtitle, submenu: wrappedMenu)
         case .separator:
             return item
         }
