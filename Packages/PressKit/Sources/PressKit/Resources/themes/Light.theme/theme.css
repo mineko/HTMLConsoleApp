@@ -233,6 +233,15 @@ body {
     50% { opacity: 1; }
 }
 
+#bumper {
+    height: 2.8em;
+}
+
+#input-area {
+    margin-top: -2.8em;
+    min-height: 2.8em;
+}
+
 /* Content stream for continuous text flow */
 .content-stream {
     line-height: 1.6;

@@ -252,3 +252,12 @@ body {
     0%, 100% { opacity: 0.2; }
     50% { opacity: 1; }
 }
+
+#bumper {
+    height: 2.8em;
+}
+
+#input-area {
+    margin-top: -2.8em;
+    min-height: 2.8em;
+}
