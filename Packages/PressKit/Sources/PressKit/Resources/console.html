@@ -1190,7 +1190,11 @@
             currentMenuData.items.forEach((item, index) => {
                 const itemDiv = document.createElement('div');
 
-                if (item === '') {
+                // Items can be objects {title, detail} or strings (legacy)
+                const title = (typeof item === 'object') ? item.title : item;
+                const detail = (typeof item === 'object') ? item.detail : null;
+
+                if (title === '') {
                     itemDiv.className = 'menu-spacer';
                     itemDiv.innerHTML = '&nbsp;';
                 } else {
@@ -1198,10 +1202,26 @@
                     if (index === selectedIndex) {
                         itemDiv.classList.add('menu-selected');
                     }
-                    itemDiv.textContent = item;
+                    if (detail) {
+                        const detailSpan = document.createElement('span');
+                        detailSpan.className = 'menu-detail';
+                        detailSpan.textContent = detail;
+                        itemDiv.appendChild(detailSpan);
+
+                        const titleSpan = document.createElement('span');
+                        titleSpan.textContent = '  ' + title;
+                        itemDiv.appendChild(titleSpan);
+                    } else {
+                        itemDiv.textContent = title;
+                    }
                 }
                 menuItems.appendChild(itemDiv);
             });
+        }
+
+        function menuItemIsSeparator(item) {
+            if (typeof item === 'object') return item.title === '';
+            return item === '';
         }
 
         function navigateMenu(direction) {
@@ -1212,11 +1232,11 @@
             if (direction === 'up') {
                 do {
                     newIndex = Math.max(0, newIndex - 1);
-                } while (newIndex > 0 && currentMenuData.items[newIndex] === '');
+                } while (newIndex > 0 && menuItemIsSeparator(currentMenuData.items[newIndex]));
             } else if (direction === 'down') {
                 do {
                     newIndex = Math.min(currentMenuData.items.length - 1, newIndex + 1);
-                } while (newIndex < currentMenuData.items.length - 1 && currentMenuData.items[newIndex] === '');
+                } while (newIndex < currentMenuData.items.length - 1 && menuItemIsSeparator(currentMenuData.items[newIndex]));
             }
 
             selectedIndex = newIndex;

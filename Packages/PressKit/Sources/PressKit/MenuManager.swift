@@ -21,23 +21,27 @@ public enum MenuItemType {
 public struct MenuItem {
     let id: String
     public let title: String
+    public let detail: String?
     public let type: MenuItemType
 
-    public init(id: String, title: String, submenu: Menu) {
+    public init(id: String, title: String, detail: String? = nil, submenu: Menu) {
         self.id = id
         self.title = title
+        self.detail = detail
         self.type = .submenu(submenu)
     }
 
-    public init(id: String, title: String, action: @escaping () -> Void) {
+    public init(id: String, title: String, detail: String? = nil, action: @escaping () -> Void) {
         self.id = id
         self.title = title
+        self.detail = detail
         self.type = .action(action)
     }
 
     public init(id: String, title: String) {
         self.id = id
         self.title = title
+        self.detail = nil
         self.type = .separator
     }
 
@@ -222,7 +226,7 @@ public class MenuManager {
     private static func wrapMenuItem(_ item: MenuItem, menuManager: MenuManager) -> MenuItem {
         switch item.type {
         case .action(let action):
-            return MenuItem(id: item.id, title: item.title, action: { [weak menuManager] in
+            return MenuItem(id: item.id, title: item.title, detail: item.detail, action: { [weak menuManager] in
                 action()
                 menuManager?.exitMenu()
             })
@@ -236,7 +240,7 @@ public class MenuManager {
                 }))
             }
             let wrappedMenu = Menu(items: items, title: submenu.title)
-            return MenuItem(id: item.id, title: item.title, submenu: wrappedMenu)
+            return MenuItem(id: item.id, title: item.title, detail: item.detail, submenu: wrappedMenu)
         case .separator:
             return item
         }

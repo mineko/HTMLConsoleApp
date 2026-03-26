@@ -167,6 +167,10 @@ public class ConsoleController: NSObject, ObservableObject {
         return availableThemes
     }
 
+    public func rebuildMenu() {
+        menuManager.rebuildMenu()
+    }
+
     internal func getEngineMenuItems() -> [MenuItem] {
         return engine?.menuItems() ?? []
     }
@@ -187,8 +191,14 @@ public class ConsoleController: NSObject, ObservableObject {
     internal func displayMenu(items: [MenuItem], title: String) {
         guard let webView = webView else { return }
 
-        let itemTitles = items.map { $0.title }
-        let itemsJSON = try! JSONSerialization.data(withJSONObject: itemTitles, options: [])
+        let itemDicts: [[String: String]] = items.map { item in
+            var dict = ["title": item.title]
+            if let detail = item.detail {
+                dict["detail"] = detail
+            }
+            return dict
+        }
+        let itemsJSON = try! JSONSerialization.data(withJSONObject: itemDicts, options: [])
         let itemsString = String(data: itemsJSON, encoding: .utf8)!
 
         let escapedTitle = title.replacingOccurrences(of: "'", with: "\\'")

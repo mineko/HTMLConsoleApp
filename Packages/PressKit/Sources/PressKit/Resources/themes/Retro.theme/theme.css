@@ -152,6 +152,10 @@ body {
     text-shadow: none;
 }
 
+.menu-detail {
+    opacity: 0.6;
+}
+
 #error-message {
     color: #800000;
     font-style: italic;
