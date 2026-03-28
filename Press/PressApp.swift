@@ -20,6 +20,7 @@ struct PressApp: App {
     var body: some Scene {
         WindowGroup {
             ConsoleView(module: "Layout Test")
+            //ConsoleView(module: "Test Module")
         }
     }
 }
