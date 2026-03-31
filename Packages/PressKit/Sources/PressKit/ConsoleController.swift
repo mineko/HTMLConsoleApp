@@ -91,26 +91,66 @@ public class ConsoleController: NSObject, ObservableObject {
         guard let webView = webView else { return }
         currentTheme = themeName
 
-        // Resolve theme URL: check external bundle first, then built-in
-        let themeURL: URL? = resolveThemeURL(themeName)
+        guard let themeDir = resolveThemeDir(themeName),
+              let css = try? String(contentsOf: themeDir.appendingPathComponent("theme.css"), encoding: .utf8)
+        else { return }
 
-        if let themeURL = themeURL {
-            let script = "document.querySelector('link[rel=\"stylesheet\"]').href = '\(themeURL.absoluteString)';"
-            webView.evaluateJavaScript(script) { _, _ in
-                // Full re-layout after CSS applies — font/spacing may have changed
-                webView.evaluateJavaScript("renderLayout(true); requestAnimationFrame(updateContentPadding);", completionHandler: nil)
-            }
+        // Resolve relative url() references to absolute file:// URLs so
+        // WKWebView can load images regardless of sandbox constraints.
+        let resolvedCSS = resolveRelativeURLs(in: css, baseDir: themeDir)
+
+        // Inject as inline <style>, replacing any previous theme style block
+        let escaped = resolvedCSS
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "'", with: "\\'")
+            .replacingOccurrences(of: "\n", with: "\\n")
+        let script = """
+            (function() {
+                var existing = document.getElementById('theme-style');
+                if (existing) existing.remove();
+                var link = document.querySelector('link[rel="stylesheet"]');
+                if (link) link.remove();
+                var style = document.createElement('style');
+                style.id = 'theme-style';
+                style.textContent = '\(escaped)';
+                document.head.appendChild(style);
+            })();
+            """
+        webView.evaluateJavaScript(script) { _, _ in
+            webView.evaluateJavaScript("renderLayout(true); requestAnimationFrame(updateContentPadding);", completionHandler: nil)
         }
     }
 
-    private func resolveThemeURL(_ themeName: String) -> URL? {
+    private func resolveThemeDir(_ themeName: String) -> URL? {
         for path in resourcePaths {
-            let themeFile = (path as NSString).appendingPathComponent("themes/\(themeName).theme/theme.css")
-            if FileManager.default.fileExists(atPath: themeFile) {
-                return URL(fileURLWithPath: themeFile)
+            let dir = URL(fileURLWithPath: path).appendingPathComponent("themes/\(themeName).theme")
+            if FileManager.default.fileExists(atPath: dir.appendingPathComponent("theme.css").path) {
+                return dir
             }
         }
         return nil
+    }
+
+    /// Rewrites relative url() references in CSS to absolute file:// URLs.
+    private func resolveRelativeURLs(in css: String, baseDir: URL) -> String {
+        // Match url('...') or url("...") or url(...)
+        let pattern = #"url\(\s*['"]?([^'")]+?)['"]?\s*\)"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return css }
+        let nsCSS = css as NSString
+        var result = css
+        // Process matches in reverse so ranges stay valid
+        let matches = regex.matches(in: css, range: NSRange(location: 0, length: nsCSS.length))
+        for match in matches.reversed() {
+            guard match.numberOfRanges >= 2 else { continue }
+            let relPath = nsCSS.substring(with: match.range(at: 1))
+            // Skip data: and absolute URLs
+            if relPath.hasPrefix("data:") || relPath.hasPrefix("http") || relPath.hasPrefix("file:") { continue }
+            let absURL = baseDir.appendingPathComponent(relPath)
+            let replacement = "url('\(absURL.absoluteString)')"
+            let range = Range(match.range(at: 0), in: result)!
+            result.replaceSubrange(range, with: replacement)
+        }
+        return result
     }
 
     // MARK: - Prompt

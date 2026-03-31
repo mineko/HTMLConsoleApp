@@ -111,11 +111,10 @@ struct WebViewRepresentable: NSViewRepresentable {
             return webView
         }
 
-        // Grant read access so WebKit can reach PressKit resources, module
-        // resources, and any external bundle (themes, images).
-        let allPaths = [Bundle.main.bundleURL.path] + consoleController.getResourcePaths()
-        let accessPath = allPaths.reduce(allPaths[0]) { Self.commonAncestor($0, $1) }
-        webView.loadFileURL(htmlURL, allowingReadAccessTo: URL(fileURLWithPath: accessPath))
+        // Grant read access to the HTML file's parent directory (PressKit resources).
+        // External themes are injected as inline CSS, so no broader access is needed.
+        let accessDir = htmlURL.deletingLastPathComponent()
+        webView.loadFileURL(htmlURL, allowingReadAccessTo: accessDir)
         return webView
     }
 
