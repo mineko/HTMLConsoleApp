@@ -145,31 +145,12 @@ public class ConsoleController: NSObject, ObservableObject {
             let relPath = nsCSS.substring(with: match.range(at: 1))
             // Skip data: and absolute URLs
             if relPath.hasPrefix("data:") || relPath.hasPrefix("http") || relPath.hasPrefix("file:") { continue }
-            let fileURL = baseDir.appendingPathComponent(relPath)
-            // Inline as data: URI to avoid sandbox file access issues
-            let replacement: String
-            if let data = try? Data(contentsOf: fileURL) {
-                let mime = Self.mimeType(for: fileURL.pathExtension)
-                let base64 = data.base64EncodedString()
-                replacement = "url('data:\(mime);base64,\(base64)')"
-            } else {
-                replacement = "url('\(fileURL.absoluteString)')"
-            }
+            let absURL = baseDir.appendingPathComponent(relPath)
+            let replacement = "url('\(absURL.absoluteString)')"
             let range = Range(match.range(at: 0), in: result)!
             result.replaceSubrange(range, with: replacement)
         }
         return result
-    }
-
-    private static func mimeType(for ext: String) -> String {
-        switch ext.lowercased() {
-        case "png": return "image/png"
-        case "jpg", "jpeg": return "image/jpeg"
-        case "gif": return "image/gif"
-        case "svg": return "image/svg+xml"
-        case "webp": return "image/webp"
-        default: return "application/octet-stream"
-        }
     }
 
     // MARK: - Prompt
