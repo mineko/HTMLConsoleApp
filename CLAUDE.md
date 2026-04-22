@@ -81,6 +81,18 @@ Modules live in their own local Swift Packages under `Packages/`, each depending
 4. Register in the app: `ModuleRegistry.shared.register(YourModule.self)`
 5. Add the module package as a local package reference and framework dependency in the Xcode project
 
+### Menu System
+
+PressKit exposes two distinct menu flows:
+
+1. **`/` menu (admin/engine)** — user-triggered by typing `/`. `MenuManager` assembles engine-provided items from `Engine.menuItems()`, appends an Admin submenu (Theme, Layout, Status Bar), and auto-injects Back/Cancel. Escape dismisses; `/foo/bar` navigates a path directly.
+
+2. **Modal menu (game-driven)** — triggered by the engine via `Engine.presentChoices(title:, choices:)`. No admin, no Back, no Cancel. Escape is swallowed and `/` input is ignored while active — the only exit is to pick an item. Use a single-item choice list for a "Next" continuation (dialog trees, page turns); there's no dedicated Continue API.
+
+Each choice action auto-dismisses the modal *before* running, so a callback is free to present another `presentChoices` (CYOA branching, multi-beat dialogue). Under the hood this routes through `MenuManager.showModalMenu(_:)`; the `modal: true` flag on the `showMenu` JS payload gates Escape handling in `console.html`.
+
+See `TestModule` (`cyoa`, `next` commands) for a runnable demo.
+
 ### Console Communication Flow
 
 1. User types in HTML input → JS sends to Swift via `window.webkit.messageHandlers.consoleInput.postMessage()`

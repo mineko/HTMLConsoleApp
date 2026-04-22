@@ -103,6 +103,7 @@ class TestEngine: Engine {
         }
         addContent(text: "Module loaded with \(availableImages.count) images available.")
         addContent(text: "Type something and press Enter to see responsive content layout...")
+        addContent(text: "Try 'cyoa' for a choice menu demo, or 'next' for a single-choice continuation.")
     }
 
     override func processInput(_ input: String) {
@@ -111,11 +112,62 @@ class TestEngine: Engine {
 
         addContent(text: "\n" + input)
 
+        switch input.lowercased() {
+        case "cyoa":
+            startCyoaDemo()
+            return
+        case "next":
+            startContinuationDemo()
+            return
+        default:
+            break
+        }
+
         if !availableImages.isEmpty && Int.random(in: 1...2) == 1 {
             addRandomContent()
         }
 
         controller?.showPrompt()
+    }
+
+    // MARK: - Modal Menu Demos
+
+    private func startCyoaDemo() {
+        addContent(text: "You stand at a fork in the road.")
+        presentChoices(title: "Which way?", choices: [
+            (title: "Go left, into the forest", action: { [weak self] in
+                self?.addContent(text: "Branches close behind you. The path narrows.")
+                self?.presentChoices(title: "The forest deepens…", choices: [
+                    (title: "Press on",  action: { [weak self] in
+                        self?.addContent(text: "You emerge into a moonlit clearing.")
+                        self?.controller?.showPrompt()
+                    }),
+                    (title: "Turn back", action: { [weak self] in
+                        self?.addContent(text: "You retreat to the fork, shaken.")
+                        self?.controller?.showPrompt()
+                    }),
+                ])
+            }),
+            (title: "Go right, toward the cliffs", action: { [weak self] in
+                self?.addContent(text: "Wind howls. The sea churns far below.")
+                self?.controller?.showPrompt()
+            }),
+        ])
+    }
+
+    private func startContinuationDemo() {
+        addContent(text: "A figure steps from the shadows.")
+        presentChoices(title: "\"Well met, traveler.\"", choices: [
+            (title: "Next", action: { [weak self] in
+                self?.addContent(text: "They extend a hand. You hesitate.")
+                self?.presentChoices(title: "\"Walk with me a while?\"", choices: [
+                    (title: "Next", action: { [weak self] in
+                        self?.addContent(text: "You fall in step beside them.")
+                        self?.controller?.showPrompt()
+                    }),
+                ])
+            }),
+        ])
     }
 
     private func addRandomContent() {

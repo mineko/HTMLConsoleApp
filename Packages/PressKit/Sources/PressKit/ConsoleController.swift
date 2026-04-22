@@ -173,6 +173,11 @@ public class ConsoleController: NSObject, ObservableObject {
     // MARK: - Input Processing
 
     func processInput(_ input: String) {
+        // Modal (game-driven) menus swallow everything — the only way out is
+        // to pick an item.
+        if menuManager.isModal {
+            return
+        }
         if input == "/" {
             menuManager.showRootMenu()
         } else if input.hasPrefix("/") {
@@ -195,6 +200,7 @@ public class ConsoleController: NSObject, ObservableObject {
                 menuManager.selectItem(at: index)
             }
         } else if action == "CANCEL" {
+            if menuManager.isModal { return }
             menuManager.exitMenu()
         }
     }
@@ -207,6 +213,16 @@ public class ConsoleController: NSObject, ObservableObject {
 
     public func rebuildMenu() {
         menuManager.rebuildMenu()
+    }
+
+    /// Present a game-driven choice menu. No admin, no Back, no Cancel; the
+    /// user can only pick one of the supplied choices. Use a single-choice
+    /// list for a "Next" continuation.
+    public func presentChoices(title: String, choices: [(title: String, action: () -> Void)]) {
+        let items = choices.map { choice in
+            MenuItem(id: "choice_\(choice.title.lowercased())", title: choice.title, action: choice.action)
+        }
+        menuManager.showModalMenu(Menu(items: items, title: title))
     }
 
     internal func getEngineMenuItems() -> [MenuItem] {
@@ -226,7 +242,7 @@ public class ConsoleController: NSObject, ObservableObject {
         menuManager.exitMenu()
     }
 
-    internal func displayMenu(items: [MenuItem], title: String) {
+    internal func displayMenu(items: [MenuItem], title: String, modal: Bool = false) {
         guard let webView = webView else { return }
 
         let itemDicts: [[String: String]] = items.map { item in
@@ -240,7 +256,7 @@ public class ConsoleController: NSObject, ObservableObject {
         let itemsString = String(data: itemsJSON, encoding: .utf8)!
 
         let escapedTitle = title.replacingOccurrences(of: "'", with: "\\'")
-        let script = "showMenu({title: '\(escapedTitle)', items: \(itemsString)});"
+        let script = "showMenu({title: '\(escapedTitle)', items: \(itemsString), modal: \(modal)});"
         webView.evaluateJavaScript(script, completionHandler: nil)
     }
 

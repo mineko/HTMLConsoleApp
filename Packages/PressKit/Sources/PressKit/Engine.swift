@@ -73,4 +73,11 @@ open class Engine {
     public func clearOutput() {
         controller?.clearOutput()
     }
+
+    /// Present a game-driven choice menu (CYOA / dialog tree). The user cannot
+    /// dismiss it — they must pick one of the supplied choices. For a "Next"
+    /// style continuation, pass a single choice.
+    public func presentChoices(title: String, choices: [(title: String, action: () -> Void)]) {
+        controller?.presentChoices(title: title, choices: choices)
+    }
 }

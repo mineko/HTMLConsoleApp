@@ -168,6 +168,7 @@ public class MenuManager {
     private var menuStack: [Menu] = []
     private var rootMenu: Menu!
     private weak var controller: ConsoleController?
+    private(set) var isModal: Bool = false
 
     init(controller: ConsoleController) {
         self.controller = controller
@@ -313,9 +314,40 @@ public class MenuManager {
     func showRootMenu() {
         // Rebuild so menus reflect current state (knob values, etc.)
         rebuildMenu()
+        isModal = false
         currentMenu = rootMenu
         menuStack = []
         sendMenuToController(menu: rootMenu)
+    }
+
+    /// Present a game-driven menu with no Back/Cancel/Admin wrapping. User
+    /// cannot dismiss with Escape or `/`; the only way out is to pick an item.
+    /// Each action auto-dismisses the menu *before* running, so an action is
+    /// free to present another modal menu.
+    public func showModalMenu(_ menu: Menu) {
+        let wrappedItems = menu.items.map { item -> MenuItem in
+            switch item.type {
+            case .action(let action):
+                return MenuItem(id: item.id, title: item.title, subtitle: item.subtitle, action: { [weak self] in
+                    self?.dismissModal()
+                    action()
+                })
+            default:
+                return item
+            }
+        }
+        let wrapped = Menu(items: wrappedItems, title: menu.title)
+        isModal = true
+        menuStack = []
+        currentMenu = wrapped
+        sendMenuToController(menu: wrapped)
+    }
+
+    private func dismissModal() {
+        isModal = false
+        currentMenu = nil
+        menuStack = []
+        controller?.hideMenu()
     }
 
     func navigateToPath(_ path: String) -> Bool {
@@ -365,6 +397,7 @@ public class MenuManager {
     }
 
     public func exitMenu() {
+        isModal = false
         currentMenu = nil
         menuStack = []
         controller?.hideMenu()
@@ -396,6 +429,6 @@ public class MenuManager {
     }
 
     private func sendMenuToController(menu: Menu) {
-        controller?.displayMenu(items: menu.items, title: buildMenuPath())
+        controller?.displayMenu(items: menu.items, title: buildMenuPath(), modal: isModal)
     }
 }

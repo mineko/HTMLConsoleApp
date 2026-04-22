@@ -1122,6 +1122,11 @@
                 e.stopPropagation();
                 selectMenuItem();
             } else if (e.key === 'Escape') {
+                if (currentMenuData && currentMenuData.modal) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return;
+                }
                 e.preventDefault();
                 e.stopPropagation();
                 window.webkit.messageHandlers.menuAction.postMessage('CANCEL');
@@ -1143,7 +1148,8 @@
 
             menuContainer.style.display = 'block';
 
-            menuTitle.textContent = data.title;
+            menuTitle.textContent = data.title || '';
+            menuTitle.style.display = (data.title && data.title.length > 0) ? '' : 'none';
             renderMenuItems();
 
             setTimeout(() => {
