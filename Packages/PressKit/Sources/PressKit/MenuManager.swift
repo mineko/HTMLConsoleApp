@@ -226,12 +226,15 @@ public class MenuManager {
     }
 
     /// Wrap a MenuItem so actions auto-exit the menu, and submenus get Back buttons.
+    /// Used only for engine-provided items — their actions typically post to
+    /// an input channel to unblock the engine, so we don't restore the prompt
+    /// preemptively. The engine's next call (io.input, io.choose, …) drives UI.
     private static func wrapMenuItem(_ item: MenuItem, menuManager: MenuManager) -> MenuItem {
         switch item.type {
         case .action(let action):
             return MenuItem(id: item.id, title: item.title, subtitle: item.subtitle, action: { [weak menuManager] in
                 action()
-                menuManager?.exitMenu()
+                menuManager?.exitMenu(restorePrompt: false)
             })
         case .submenu(let submenu):
             let wrappedChildren = submenu.items.map { wrapMenuItem($0, menuManager: menuManager) }
@@ -329,7 +332,7 @@ public class MenuManager {
             switch item.type {
             case .action(let action):
                 return MenuItem(id: item.id, title: item.title, subtitle: item.subtitle, action: { [weak self] in
-                    self?.dismissModal()
+                    self?.exitMenu(restorePrompt: false)
                     action()
                 })
             default:
@@ -341,13 +344,6 @@ public class MenuManager {
         menuStack = []
         currentMenu = wrapped
         sendMenuToController(menu: wrapped)
-    }
-
-    private func dismissModal() {
-        isModal = false
-        currentMenu = nil
-        menuStack = []
-        controller?.hideMenu()
     }
 
     func navigateToPath(_ path: String) -> Bool {
@@ -396,11 +392,23 @@ public class MenuManager {
         sendMenuToController(menu: previousMenu)
     }
 
-    public func exitMenu() {
+    /// Close the current menu.
+    ///
+    /// - `restorePrompt: true` (default) — caller is a pure UI action that
+    ///   leaves the engine blocked where it was (admin items, Back, Cancel).
+    ///   The user's text prompt is restored so they can keep typing.
+    /// - `restorePrompt: false` — caller unblocked or has no use for the
+    ///   prompt (modal-choice pick, game-registered menu item whose action
+    ///   posted to inputChannel). Leave the UI to whatever the engine does
+    ///   next (io.input/io.choose/io.print/exit).
+    public func exitMenu(restorePrompt: Bool = true) {
         isModal = false
         currentMenu = nil
         menuStack = []
         controller?.hideMenu()
+        if restorePrompt {
+            controller?.showPrompt()
+        }
     }
 
     func buildMenuPath() -> String {

@@ -13,7 +13,7 @@
             <div id="output"></div>
     <div id="bumper"></div>
     <div id="input-area">
-    <div id="menu-container" style="display: none;">
+    <div id="menu-container" tabindex="-1" style="display: none; outline: none;">
         <div id="menu-title"></div>
         <div id="menu-items"></div>
     </div>
@@ -1151,6 +1151,14 @@
             menuTitle.textContent = data.title || '';
             menuTitle.style.display = (data.title && data.title.length > 0) ? '' : 'none';
             renderMenuItems();
+
+            // Grab first-responder status. showPrompt gets this for free via
+            // its contentEditable inputSpan.focus(); a bare showMenu (first
+            // interaction after load) needs to focus a visible element or
+            // keyboard events never reach us. The textarea #input is inside
+            // #input-line which is display:none, so focus it on the menu
+            // container itself (tabindex=-1 makes it programmatically focusable).
+            menuContainer.focus();
 
             setTimeout(() => {
                 adjustMenuWidth();

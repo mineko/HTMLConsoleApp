@@ -165,7 +165,7 @@ public class ConsoleController: NSObject, ObservableObject {
         }
     }
 
-    func hidePrompt() {
+    public func hidePrompt() {
         guard let webView = webView else { return }
         webView.evaluateJavaScript("hidePrompt();", completionHandler: nil)
     }
@@ -263,7 +263,6 @@ public class ConsoleController: NSObject, ObservableObject {
     internal func hideMenu() {
         guard let webView = webView else { return }
         webView.evaluateJavaScript("hideMenu();", completionHandler: nil)
-        showPrompt()
     }
 
     // MARK: - Error Display
