@@ -1215,7 +1215,9 @@
             const contentContainer = document.getElementById('content');
             contentContainer.appendChild(menuContainer);
 
-            showPrompt();
+            // Prompt restoration is the Swift side's call (MenuManager.exitMenu
+            // does it for admin menus; modal menus intentionally skip it so the
+            // engine's next output/modal drives the UI without a flash of '>'.
         }
 
         function renderMenuItems() {
