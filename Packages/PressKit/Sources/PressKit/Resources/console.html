@@ -54,6 +54,7 @@
         let currentMenuData = null;
         let selectedIndex = 0;
         let shouldMarkOldOnNextOutput = false;
+        let consoleDisabled = false;
 
         // ─── Input history ───
         let inputHistory = [];
@@ -842,6 +843,7 @@
 
         function setupFlowingInputHandlers(inputSpan) {
             inputSpan.addEventListener('keydown', function(e) {
+                if (consoleDisabled) { e.preventDefault(); return; }
                 if (menuMode) {
                     handleMenuKeydown(e);
                     return;
@@ -1089,6 +1091,7 @@
         });
 
         input.addEventListener('keydown', function(e) {
+            if (consoleDisabled) { e.preventDefault(); return; }
             if (menuMode) {
                 handleMenuKeydown(e);
                 return;
@@ -1107,6 +1110,7 @@
         });
 
         document.addEventListener('keydown', function(e) {
+            if (consoleDisabled) return;
             if (menuMode) {
                 handleMenuKeydown(e);
             }
@@ -1376,6 +1380,7 @@
         // Focus the input when the user starts typing rather than on click,
         // so that click-and-drag text selection works for copy operations.
         document.addEventListener('keydown', function(e) {
+            if (consoleDisabled) return;
             // Ignore modifier-only keys and copy/select-all shortcuts
             if (e.metaKey || e.ctrlKey || e.altKey) return;
             if (e.key === 'Shift' || e.key === 'Control' || e.key === 'Alt' || e.key === 'Meta') return;
@@ -1391,6 +1396,21 @@
         // Expose functions to Swift
         // ═══════════════════════════════════════════════════
 
+        function disableConsole() {
+            consoleDisabled = true;
+            // Dismiss any active menu
+            if (menuMode) {
+                const overlay = document.getElementById('menu-overlay');
+                if (overlay) overlay.style.display = 'none';
+                menuMode = false;
+            }
+            // Hide and disable input
+            hidePrompt();
+            input.disabled = true;
+            const flowingInput = document.getElementById('flowing-input');
+            if (flowingInput) flowingInput.contentEditable = 'false';
+        }
+
         window.pushText = pushText;
         window.pushImage = pushImage;
         window.pushSystem = pushSystem;
@@ -1403,6 +1423,7 @@
         window.getLayoutKnobs = getLayoutKnobs;
         window.setLayoutDebug = setLayoutDebug;
         window.renderLayout = renderLayout;
+        window.disableConsole = disableConsole;
     </script>
 </body>
 </html>

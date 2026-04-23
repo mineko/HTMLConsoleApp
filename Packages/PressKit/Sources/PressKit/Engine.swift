@@ -24,6 +24,12 @@ open class Engine {
     /// passing a prompt string; defaults to ">").
     open func start() {}
 
+    /// Whether the engine is actively running. Override in subclasses with background threads.
+    open var isRunning: Bool { false }
+
+    /// Called to stop the engine. Override to cancel background threads and clean up.
+    open func stop() {}
+
     /// Called when the user submits a line of text (that isn't a menu command).
     open func processInput(_ input: String) {}
 

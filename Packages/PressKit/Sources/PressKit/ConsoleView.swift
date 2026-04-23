@@ -11,16 +11,32 @@ public struct ConsoleView: View {
     private let module: String
     private let configuration: Any?
     private let theme: String?
+    private let externalController: ConsoleController?
 
     public init(module: String, configuration: Any? = nil, theme: String? = nil) {
         self.module = module
         self.configuration = configuration
         self.theme = theme
+        self.externalController = nil
+    }
+
+    /// Creates a ConsoleView using an externally-managed controller.
+    /// The caller retains ownership and can call stop() on the controller.
+    public init(controller: ConsoleController) {
+        self.module = ""
+        self.configuration = nil
+        self.theme = nil
+        self.externalController = controller
     }
 
     public var body: some View {
-        WebViewRepresentable(module: module, configuration: configuration, theme: theme)
-            .ignoresSafeArea()
+        if let controller = externalController {
+            WebViewRepresentable(controller: controller)
+                .ignoresSafeArea()
+        } else {
+            WebViewRepresentable(module: module, configuration: configuration, theme: theme)
+                .ignoresSafeArea()
+        }
     }
 }
 
@@ -72,6 +88,12 @@ struct WebViewRepresentable: NSViewRepresentable {
         self.module = module
         self.configuration = configuration
         _consoleController = StateObject(wrappedValue: ConsoleController(module: module, configuration: configuration, theme: theme))
+    }
+
+    init(controller: ConsoleController) {
+        self.module = ""
+        self.configuration = nil
+        _consoleController = StateObject(wrappedValue: controller)
     }
 
     class Coordinator: NSObject, WKNavigationDelegate {

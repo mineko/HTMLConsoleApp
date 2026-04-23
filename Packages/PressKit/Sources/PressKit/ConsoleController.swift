@@ -85,6 +85,12 @@ public class ConsoleController: NSObject, ObservableObject {
         engine?.start()
     }
 
+    public var isRunning: Bool { engine?.isRunning ?? false }
+
+    public func stop() {
+        engine?.stop()
+    }
+
     // MARK: - Theme
 
     func switchTheme(to themeName: String) {
@@ -168,6 +174,12 @@ public class ConsoleController: NSObject, ObservableObject {
     public func hidePrompt() {
         guard let webView = webView else { return }
         webView.evaluateJavaScript("hidePrompt();", completionHandler: nil)
+    }
+
+    /// Disables all console interaction (input, menus, keyboard) after execution has stopped.
+    public func disableInput() {
+        guard let webView = webView else { return }
+        webView.evaluateJavaScript("disableConsole();", completionHandler: nil)
     }
 
     // MARK: - Input Processing
