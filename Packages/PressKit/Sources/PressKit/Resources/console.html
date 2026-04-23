@@ -635,7 +635,16 @@
             } else if (item.type === 'system') {
                 const line = document.createElement('div');
                 line.className = `output-line ${outputClass}`;
-                line.textContent = item.text;
+                // A whitespace-only output line (e.g. from io.print([]))
+                // would collapse to ~0 height: WebKit pre-wrap treats a
+                // lone '\n' as block-boundary whitespace. Insert an explicit
+                // <br> — a real line-break element that reserves one
+                // line-height regardless of CSS.
+                if (!item.text || !item.text.trim()) {
+                    line.appendChild(document.createElement('br'));
+                } else {
+                    line.textContent = item.text;
+                }
                 line.dataset.streamIndex = item.streamIndex;
                 return line;
 
