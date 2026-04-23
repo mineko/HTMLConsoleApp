@@ -641,6 +641,9 @@
                 // <br> — a real line-break element that reserves one
                 // line-height regardless of CSS.
                 if (!item.text || !item.text.trim()) {
+                    // Blank line — shrink its own line-height so consecutive
+                    // beats get a breath of space, not a whole new line.
+                    line.style.lineHeight = '1.0';
                     line.appendChild(document.createElement('br'));
                 } else {
                     line.textContent = item.text;
