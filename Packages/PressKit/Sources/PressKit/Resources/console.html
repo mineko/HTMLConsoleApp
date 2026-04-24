@@ -1163,9 +1163,6 @@
             outputContainer.appendChild(menuContainer);
 
             menuContainer.style.display = 'block';
-            // Breathing room above the menu so it doesn't hug the preceding
-            // text. Only applies while the menu is shown — hideMenu resets it.
-            menuContainer.style.marginTop = '1em';
 
             menuTitle.textContent = data.title || '';
             menuTitle.style.display = (data.title && data.title.length > 0) ? '' : 'none';
