@@ -1253,6 +1253,23 @@
                     } else {
                         itemDiv.textContent = title;
                     }
+
+                    // Mouse/touch support alongside keyboard nav.
+                    // Hover highlights (moves the keyboard selection); click
+                    // picks the item.
+                    itemDiv.style.cursor = 'pointer';
+                    itemDiv.addEventListener('mouseenter', () => {
+                        if (selectedIndex !== index) {
+                            selectedIndex = index;
+                            renderMenuItems();
+                        }
+                    });
+                    itemDiv.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        selectedIndex = index;
+                        selectMenuItem();
+                    });
                 }
                 menuItems.appendChild(itemDiv);
             });
