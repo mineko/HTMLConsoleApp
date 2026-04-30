@@ -55,6 +55,12 @@
         let selectedIndex = 0;
         let shouldMarkOldOnNextOutput = false;
         let consoleDisabled = false;
+        // Index of the first content-stream item in the current batch
+        // (a "batch" = the run of output chunks emitted between two
+        // user-input boundaries — a menu pick or a typed input). Used as
+        // the scroll anchor so multi-chunk passage text reveals from its
+        // top, not from its latest piece.
+        let firstNewItemIndex = -1;
 
         // ─── Input history ───
         let inputHistory = [];
@@ -129,7 +135,7 @@
             if (!text || !text.trim()) return;
             consumeOldMarker();
             contentStream.push({ type: 'text', text: text, style: style || '' });
-            renderLayout();
+            renderLayout(false, true);
         }
 
         function pushImage(src, caption, priority, width, height) {
@@ -138,14 +144,14 @@
                 type: 'image', src: src, caption: caption || '',
                 priority: priority || 0.5, width: width || 0, height: height || 0
             });
-            renderLayout();
+            renderLayout(false, true);
         }
 
         function pushSystem(text) {
             if (!text) return;
             consumeOldMarker();
             contentStream.push({ type: 'system', text: text });
-            renderLayout();
+            renderLayout(false, true);
         }
 
         // Mark all existing stream items as old when new content arrives after user input.
@@ -156,6 +162,10 @@
                 for (const item of contentStream) {
                     item.old = true;
                 }
+                // The about-to-be-pushed item is the first of a new batch.
+                // Subsequent pushes within the same batch leave this alone,
+                // so all of them anchor scroll to this same first item.
+                firstNewItemIndex = contentStream.length;
             }
         }
 
@@ -216,7 +226,7 @@
 
         let resizeDebounceTimer = null;
 
-        function renderLayout(fullRescore = false) {
+        function renderLayout(fullRescore = false, newContentAdded = false) {
             if (fullRescore) {
                 committedPlacements = {};
                 committedSkips = new Set();
@@ -272,7 +282,30 @@
             contentStreamContainer = newContainer;
 
             // Restore scroll position after DOM settles
-            if (wasAtBottom && scrollContainer) {
+            if (newContentAdded && scrollContainer) {
+                // Anchor the first item of the *current batch* near the top
+                // of the viewport with a small context margin. A single
+                // passage of text often arrives as multiple chunks (text
+                // segments + images interleaved); using the first chunk as
+                // the anchor keeps the start of the passage visible no
+                // matter how many chunks follow within the same batch.
+                // Falls back to the latest item if no batch boundary has
+                // been recorded (e.g. initial load before any prompt).
+                const anchorIdx = firstNewItemIndex >= 0
+                    ? firstNewItemIndex
+                    : contentStream.length - 1;
+                const contextMargin = 48; // ~2 lines of body text
+                const computeTarget = () => {
+                    const el = newContainer.querySelector(`[data-stream-index="${anchorIdx}"]`);
+                    if (!el) return 0;
+                    return Math.max(0, el.offsetTop - contextMargin);
+                };
+                // Immediate jump, then re-target after image/layout settles.
+                scrollContainer.scrollTop = computeTarget();
+                setTimeout(() => {
+                    scrollContainer.scrollTo({ top: computeTarget(), behavior: 'smooth' });
+                }, 50);
+            } else if (wasAtBottom && scrollContainer) {
                 // Immediate jump to bottom, then smooth-scroll once images load
                 scrollContainer.scrollTop = scrollContainer.scrollHeight;
                 setTimeout(() => {
@@ -1310,46 +1343,49 @@
             const scrollContainer = document.getElementById('scroll-container');
             if (!scrollContainer) return;
 
-            const menuRect = menuContainer.getBoundingClientRect();
-            const viewportHeight = window.innerHeight;
-            const statusBarHeight = statusBar.style.display === 'none' ? 0 : statusBar.offsetHeight;
-            const availableHeight = viewportHeight - statusBarHeight;
+            const viewportHeight = scrollContainer.clientHeight;
             const buffer = 20;
+            const contextMargin = 48; // ~2 lines of body text — keep above new content
 
-            const content = document.getElementById('content');
-            const contentPaddingBottom = content ? parseFloat(getComputedStyle(content).paddingBottom) || 0 : 0;
+            // If a batch of new content is in flight, prioritize keeping the
+            // top of that new content visible (with a little context above)
+            // and let the menu fall where it lands within the viewport. This
+            // matches the same anchor used in renderLayout's newContentAdded
+            // path, so the menu showing after a passage of text doesn't yank
+            // the start of the passage above the viewport.
+            //
+            // If the new content + menu fits in the viewport, both are
+            // visible. If not, the start of the new content stays visible
+            // and the menu clips at the bottom — the user scrolls down.
+            if (firstNewItemIndex >= 0) {
+                const anchor = document.querySelector(`[data-stream-index="${firstNewItemIndex}"]`);
+                if (anchor) {
+                    const newTopWithMargin = Math.max(0, anchor.offsetTop - contextMargin);
+                    scrollContainer.scrollTop = newTopWithMargin;
+                    return;
+                }
+            }
 
-            const menuTop = menuRect.top - statusBarHeight;
-            const menuBottom = menuRect.bottom + contentPaddingBottom - statusBarHeight;
-            const menuHeight = menuBottom - menuTop;
+            // No batch context — fall back to the original "make menu
+            // visible at the bottom" behavior so admin menus and engine-
+            // initiated menus that appear without a fresh content batch
+            // still scroll into view as before.
+            const menuRect = menuContainer.getBoundingClientRect();
+            const scrollRect = scrollContainer.getBoundingClientRect();
+            const menuTopInScroll = (menuRect.top - scrollRect.top) + scrollContainer.scrollTop;
+            const menuBottomInScroll = (menuRect.bottom - scrollRect.top) + scrollContainer.scrollTop;
+            const menuHeight = menuBottomInScroll - menuTopInScroll;
 
-            if (menuHeight <= availableHeight - (2 * buffer)) {
-                if (menuBottom > availableHeight - buffer) {
-                    const scrollAmount = menuBottom - availableHeight + buffer;
-                    scrollContainer.scrollBy(0, scrollAmount);
-                } else if (menuTop < buffer) {
-                    const scrollAmount = buffer - menuTop;
-                    scrollContainer.scrollBy(0, -scrollAmount);
+            if (menuHeight <= viewportHeight - (2 * buffer)) {
+                if (menuBottomInScroll > scrollContainer.scrollTop + viewportHeight - buffer) {
+                    scrollContainer.scrollTop = menuBottomInScroll - viewportHeight + buffer;
+                } else if (menuTopInScroll < scrollContainer.scrollTop + buffer) {
+                    scrollContainer.scrollTop = menuTopInScroll - buffer;
                 }
             } else {
-                const selectedItem = menuItems.querySelector('.menu-selected');
-                if (selectedItem) {
-                    const itemRect = selectedItem.getBoundingClientRect();
-                    const itemTop = itemRect.top - statusBarHeight;
-                    const itemBottom = itemRect.bottom - statusBarHeight;
-
-                    if (itemBottom > availableHeight - buffer) {
-                        const scrollAmount = itemBottom - availableHeight + buffer;
-                        scrollContainer.scrollBy(0, scrollAmount);
-                    } else if (itemTop < buffer) {
-                        const scrollAmount = buffer - itemTop;
-                        scrollContainer.scrollBy(0, -scrollAmount);
-                    }
-                } else {
-                    if (menuTop < buffer) {
-                        const scrollAmount = buffer - menuTop;
-                        scrollContainer.scrollBy(0, -scrollAmount);
-                    }
+                // Menu doesn't fit — at least keep the top in view.
+                if (menuTopInScroll < scrollContainer.scrollTop + buffer) {
+                    scrollContainer.scrollTop = menuTopInScroll - buffer;
                 }
             }
         }
