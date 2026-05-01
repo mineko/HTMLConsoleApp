@@ -302,19 +302,24 @@
                 };
                 // Immediate jump, then re-target after image/layout settles.
                 scrollContainer.scrollTop = computeTarget();
+                flushScrollHitTest(scrollContainer);
                 setTimeout(() => {
                     scrollContainer.scrollTo({ top: computeTarget(), behavior: 'smooth' });
+                    flushScrollHitTest(scrollContainer);
                 }, 50);
             } else if (wasAtBottom && scrollContainer) {
                 // Immediate jump to bottom, then smooth-scroll once images load
                 scrollContainer.scrollTop = scrollContainer.scrollHeight;
+                flushScrollHitTest(scrollContainer);
                 setTimeout(() => {
                     scrollContainer.scrollTo({ top: scrollContainer.scrollHeight, behavior: 'smooth' });
+                    flushScrollHitTest(scrollContainer);
                 }, 50);
             } else if (anchorIndex >= 0 && scrollContainer) {
                 const anchored = newContainer.querySelector(`[data-stream-index="${anchorIndex}"]`);
                 if (anchored) {
                     scrollContainer.scrollTop = anchored.offsetTop - anchorOffset;
+                    flushScrollHitTest(scrollContainer);
                 }
             }
 
@@ -819,10 +824,23 @@
         // Scrolling helpers
         // ═══════════════════════════════════════════════════
 
+        // After a programmatic scroll, WKWebView's hit-test cache can lag —
+        // the visual position updates but mouse clicks land at the
+        // pre-scroll coordinates until the user nudges the scroller. Force
+        // a layout flush + dispatch a synthetic scroll event so WebKit
+        // re-derives the hit-test geometry. Cheap and idempotent — call
+        // after every programmatic scrollTop / scrollTo.
+        function flushScrollHitTest(container) {
+            if (!container) return;
+            void container.offsetHeight;
+            container.dispatchEvent(new Event('scroll'));
+        }
+
         function scrollToBottom() {
             const scrollContainer = document.getElementById('scroll-container');
             if (scrollContainer) {
                 scrollContainer.scrollTo({ top: scrollContainer.scrollHeight, behavior: 'smooth' });
+                flushScrollHitTest(scrollContainer);
             }
         }
 
@@ -1362,6 +1380,7 @@
                 if (anchor) {
                     const newTopWithMargin = Math.max(0, anchor.offsetTop - contextMargin);
                     scrollContainer.scrollTop = newTopWithMargin;
+                    flushScrollHitTest(scrollContainer);
                     return;
                 }
             }
@@ -1388,6 +1407,7 @@
                     scrollContainer.scrollTop = menuTopInScroll - buffer;
                 }
             }
+            flushScrollHitTest(scrollContainer);
         }
 
         function scrollSelectedItemIntoView() {
