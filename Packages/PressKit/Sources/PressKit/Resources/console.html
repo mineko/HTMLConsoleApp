@@ -307,15 +307,35 @@
                 const anchorIdx = firstNewItemIndex >= 0
                     ? firstNewItemIndex
                     : contentStream.length - 1;
-                const anchorEl = newContainer.querySelector(`[data-stream-index="${anchorIdx}"]`);
-                const firstItemTop = anchorEl ? anchorEl.offsetTop : 0;
+                // Anchor element may not exist in the DOM if it's a
+                // skipped image (layout scorer culls images that don't
+                // earn a slot, so they're absent from renderList). Walk
+                // forward from anchorIdx to find the first rendered item
+                // — that's the real visible "start of new content".
+                let anchorEl = null;
+                for (let i = anchorIdx; i < contentStream.length; i++) {
+                    anchorEl = newContainer.querySelector(`[data-stream-index="${i}"]`);
+                    if (anchorEl) break;
+                }
                 const bottomTarget = Math.max(
                     0, scrollContainer.scrollHeight - scrollContainer.clientHeight);
+                // If we still have no anchor (e.g. the whole batch was
+                // skipped images), there's nothing to keep on screen — go
+                // straight to the bottom rather than ending up at the top.
+                let target;
+                if (!anchorEl) {
+                    target = bottomTarget;
+                } else {
+                    const firstItemTop = anchorEl.offsetTop;
+                    target = bottomTarget <= firstItemTop
+                        ? bottomTarget
+                        : Math.max(0, firstItemTop - TOP_BREATHING_ROOM);
+                }
                 // scrollMenuIntoView re-runs this same calc once the menu
                 // is appended (showMenu doesn't go through renderLayout, so
                 // scrollHeight grows after this runs) — the call here is
                 // still useful so the content scrolls before the menu shows.
-                scrollContainer.scrollTop = Math.min(bottomTarget, firstItemTop);
+                scrollContainer.scrollTop = target;
                 flushScrollHitTest(scrollContainer);
             } else if (wasAtBottom && scrollContainer) {
                 scrollContainer.scrollTop = scrollContainer.scrollHeight;
@@ -715,6 +735,18 @@
                 const maxImgHeight = window.innerHeight - statusBarH - 40;
                 img.style.maxHeight = Math.max(100, maxImgHeight) + 'px';
                 img.style.objectFit = 'contain';
+                // Until an <img> loads, its rendered height is 0, so
+                // scrollHeight at scroll-calc time misses the image's
+                // eventual contribution. Re-run the scroll calc on load so
+                // the user lands at the correct position once the image
+                // pops in. Guarded to the current batch so cache-backed
+                // loads of older images don't yank the scroll around.
+                img.addEventListener('load', () => {
+                    const cutoff = firstNewItemIndex >= 0 ? firstNewItemIndex : 0;
+                    if (item.streamIndex >= cutoff) {
+                        reapplyBatchScroll();
+                    }
+                });
                 figure.appendChild(img);
 
                 const cap = document.createElement('figcaption');
@@ -829,6 +861,12 @@
         // Scrolling helpers
         // ═══════════════════════════════════════════════════
 
+        // When a batch overflows the viewport and we anchor the first new
+        // item at the top instead of scrolling all the way down, leave a
+        // small breathing room above it so the text/image isn't flush
+        // against the window edge. Roughly a quarter inch at 96 DPI.
+        const TOP_BREATHING_ROOM = 24;
+
         // After a programmatic scroll, force a layout flush + dispatch a
         // synthetic scroll event so WebKit's hit-test cache picks up the
         // new geometry. Cheap and idempotent. The bigger lever for
@@ -838,6 +876,40 @@
             if (!container) return;
             void container.offsetHeight;
             container.dispatchEvent(new Event('scroll'));
+        }
+
+        // Shared scroll math used by renderLayout (initial scroll on push),
+        // scrollMenuIntoView (re-scroll after menu DOM is appended) and the
+        // image load handler (re-scroll after a deferred image fills out
+        // its slot). All three want the same thing: scroll as far down as
+        // possible without pushing the start of the current batch off the
+        // top of the viewport.
+        function reapplyBatchScroll() {
+            const scrollContainer = document.getElementById('scroll-container');
+            if (!scrollContainer) return;
+            const streamContainer = document.getElementById('content-stream');
+            if (!streamContainer) return;
+            const anchorIdx = firstNewItemIndex >= 0
+                ? firstNewItemIndex
+                : contentStream.length - 1;
+            let anchorEl = null;
+            for (let i = anchorIdx; i < contentStream.length; i++) {
+                anchorEl = streamContainer.querySelector(`[data-stream-index="${i}"]`);
+                if (anchorEl) break;
+            }
+            const bottomTarget = Math.max(
+                0, scrollContainer.scrollHeight - scrollContainer.clientHeight);
+            let target;
+            if (!anchorEl) {
+                target = bottomTarget;
+            } else {
+                const firstItemTop = anchorEl.offsetTop;
+                target = bottomTarget <= firstItemTop
+                    ? bottomTarget
+                    : Math.max(0, firstItemTop - TOP_BREATHING_ROOM);
+            }
+            scrollContainer.scrollTop = target;
+            flushScrollHitTest(scrollContainer);
         }
 
         function scrollToBottom() {
@@ -1361,27 +1433,11 @@
 
         function scrollMenuIntoView() {
             if (!menuContainer || menuContainer.style.display === 'none') return;
-
-            const scrollContainer = document.getElementById('scroll-container');
-            if (!scrollContainer) return;
-
             // showMenu appends the menu DOM to #output without going through
             // renderLayout, so scrollHeight grows by the menu's height after
             // renderLayout's scroll already ran with the smaller value. Re-run
-            // the same calc here against the current scrollHeight so the
-            // trailing decoration below the menu stays visible.
-            const streamContainer = document.getElementById('content-stream');
-            const anchorIdx = firstNewItemIndex >= 0
-                ? firstNewItemIndex
-                : contentStream.length - 1;
-            const anchorEl = streamContainer
-                ? streamContainer.querySelector(`[data-stream-index="${anchorIdx}"]`)
-                : null;
-            const firstItemTop = anchorEl ? anchorEl.offsetTop : 0;
-            const bottomTarget = Math.max(
-                0, scrollContainer.scrollHeight - scrollContainer.clientHeight);
-            scrollContainer.scrollTop = Math.min(bottomTarget, firstItemTop);
-            flushScrollHitTest(scrollContainer);
+            // the same calc against the current scrollHeight.
+            reapplyBatchScroll();
         }
 
         function scrollSelectedItemIntoView() {
