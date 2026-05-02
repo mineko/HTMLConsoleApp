@@ -283,29 +283,39 @@
 
             // Restore scroll position after DOM settles
             if (newContentAdded && scrollContainer) {
-                // Anchor the first item of the *current batch* near the top
-                // of the viewport with a small context margin. A single
-                // passage of text often arrives as multiple chunks (text
-                // segments + images interleaved); using the first chunk as
-                // the anchor keeps the start of the passage visible no
-                // matter how many chunks follow within the same batch.
+                // Default: scroll all the way to the bottom so the latest
+                // content sits at the bottom of the viewport. Exception:
+                // if the new batch is taller than the viewport, scrolling
+                // to the bottom would push the start of the batch off the
+                // top — in that case anchor the first new item near the
+                // top instead, so the user sees the batch from its start
+                // and can scroll down to read the rest.
+                //
+                // A single passage often arrives as multiple chunks (text
+                // segments + images interleaved); using the first chunk
+                // of the batch as the anchor keeps the whole passage's
+                // start visible no matter how many chunks follow.
                 // Falls back to the latest item if no batch boundary has
                 // been recorded (e.g. initial load before any prompt).
+                // Scroll all the way to the bottom of the page so the
+                // trailing book-page decoration below the last interactive
+                // element stays visible. Cap the scroll at the first new
+                // item's top so the start of this batch is never pushed
+                // off the top of the viewport — when the batch overflows,
+                // this anchors firstItem at viewport row 0 and the user
+                // scrolls down to read the rest.
                 const anchorIdx = firstNewItemIndex >= 0
                     ? firstNewItemIndex
                     : contentStream.length - 1;
-                const contextMargin = 48; // ~2 lines of body text
-                const computeTarget = () => {
-                    const el = newContainer.querySelector(`[data-stream-index="${anchorIdx}"]`);
-                    if (!el) return 0;
-                    return Math.max(0, el.offsetTop - contextMargin);
-                };
-                // Single scroll per batch. Multiple back-to-back scrolls
-                // (instant + later smooth re-target) was leaving WebKit's
-                // hit-test cache pointing at an intermediate position —
-                // menu items would be visually correct but unclickable
-                // until the user nudged the scroller manually.
-                scrollContainer.scrollTop = computeTarget();
+                const anchorEl = newContainer.querySelector(`[data-stream-index="${anchorIdx}"]`);
+                const firstItemTop = anchorEl ? anchorEl.offsetTop : 0;
+                const bottomTarget = Math.max(
+                    0, scrollContainer.scrollHeight - scrollContainer.clientHeight);
+                // scrollMenuIntoView re-runs this same calc once the menu
+                // is appended (showMenu doesn't go through renderLayout, so
+                // scrollHeight grows after this runs) — the call here is
+                // still useful so the content scrolls before the menu shows.
+                scrollContainer.scrollTop = Math.min(bottomTarget, firstItemTop);
                 flushScrollHitTest(scrollContainer);
             } else if (wasAtBottom && scrollContainer) {
                 scrollContainer.scrollTop = scrollContainer.scrollHeight;
@@ -1355,52 +1365,22 @@
             const scrollContainer = document.getElementById('scroll-container');
             if (!scrollContainer) return;
 
-            const viewportHeight = scrollContainer.clientHeight;
-            const buffer = 20;
-            const contextMargin = 48; // ~2 lines of body text — keep above new content
-
-            // If a batch of new content is in flight, prioritize keeping the
-            // top of that new content visible (with a little context above)
-            // and let the menu fall where it lands within the viewport. This
-            // matches the same anchor used in renderLayout's newContentAdded
-            // path, so the menu showing after a passage of text doesn't yank
-            // the start of the passage above the viewport.
-            //
-            // If the new content + menu fits in the viewport, both are
-            // visible. If not, the start of the new content stays visible
-            // and the menu clips at the bottom — the user scrolls down.
-            if (firstNewItemIndex >= 0) {
-                // The new-content scroll in renderLayout already anchored
-                // the start of this batch at the right position. Doing a
-                // second programmatic scroll here is what was leaving the
-                // menu items in a "visually right but unclickable" state.
-                // Trust the existing scroll position; the menu naturally
-                // appears below the new content and is clickable.
-                return;
-            }
-
-            // No batch context — fall back to the original "make menu
-            // visible at the bottom" behavior so admin menus and engine-
-            // initiated menus that appear without a fresh content batch
-            // still scroll into view as before.
-            const menuRect = menuContainer.getBoundingClientRect();
-            const scrollRect = scrollContainer.getBoundingClientRect();
-            const menuTopInScroll = (menuRect.top - scrollRect.top) + scrollContainer.scrollTop;
-            const menuBottomInScroll = (menuRect.bottom - scrollRect.top) + scrollContainer.scrollTop;
-            const menuHeight = menuBottomInScroll - menuTopInScroll;
-
-            if (menuHeight <= viewportHeight - (2 * buffer)) {
-                if (menuBottomInScroll > scrollContainer.scrollTop + viewportHeight - buffer) {
-                    scrollContainer.scrollTop = menuBottomInScroll - viewportHeight + buffer;
-                } else if (menuTopInScroll < scrollContainer.scrollTop + buffer) {
-                    scrollContainer.scrollTop = menuTopInScroll - buffer;
-                }
-            } else {
-                // Menu doesn't fit — at least keep the top in view.
-                if (menuTopInScroll < scrollContainer.scrollTop + buffer) {
-                    scrollContainer.scrollTop = menuTopInScroll - buffer;
-                }
-            }
+            // showMenu appends the menu DOM to #output without going through
+            // renderLayout, so scrollHeight grows by the menu's height after
+            // renderLayout's scroll already ran with the smaller value. Re-run
+            // the same calc here against the current scrollHeight so the
+            // trailing decoration below the menu stays visible.
+            const streamContainer = document.getElementById('content-stream');
+            const anchorIdx = firstNewItemIndex >= 0
+                ? firstNewItemIndex
+                : contentStream.length - 1;
+            const anchorEl = streamContainer
+                ? streamContainer.querySelector(`[data-stream-index="${anchorIdx}"]`)
+                : null;
+            const firstItemTop = anchorEl ? anchorEl.offsetTop : 0;
+            const bottomTarget = Math.max(
+                0, scrollContainer.scrollHeight - scrollContainer.clientHeight);
+            scrollContainer.scrollTop = Math.min(bottomTarget, firstItemTop);
             flushScrollHitTest(scrollContainer);
         }
 
