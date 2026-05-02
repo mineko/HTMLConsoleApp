@@ -300,21 +300,16 @@
                     if (!el) return 0;
                     return Math.max(0, el.offsetTop - contextMargin);
                 };
-                // Immediate jump, then re-target after image/layout settles.
+                // Single scroll per batch. Multiple back-to-back scrolls
+                // (instant + later smooth re-target) was leaving WebKit's
+                // hit-test cache pointing at an intermediate position —
+                // menu items would be visually correct but unclickable
+                // until the user nudged the scroller manually.
                 scrollContainer.scrollTop = computeTarget();
                 flushScrollHitTest(scrollContainer);
-                setTimeout(() => {
-                    scrollContainer.scrollTo({ top: computeTarget(), behavior: 'smooth' });
-                    flushScrollHitTest(scrollContainer);
-                }, 50);
             } else if (wasAtBottom && scrollContainer) {
-                // Immediate jump to bottom, then smooth-scroll once images load
                 scrollContainer.scrollTop = scrollContainer.scrollHeight;
                 flushScrollHitTest(scrollContainer);
-                setTimeout(() => {
-                    scrollContainer.scrollTo({ top: scrollContainer.scrollHeight, behavior: 'smooth' });
-                    flushScrollHitTest(scrollContainer);
-                }, 50);
             } else if (anchorIndex >= 0 && scrollContainer) {
                 const anchored = newContainer.querySelector(`[data-stream-index="${anchorIndex}"]`);
                 if (anchored) {
@@ -824,12 +819,11 @@
         // Scrolling helpers
         // ═══════════════════════════════════════════════════
 
-        // After a programmatic scroll, WKWebView's hit-test cache can lag —
-        // the visual position updates but mouse clicks land at the
-        // pre-scroll coordinates until the user nudges the scroller. Force
-        // a layout flush + dispatch a synthetic scroll event so WebKit
-        // re-derives the hit-test geometry. Cheap and idempotent — call
-        // after every programmatic scrollTop / scrollTo.
+        // After a programmatic scroll, force a layout flush + dispatch a
+        // synthetic scroll event so WebKit's hit-test cache picks up the
+        // new geometry. Cheap and idempotent. The bigger lever for
+        // avoiding stale hit-tests is "scroll only once per content
+        // batch" — see renderLayout / scrollMenuIntoView for that.
         function flushScrollHitTest(container) {
             if (!container) return;
             void container.offsetHeight;
@@ -1376,13 +1370,13 @@
             // visible. If not, the start of the new content stays visible
             // and the menu clips at the bottom — the user scrolls down.
             if (firstNewItemIndex >= 0) {
-                const anchor = document.querySelector(`[data-stream-index="${firstNewItemIndex}"]`);
-                if (anchor) {
-                    const newTopWithMargin = Math.max(0, anchor.offsetTop - contextMargin);
-                    scrollContainer.scrollTop = newTopWithMargin;
-                    flushScrollHitTest(scrollContainer);
-                    return;
-                }
+                // The new-content scroll in renderLayout already anchored
+                // the start of this batch at the right position. Doing a
+                // second programmatic scroll here is what was leaving the
+                // menu items in a "visually right but unclickable" state.
+                // Trust the existing scroll position; the menu naturally
+                // appears below the new content and is clickable.
+                return;
             }
 
             // No batch context — fall back to the original "make menu
