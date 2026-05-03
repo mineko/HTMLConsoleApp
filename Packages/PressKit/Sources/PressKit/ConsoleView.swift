@@ -6,6 +6,7 @@
 import SwiftUI
 import WebKit
 
+
 /// A SwiftUI view that hosts the HTML console. Drop this into any window or pane.
 public struct ConsoleView: View {
     private let module: String
