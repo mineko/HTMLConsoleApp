@@ -277,6 +277,32 @@ public class ConsoleController: NSObject, ObservableObject {
         webView.evaluateJavaScript("hideMenu();", completionHandler: nil)
     }
 
+    // MARK: - Inline (non-modal) menu
+
+    /// Show a non-modal clickable menu alongside the parser prompt. Used by
+    /// the Pulp story engine in mixed-mode passages where the player can
+    /// pick a numbered choice OR keep playing the world. Clicking an item
+    /// posts its label (typically the index string `"1"`, `"2"`, …) through
+    /// the standard input pathway, so the engine handles it the same way it
+    /// handles a typed input.
+    ///
+    /// Unlike `presentChoices`, this does NOT set `MenuManager.isModal`. The
+    /// prompt stays focused; the user can pick a choice or type a command
+    /// at any time.
+    public func showInlineMenu(items: [(index: Int, label: String)]) {
+        guard let webView = webView else { return }
+        let dicts: [[String: Any]] = items.map { ["index": $0.index, "label": $0.label] }
+        guard let data = try? JSONSerialization.data(withJSONObject: dicts, options: []),
+              let json = String(data: data, encoding: .utf8) else { return }
+        webView.evaluateJavaScript("showInlineMenu(\(json));", completionHandler: nil)
+    }
+
+    /// Remove any inline menu currently visible. No-op if none.
+    public func hideInlineMenu() {
+        guard let webView = webView else { return }
+        webView.evaluateJavaScript("hideInlineMenu();", completionHandler: nil)
+    }
+
     // MARK: - Error Display
 
     private func showError(_ message: String) {

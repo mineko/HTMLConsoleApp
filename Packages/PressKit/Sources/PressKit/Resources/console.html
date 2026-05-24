@@ -17,6 +17,7 @@
         <div id="menu-title"></div>
         <div id="menu-items"></div>
     </div>
+    <div id="inline-menu" style="display: none;"></div>
     <div id="input-line" style="display: none;">
         <span id="prompt">></span>
         <textarea id="input" rows="1"></textarea>
@@ -47,6 +48,7 @@
         const menuContainer = document.getElementById('menu-container');
         const menuTitle = document.getElementById('menu-title');
         const menuItems = document.getElementById('menu-items');
+        const inlineMenuContainer = document.getElementById('inline-menu');
         const errorMessage = document.getElementById('error-message');
         const statusBar = document.getElementById('status-bar');
 
@@ -1319,6 +1321,63 @@
 
             menuContainer.style.marginLeft = '8px';
             menuContainer.style.marginRight = '8px';
+        }
+
+        // ═══════════════════════════════════════════════════
+        // Inline (non-modal) menu
+        // ═══════════════════════════════════════════════════
+        //
+        // The Pulp story engine emits `<<choices:N|label|N|label|...>>`
+        // markers when a passage is active with AskTrigger choices. The
+        // bridge strips the marker from output and calls showInlineMenu
+        // with the parsed items. The menu sits between the content stream
+        // and the parser prompt; clicking an item posts its index string
+        // through the standard consoleInput pathway, so Pulp's
+        // try_pick_ask_choice handles it the same as a typed "1".
+        //
+        // Unlike showMenu, this never sets menuMode — the prompt stays
+        // live and the user can keep typing world commands. The menu is
+        // a parallel input channel, not a modal takeover.
+
+        function showInlineMenu(items) {
+            inlineMenuContainer.innerHTML = '';
+            if (!items || items.length === 0) {
+                inlineMenuContainer.style.display = 'none';
+                return;
+            }
+            inlineMenuContainer.style.display = 'flex';
+            inlineMenuContainer.style.flexWrap = 'wrap';
+            inlineMenuContainer.style.gap = '6px';
+            inlineMenuContainer.style.margin = '6px 0';
+            items.forEach(item => {
+                const button = document.createElement('button');
+                button.className = 'inline-menu-item';
+                button.type = 'button';
+                button.textContent = item.label;
+                button.dataset.index = String(item.index);
+                // Inline styling so the button looks reasonable regardless
+                // of theme. Themes can override via .inline-menu-item.
+                button.style.font = 'inherit';
+                button.style.color = 'inherit';
+                button.style.background = 'rgba(255,255,255,0.08)';
+                button.style.border = '1px solid currentColor';
+                button.style.borderRadius = '4px';
+                button.style.padding = '4px 10px';
+                button.style.cursor = 'pointer';
+                button.addEventListener('click', function() {
+                    const indexStr = String(item.index);
+                    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.consoleInput) {
+                        window.webkit.messageHandlers.consoleInput.postMessage(indexStr);
+                    }
+                });
+                inlineMenuContainer.appendChild(button);
+            });
+            scrollToBottom();
+        }
+
+        function hideInlineMenu() {
+            inlineMenuContainer.innerHTML = '';
+            inlineMenuContainer.style.display = 'none';
         }
 
         function hideMenu() {
