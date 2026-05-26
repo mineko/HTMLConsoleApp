@@ -69,6 +69,16 @@
         let historyIndex = -1;
         let savedCurrentInput = '';
 
+        // ─── Inline-menu keyboard focus ───
+        // -1 = prompt has focus (normal). 0..N-1 = an inline menu item is
+        // visually selected via the keyboard. Down at the end-of-history
+        // moves focus from prompt → first item (0). Up at the top of the
+        // menu (focus index 0) moves focus back to the prompt. Enter
+        // while in menu posts the focused item's index string the same
+        // way a click does. Any printable keystroke kicks focus back to
+        // the prompt so typing is never blocked.
+        let inlineMenuFocusIndex = -1;
+
         // ─── Activity indicator ───
         let activityTimer = null;
 
@@ -968,6 +978,18 @@
 
             inputSpan.focus();
             scrollPromptIntoView();
+
+            // When the inline choice menu is showing, scrollPromptIntoView
+            // only thinks about the prompt itself and can leave the menu's
+            // bottom — and the page decoration below it — clipped off the
+            // viewport. Re-run the batch-scroll math after the prompt has
+            // settled into the DOM so we anchor to the same bottom-aware
+            // target the rest of the console uses.
+            if (isInlineMenuVisible()) {
+                requestAnimationFrame(() => {
+                    reapplyBatchScroll();
+                });
+            }
         }
 
         function setupFlowingInputHandlers(inputSpan) {
@@ -978,8 +1000,34 @@
                     return;
                 }
 
+                // ─── Inline-menu keyboard handling ───
+                //
+                // When the inline menu is showing, arrow keys split their
+                // duties: Up cycles history when the prompt holds focus, but
+                // navigates within the menu when an item is already focused;
+                // Down enters the menu once history has been exhausted past
+                // its newest entry. Enter while in the menu picks the
+                // highlighted item. Escape backs out to the prompt. Any
+                // printable keystroke kicks focus back to the prompt so the
+                // user is never locked out of typing.
+                const menuVisible = isInlineMenuVisible();
+
                 if (e.key === 'ArrowUp') {
                     e.preventDefault();
+                    if (inlineMenuFocusIndex > 0) {
+                        // Move up within the menu.
+                        setInlineMenuFocus(inlineMenuFocusIndex - 1);
+                        return;
+                    }
+                    if (inlineMenuFocusIndex === 0) {
+                        // At the top of the menu — bounce back to the prompt
+                        // without yet touching history. The next Up press
+                        // (now in the prompt) begins normal history cycling.
+                        setInlineMenuFocus(-1);
+                        placeCaretAtEnd(inputSpan);
+                        return;
+                    }
+                    // Prompt holds focus — normal history navigation.
                     if (inputHistory.length === 0) return;
                     if (historyIndex === -1) {
                         savedCurrentInput = inputSpan.textContent;
@@ -994,7 +1042,24 @@
 
                 if (e.key === 'ArrowDown') {
                     e.preventDefault();
-                    if (historyIndex === -1) return;
+                    if (inlineMenuFocusIndex >= 0) {
+                        // Already in the menu — move down, clamp at last.
+                        const buttons = inlineMenuContainer.querySelectorAll('.inline-menu-item');
+                        if (inlineMenuFocusIndex < buttons.length - 1) {
+                            setInlineMenuFocus(inlineMenuFocusIndex + 1);
+                        }
+                        return;
+                    }
+                    if (historyIndex === -1) {
+                        // Prompt is at its "live" state (not navigating
+                        // history). If a menu is visible, enter it on the
+                        // first item; otherwise Down is a no-op as before.
+                        if (menuVisible) {
+                            setInlineMenuFocus(0);
+                        }
+                        return;
+                    }
+                    // Walking forward through history.
                     if (historyIndex < inputHistory.length - 1) {
                         historyIndex++;
                         inputSpan.textContent = inputHistory[historyIndex];
@@ -1006,8 +1071,20 @@
                     return;
                 }
 
+                if (e.key === 'Escape' && inlineMenuFocusIndex >= 0) {
+                    e.preventDefault();
+                    setInlineMenuFocus(-1);
+                    placeCaretAtEnd(inputSpan);
+                    return;
+                }
+
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
+                    if (inlineMenuFocusIndex >= 0) {
+                        // Pick the focused item — same path as a click.
+                        pickInlineMenuFocused();
+                        return;
+                    }
                     const userText = inputSpan.textContent;
 
                     if (userText.trim()) {
@@ -1024,6 +1101,16 @@
                         inputSpan.textContent = '';
                         inputSpan.focus();
                     }
+                    return;
+                }
+
+                // Any other key while in menu focus drops the highlight so
+                // the user can start typing into the prompt — the keystroke
+                // itself flows through unmodified to the contentEditable.
+                if (inlineMenuFocusIndex >= 0
+                    && e.key.length === 1
+                    && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                    setInlineMenuFocus(-1);
                 }
             });
 
@@ -1327,13 +1414,14 @@
         // Inline (non-modal) menu
         // ═══════════════════════════════════════════════════
         //
-        // The Pulp story engine emits `<<choices:N|label|N|label|...>>`
-        // markers when a passage is active with AskTrigger choices. The
-        // bridge strips the marker from output and calls showInlineMenu
-        // with the parsed items. The menu sits between the content stream
-        // and the parser prompt; clicking an item posts its index string
+        // The host receives the active passage's ask labels via the
+        // PulpIODelegate pulpDidPresentChoicesWithLabels: call (driven
+        // by the Pulp engine's io.present_choices builtin) and routes
+        // them here. Each button shows "N. label" — the leading index
+        // matches the typed-input protocol so clicking is just a faster
+        // way to "type N + Enter." Clicking posts that index string
         // through the standard consoleInput pathway, so Pulp's
-        // try_pick_ask_choice handles it the same as a typed "1".
+        // try_pick_ask_choice handles it the same as a typed digit.
         //
         // Unlike showMenu, this never sets menuMode — the prompt stays
         // live and the user can keep typing world commands. The menu is
@@ -1341,20 +1429,28 @@
 
         function showInlineMenu(items) {
             inlineMenuContainer.innerHTML = '';
+            inlineMenuFocusIndex = -1;
             if (!items || items.length === 0) {
                 inlineMenuContainer.style.display = 'none';
                 return;
             }
+            // Stack options vertically — each option gets its own line so
+            // the list reads like the terminal's numbered menu and arrow-key
+            // navigation has a natural up/down axis. align-items: flex-start
+            // keeps buttons shrink-wrapped to their content rather than
+            // stretching to the container width.
             inlineMenuContainer.style.display = 'flex';
-            inlineMenuContainer.style.flexWrap = 'wrap';
-            inlineMenuContainer.style.gap = '6px';
+            inlineMenuContainer.style.flexDirection = 'column';
+            inlineMenuContainer.style.alignItems = 'flex-start';
+            inlineMenuContainer.style.gap = '4px';
             inlineMenuContainer.style.margin = '6px 0';
-            items.forEach(item => {
+            items.forEach((item, position) => {
                 const button = document.createElement('button');
                 button.className = 'inline-menu-item';
                 button.type = 'button';
-                button.textContent = item.label;
+                button.textContent = item.index + '. ' + item.label;
                 button.dataset.index = String(item.index);
+                button.dataset.position = String(position);
                 // Inline styling so the button looks reasonable regardless
                 // of theme. Themes can override via .inline-menu-item.
                 button.style.font = 'inherit';
@@ -1372,12 +1468,64 @@
                 });
                 inlineMenuContainer.appendChild(button);
             });
-            scrollToBottom();
+            // Wait one frame so the freshly-appended buttons have settled
+            // layout, then re-run the shared batch-scroll math used by the
+            // rest of the console: scroll all the way to the bottom (so
+            // any page-border decoration is visible) unless doing so would
+            // push the start of the current batch off the top, in which
+            // case fall back to anchor-top minus breathing room. This
+            // matches the behavior of fresh output arriving.
+            requestAnimationFrame(() => {
+                reapplyBatchScroll();
+            });
         }
 
         function hideInlineMenu() {
             inlineMenuContainer.innerHTML = '';
             inlineMenuContainer.style.display = 'none';
+            inlineMenuFocusIndex = -1;
+        }
+
+        // True when the inline menu is currently displayed.
+        function isInlineMenuVisible() {
+            return inlineMenuContainer.style.display !== 'none'
+                && inlineMenuContainer.children.length > 0;
+        }
+
+        // Highlight the inline menu item at `position` (0-based) and update
+        // inlineMenuFocusIndex. Passing -1 clears any highlight (focus
+        // returns to the prompt). Themes don't expose CSS variables for
+        // fg/bg — read body's computed values at click-time so the
+        // selection invert works on every theme (light or dark).
+        function setInlineMenuFocus(position) {
+            const buttons = inlineMenuContainer.querySelectorAll('.inline-menu-item');
+            const cs = getComputedStyle(document.body);
+            const themeFg = cs.color;
+            const themeBg = cs.backgroundColor;
+            buttons.forEach((b, i) => {
+                if (i === position) {
+                    b.style.background = themeFg;
+                    b.style.color = themeBg;
+                    b.scrollIntoView({ block: 'nearest' });
+                } else {
+                    b.style.background = 'rgba(255,255,255,0.08)';
+                    b.style.color = 'inherit';
+                }
+            });
+            inlineMenuFocusIndex = position;
+        }
+
+        // Post the focused item's index string back through the input
+        // channel — same path that a click takes. Pulp's try_pick_ask_choice
+        // then handles it identically to a typed "1".
+        function pickInlineMenuFocused() {
+            const buttons = inlineMenuContainer.querySelectorAll('.inline-menu-item');
+            if (inlineMenuFocusIndex < 0 || inlineMenuFocusIndex >= buttons.length) return;
+            const button = buttons[inlineMenuFocusIndex];
+            const indexStr = button.dataset.index;
+            if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.consoleInput) {
+                window.webkit.messageHandlers.consoleInput.postMessage(indexStr);
+            }
         }
 
         function hideMenu() {
