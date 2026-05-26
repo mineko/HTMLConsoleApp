@@ -79,6 +79,13 @@
         // the prompt so typing is never blocked.
         let inlineMenuFocusIndex = -1;
 
+        // Latest item list handed to showInlineMenu, or null when no
+        // choices are active. Cached so the slash (admin) menu can hide
+        // the story choices while it's up and restore the exact same
+        // choices when it closes — without the engine having to re-emit
+        // them.
+        let cachedInlineMenuItems = null;
+
         // ─── Activity indicator ───
         let activityTimer = null;
 
@@ -1373,6 +1380,13 @@
             currentMenuData = data;
             selectedIndex = 0;
 
+            // Hide story choices while the slash menu is up — they'll be
+            // restored unchanged when hideMenu runs. The items themselves
+            // stay cached in cachedInlineMenuItems, so even if the engine
+            // sends a new io.present_choices while the modal is open, the
+            // cache stays current and only the visible state is gated.
+            renderInlineMenu();
+
             hidePrompt();
 
             const outputContainer = document.getElementById('output');
@@ -1428,9 +1442,26 @@
         // a parallel input channel, not a modal takeover.
 
         function showInlineMenu(items) {
+            cachedInlineMenuItems = (items && items.length > 0) ? items : null;
+            renderInlineMenu();
+        }
+
+        function hideInlineMenu() {
+            cachedInlineMenuItems = null;
+            renderInlineMenu();
+        }
+
+        // Actual DOM work for the inline choice menu. Single source of
+        // truth — both showInlineMenu / hideInlineMenu and the slash-menu
+        // open/close hooks call this. While the slash (admin) menu is up
+        // (menuMode === true), the inline menu stays hidden even if the
+        // engine has active choices; closing the slash menu re-runs this
+        // function and the cached items come back unchanged.
+        function renderInlineMenu() {
             inlineMenuContainer.innerHTML = '';
             inlineMenuFocusIndex = -1;
-            if (!items || items.length === 0) {
+            const items = cachedInlineMenuItems;
+            if (!items || menuMode) {
                 inlineMenuContainer.style.display = 'none';
                 return;
             }
@@ -1478,12 +1509,6 @@
             requestAnimationFrame(() => {
                 reapplyBatchScroll();
             });
-        }
-
-        function hideInlineMenu() {
-            inlineMenuContainer.innerHTML = '';
-            inlineMenuContainer.style.display = 'none';
-            inlineMenuFocusIndex = -1;
         }
 
         // True when the inline menu is currently displayed.
@@ -1545,6 +1570,12 @@
 
             const contentContainer = document.getElementById('content');
             contentContainer.appendChild(menuContainer);
+
+            // Restore the story choices that were live before the slash
+            // menu took over. renderInlineMenu reads from cachedInlineMenuItems,
+            // which the engine kept current throughout, so the right list
+            // comes back even if it changed while the modal was open.
+            renderInlineMenu();
 
             // Prompt restoration is the Swift side's call (MenuManager.exitMenu
             // does it for admin menus; modal menus intentionally skip it so the
