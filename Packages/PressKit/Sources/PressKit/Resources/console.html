@@ -55,6 +55,12 @@
         let menuMode = false;
         let currentMenuData = null;
         let selectedIndex = 0;
+        // Suppresses the synthetic mouseenter that WebKit fires on freshly-
+        // rendered menu items when renderMenuItems rebuilds the DOM under a
+        // stationary cursor. Set true around each keyboard-driven rerender;
+        // cleared on real cursor movement (the document-level mousemove
+        // listener registered below).
+        let suppressMenuMouseEnter = false;
         let shouldMarkOldOnNextOutput = false;
         let consoleDisabled = false;
         // Index of the first content-stream item in the current batch
@@ -1339,6 +1345,14 @@
             }
         });
 
+        // Clears the post-keyboard-rerender suppression flag. mousemove
+        // only fires on actual cursor motion, not on layout shifts that
+        // bring a new element under a stationary cursor — so this is
+        // exactly the signal "user has expressed mouse intent."
+        document.addEventListener('mousemove', function() {
+            suppressMenuMouseEnter = false;
+        });
+
         // ═══════════════════════════════════════════════════
         // Menu system
         // ═══════════════════════════════════════════════════
@@ -1621,6 +1635,14 @@
                     // picks the item.
                     itemDiv.style.cursor = 'pointer';
                     itemDiv.addEventListener('mouseenter', () => {
+                        // Ignore the synthetic mouseenter WebKit fires when
+                        // this item is newly rendered under a stationary
+                        // cursor right after a keyboard navigation — otherwise
+                        // the arrow press would immediately snap selection
+                        // back to whatever the mouse happens to be over.
+                        // Real cursor movement clears the flag (see the
+                        // document mousemove listener).
+                        if (suppressMenuMouseEnter) return;
                         if (selectedIndex !== index) {
                             selectedIndex = index;
                             renderMenuItems();
@@ -1658,6 +1680,11 @@
             }
 
             selectedIndex = newIndex;
+            // Mark this rerender as keyboard-driven so the synthetic
+            // mouseenter on the freshly-rendered item under the cursor
+            // doesn't snap selection back. Real cursor movement clears
+            // the flag.
+            suppressMenuMouseEnter = true;
             renderMenuItems();
 
             scrollSelectedItemIntoView();
