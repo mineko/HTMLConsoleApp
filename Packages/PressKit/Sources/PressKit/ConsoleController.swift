@@ -312,6 +312,24 @@ public class ConsoleController: NSObject, ObservableObject {
         webView.evaluateJavaScript("showError('\(escapedMessage)');", completionHandler: nil)
     }
 
+    // MARK: - Ephemeral notice (by the prompt; not part of the output stream)
+
+    /// Show a transient notice line by the prompt — parser errors, lifecycle
+    /// confirmations ("Undone."), etc. It is NOT part of the output stream, so it
+    /// never enters the saved transcript; it persists until the next command (or
+    /// until output is cleared). An empty string clears it.
+    public func showNotice(_ text: String) {
+        guard let webView = webView else { return }
+        let escaped = escapeForJS(text)
+        webView.evaluateJavaScript("showNotice('\(escaped)');", completionHandler: nil)
+    }
+
+    /// Remove any notice currently shown. No-op if none.
+    public func clearNotice() {
+        guard let webView = webView else { return }
+        webView.evaluateJavaScript("clearNotice();", completionHandler: nil)
+    }
+
     // MARK: - Output (public, used by Engine subclasses)
 
     public func addOutput(_ text: String) {

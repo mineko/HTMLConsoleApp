@@ -22,6 +22,10 @@
         <span id="prompt">></span>
         <textarea id="input" rows="1"></textarea>
     </div>
+    <!-- Ephemeral notice line: parser errors / lifecycle confirmations. Sits by
+         the prompt, muted+italic, and is NOT part of the output stream (so it's
+         never in the saved transcript). Persists until the next command. -->
+    <div id="notice-line" style="display: none; font-style: italic; opacity: 0.6; padding: 4px 0; font-size: 0.9em;"></div>
     <div id="activity-indicator" style="display: none;"><span class="activity-dot"></span></div>
     <div id="error-message" style="display: none;"></div>
     </div>
@@ -174,7 +178,13 @@
 
         function pushSystem(text) {
             if (!text) return;
-            consumeOldMarker();
+            // Whitespace-only output (e.g. the per-turn leading blank line, or the
+            // separator a notice-only turn emits) is spacing, not new world
+            // content: keep it in the stream for the gap, but DON'T let it consume
+            // the old-marker. Otherwise a turn whose only output is a blank line —
+            // a parser-rejected command that surfaces as an io.notice — would dim
+            // the prior text with nothing bright to take its place.
+            if (text.trim()) consumeOldMarker();
             contentStream.push({ type: 'system', text: text });
             renderLayout(false, true);
         }
@@ -243,6 +253,7 @@
             committedSkips = new Set();
             output.innerHTML = '';
             contentStreamContainer = null;
+            clearNotice();   // a screen clear (io.clear / restore) drops any stale notice too
         }
 
         // ═══════════════════════════════════════════════════
@@ -1109,6 +1120,7 @@
                             inputContainer.remove();
                         }
                         scheduleActivityIndicator();
+                        clearNotice();   // the previous turn's notice clears on the next command
                         window.webkit.messageHandlers.consoleInput.postMessage(userText);
                     } else {
                         inputSpan.textContent = '';
@@ -1158,6 +1170,27 @@
         // ═══════════════════════════════════════════════════
         // Errors
         // ═══════════════════════════════════════════════════
+
+        // Ephemeral notice by the prompt (parser errors, /undo confirmations,
+        // etc). Replaces any current notice; persists until the next command
+        // (cleared by the input submit handlers) or until output is cleared.
+        // Deliberately NOT part of the output stream, so it never lands in the
+        // saved transcript.
+        function showNotice(message) {
+            const line = document.getElementById('notice-line');
+            if (!line) return;
+            if (!message || !message.trim()) { line.style.display = 'none'; line.textContent = ''; return; }
+            line.textContent = message;
+            line.style.display = 'block';
+            scrollToBottom();
+        }
+
+        function clearNotice() {
+            const line = document.getElementById('notice-line');
+            if (!line) return;
+            line.textContent = '';
+            line.style.display = 'none';
+        }
 
         function showError(message) {
             setTimeout(() => {
@@ -1330,6 +1363,7 @@
                 e.preventDefault();
                 const userText = input.value;
                 if (userText.trim()) {
+                    clearNotice();   // the previous turn's notice clears on the next command
                     window.webkit.messageHandlers.consoleInput.postMessage(userText);
                 }
                 input.value = '';
