@@ -228,6 +228,16 @@
             pushSystem(text);
         }
 
+        // Repaint restored scrollback (undo / redo / restart / restore) as
+        // settled history: pushed already marked `old` (de-emphasized) and does
+        // NOT consume the old-marker — a replay has no "new" content, so without
+        // this the whole transcript would light up as fresh output.
+        function addOldOutput(text) {
+            if (!text) return;
+            contentStream.push({ type: 'system', text: text, old: true });
+            renderLayout(false, true);
+        }
+
         function appendOutput(text) {
             // Append to the last system item in the stream (for token streaming)
             if (contentStream.length > 0) {

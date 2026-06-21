@@ -338,6 +338,14 @@ public class ConsoleController: NSObject, ObservableObject {
         webView.evaluateJavaScript("addOutput('\(escapedText)');", completionHandler: nil)
     }
 
+    /// Repaint restored scrollback (undo/redo/restart/restore) as settled,
+    /// de-emphasized history — see `addOldOutput` in console.html.
+    public func addOldOutput(_ text: String) {
+        guard let webView = webView else { return }
+        let escapedText = escapeForJS(text)
+        webView.evaluateJavaScript("addOldOutput('\(escapedText)');", completionHandler: nil)
+    }
+
     public func appendOutput(_ text: String) {
         guard let webView = webView else { return }
         let escapedText = escapeForJS(text)
