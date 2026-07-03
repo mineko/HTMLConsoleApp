@@ -6,6 +6,14 @@
 import SwiftUI
 import WebKit
 
+// SwiftUI's view-representable protocol is platform-specific (NSViewRepresentable on
+// macOS, UIViewRepresentable on iOS/iPadOS). The WKWebView body is identical on both.
+#if os(macOS)
+typealias PlatformViewRepresentable = NSViewRepresentable
+#else
+typealias PlatformViewRepresentable = UIViewRepresentable
+#endif
+
 
 /// A SwiftUI view that hosts the HTML console. Drop this into any window or pane.
 public struct ConsoleView: View {
@@ -79,7 +87,7 @@ class MenuActionHandler: NSObject, WKScriptMessageHandler {
 
 // MARK: - WebView Wrapper
 
-struct WebViewRepresentable: NSViewRepresentable {
+struct WebViewRepresentable: PlatformViewRepresentable {
     let module: String
     let configuration: Any?
 
@@ -113,7 +121,15 @@ struct WebViewRepresentable: NSViewRepresentable {
         Coordinator(consoleController: consoleController)
     }
 
-    func makeNSView(context: Context) -> WKWebView {
+#if os(macOS)
+    func makeNSView(context: Context) -> WKWebView { makeWebView(context: context) }
+    func updateNSView(_ nsView: WKWebView, context: Context) {}
+#else
+    func makeUIView(context: Context) -> WKWebView { makeWebView(context: context) }
+    func updateUIView(_ uiView: WKWebView, context: Context) {}
+#endif
+
+    private func makeWebView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .nonPersistent()
         configuration.preferences.javaScriptCanOpenWindowsAutomatically = false
@@ -143,8 +159,6 @@ struct WebViewRepresentable: NSViewRepresentable {
         webView.loadFileURL(htmlURL, allowingReadAccessTo: URL(fileURLWithPath: accessPath))
         return webView
     }
-
-    func updateNSView(_ nsView: WKWebView, context: Context) {}
 
     private static func commonAncestor(_ a: String, _ b: String) -> String {
         let aComponents = a.split(separator: "/", omittingEmptySubsequences: false)
