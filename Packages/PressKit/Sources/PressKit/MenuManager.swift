@@ -19,7 +19,9 @@ public enum MenuItemType {
 }
 
 public struct MenuItem {
-    let id: String
+    /// Stable identifier (e.g. "lifecycle_save") — hosts key native affordances
+    /// like keyboard shortcuts off it.
+    public let id: String
     public let title: String
     public let subtitle: String?
     public let type: MenuItemType

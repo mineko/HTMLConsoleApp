@@ -93,6 +93,11 @@ public class ConsoleController: NSObject, ObservableObject {
 
     // MARK: - Theme
 
+    /// Whether the active console theme is dark (from its body background-color).
+    /// Native chrome around the webview — the iPad cascade panel, for instance —
+    /// reads this to match the console instead of the system appearance.
+    @Published public private(set) var themeIsDark: Bool = true
+
     func switchTheme(to themeName: String) {
         guard let webView = webView else { return }
         currentTheme = themeName
@@ -100,6 +105,8 @@ public class ConsoleController: NSObject, ObservableObject {
         guard let themeDir = resolveThemeDir(themeName),
               let css = try? String(contentsOf: themeDir.appendingPathComponent("theme.css"), encoding: .utf8)
         else { return }
+
+        themeIsDark = Self.isDarkBackground(css: css)
 
         // Resolve relative url() references to absolute file:// URLs so
         // WKWebView can load images regardless of sandbox constraints.
@@ -125,6 +132,24 @@ public class ConsoleController: NSObject, ObservableObject {
         webView.evaluateJavaScript(script) { _, _ in
             webView.evaluateJavaScript("renderLayout(true); requestAnimationFrame(updateContentPadding);", completionHandler: nil)
         }
+    }
+
+    /// Reads the first `background-color: #hex` from the theme CSS and calls it
+    /// dark below 50% luminance. Themes declare their background on `body`, which
+    /// is the first such rule in every bundled theme; a theme without one reads
+    /// as dark (the console's historical default).
+    private static func isDarkBackground(css: String) -> Bool {
+        guard let range = css.range(of: #"background-color:\s*#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})"#,
+                                    options: .regularExpression),
+              let hashIndex = css[range].firstIndex(of: "#") else { return true }
+        var hex = String(css[css.index(after: hashIndex)..<range.upperBound])
+        if hex.count == 3 { hex = hex.map { "\($0)\($0)" }.joined() }
+        guard let value = UInt32(hex, radix: 16) else { return true }
+        let r = Double((value >> 16) & 0xFF) / 255
+        let g = Double((value >> 8) & 0xFF) / 255
+        let b = Double(value & 0xFF) / 255
+        let luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
+        return luminance < 0.5
     }
 
     private func resolveThemeDir(_ themeName: String) -> URL? {
