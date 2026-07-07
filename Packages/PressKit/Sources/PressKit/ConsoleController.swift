@@ -241,6 +241,14 @@ public class ConsoleController: NSObject, ObservableObject {
         return engine?.menuItems() ?? []
     }
 
+    /// The engine's menu items (lifecycle commands plus game-registered commands),
+    /// for hosts that render a NATIVE menu — e.g. the iPad toolbar — instead of the
+    /// HTML overlay menu (which opens with Escape, so it's unreachable on touch).
+    /// Item actions are self-contained; a host just invokes them.
+    public func hostMenuItems() -> [MenuItem] {
+        return getEngineMenuItems()
+    }
+
     internal func showSubmenu(_ submenu: Menu?) {
         guard let submenu = submenu else { return }
         menuManager.showSubmenu(submenu)
